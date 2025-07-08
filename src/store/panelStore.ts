@@ -9,8 +9,8 @@ import { clamp } from '@/lib/utils';
 /** Store Zustand pour la gestion globale du panneau */
 export interface PanelStore {
   dimensions: PanelDimensions;
+  setLength: (length: number) => void;
   setWidth: (width: number) => void;
-  setHeight: (height: number) => void;
   setThickness: (thickness: number) => void;
   setDimensions: (dims: PanelDimensions) => void;
   resetDimensions: () => void;
@@ -18,18 +18,18 @@ export interface PanelStore {
 
 export const usePanelStore = create<PanelStore>((set) => ({
   dimensions: DEFAULT_DIMENSIONS,
+  setLength: (length) =>
+    set((state) => ({
+      dimensions: {
+        ...state.dimensions,
+        length: clamp(length, PANEL_LIMITS.length.min, PANEL_LIMITS.length.max),
+      },
+    })),
   setWidth: (width) =>
     set((state) => ({
       dimensions: {
         ...state.dimensions,
         width: clamp(width, PANEL_LIMITS.width.min, PANEL_LIMITS.width.max),
-      },
-    })),
-  setHeight: (height) =>
-    set((state) => ({
-      dimensions: {
-        ...state.dimensions,
-        height: clamp(height, PANEL_LIMITS.height.min, PANEL_LIMITS.height.max),
       },
     })),
   setThickness: (thickness) =>
@@ -46,11 +46,11 @@ export const usePanelStore = create<PanelStore>((set) => ({
   setDimensions: (dims) =>
     set({
       dimensions: {
-        width: clamp(dims.width, PANEL_LIMITS.width.min, PANEL_LIMITS.width.max),
-        height: clamp(
-          dims.height,
-          PANEL_LIMITS.height.min,
-          PANEL_LIMITS.height.max,
+        length: clamp(dims.length, PANEL_LIMITS.length.min, PANEL_LIMITS.length.max),
+        width: clamp(
+          dims.width,
+          PANEL_LIMITS.width.min,
+          PANEL_LIMITS.width.max,
         ),
         thickness: clamp(
           dims.thickness,

@@ -20,12 +20,12 @@ async function init() {
 }
 
 // Génère un panneau simple selon les dimensions fournies
-async function createBox({ width, height, thickness }: PanelDimensions): Promise<{ url: string; edges: EdgeDTO[] }> {
+async function createBox({ length, width, thickness }: PanelDimensions): Promise<{ url: string; edges: EdgeDTO[] }> {
   if (!oc) throw new Error("OpenCascade not ready");
 
   const panel = new oc.BRepPrimAPI_MakeBox_2(
+    length,
     width,
-    height,
     thickness,
   ).Shape();
 

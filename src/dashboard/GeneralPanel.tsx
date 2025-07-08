@@ -17,25 +17,25 @@ import {
 export function GeneralPanel() {
   const {
     dimensions,
+    setLength,
     setWidth,
-    setHeight,
     setThickness,
     resetDimensions,
   } = usePanelStore();
   const [isLocked, setIsLocked] = useState(false);
 
   // Valeurs locales pour permettre la saisie libre avant validation
+  const [lengthInput, setLengthInput] = useState(dimensions.length.toString());
   const [widthInput, setWidthInput] = useState(dimensions.width.toString());
-  const [heightInput, setHeightInput] = useState(dimensions.height.toString());
   const [thicknessInput, setThicknessInput] = useState(dimensions.thickness.toString());
 
+  useEffect(() => setLengthInput(String(dimensions.length)), [dimensions.length]);
   useEffect(() => setWidthInput(String(dimensions.width)), [dimensions.width]);
-  useEffect(() => setHeightInput(String(dimensions.height)), [dimensions.height]);
   useEffect(() => setThicknessInput(String(dimensions.thickness)), [dimensions.thickness]);
 
   const updateDimension = (key: string, value: number) => {
+    if (key === "length") setLength(value);
     if (key === "width") setWidth(value);
-    if (key === "height") setHeight(value);
     if (key === "thickness") setThickness(value);
   };
 
@@ -64,6 +64,23 @@ export function GeneralPanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
+            {/* Longueur */}
+            <div className="flex flex-col gap-1 w-full">
+              <Label htmlFor="length" className="text-xs">Longueur (mm)</Label>
+              <Input
+                id="length"
+                type="number"
+                value={lengthInput}
+                onChange={(e) => setLengthInput(e.target.value)}
+                onBlur={() => updateDimension('length', Number(lengthInput))}
+                className="h-9 flex-1"
+                min={PANEL_LIMITS.length.min}
+                max={PANEL_LIMITS.length.max}
+              />
+              <Badge variant="secondary" className="self-start text-xs mt-0.5">
+               min: {PANEL_LIMITS.length.min} mm – max: {PANEL_LIMITS.length.max} mm
+              </Badge>
+            </div>
             {/* Largeur */}
             <div className="flex flex-col gap-1 w-full">
               <Label htmlFor="width" className="text-xs">Largeur (mm)</Label>
@@ -79,23 +96,6 @@ export function GeneralPanel() {
               />
               <Badge variant="secondary" className="self-start text-xs mt-0.5">
                min: {PANEL_LIMITS.width.min} mm – max: {PANEL_LIMITS.width.max} mm
-              </Badge>
-            </div>
-            {/* Hauteur */}
-            <div className="flex flex-col gap-1 w-full">
-              <Label htmlFor="height" className="text-xs">Hauteur (mm)</Label>
-              <Input
-                id="height"
-                type="number"
-                value={heightInput}
-                onChange={(e) => setHeightInput(e.target.value)}
-                onBlur={() => updateDimension('height', Number(heightInput))}
-                className="h-9 flex-1"
-                min={PANEL_LIMITS.height.min}
-                max={PANEL_LIMITS.height.max}
-              />
-              <Badge variant="secondary" className="self-start text-xs mt-0.5">
-               min: {PANEL_LIMITS.height.min} mm – max: {PANEL_LIMITS.height.max} mm
               </Badge>
             </div>
           </div>
@@ -145,20 +145,20 @@ export function GeneralPanel() {
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Surface:</span>
             <Badge variant="secondary">
-              {(dimensions.width * dimensions.height / 10000).toFixed(2)} m²
+              {(dimensions.length * dimensions.width / 10000).toFixed(2)} m²
             </Badge>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Volume:</span>
             <Badge variant="secondary">
-              {(dimensions.width * dimensions.height * dimensions.thickness / 1000000).toFixed(3)} m³
+              {(dimensions.length * dimensions.width * dimensions.thickness / 1000000).toFixed(3)} m³
             </Badge>
           </div>
           <Separator />
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Poids estimé:</span>
             <Badge variant="outline">
-              {(dimensions.width * dimensions.height * dimensions.thickness * 0.0007).toFixed(1)} kg
+              {(dimensions.length * dimensions.width * dimensions.thickness * 0.0007).toFixed(1)} kg
             </Badge>
           </div>
         </CardContent>
