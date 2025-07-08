@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import * as Comlink from "comlink";
 import AppViewer from "./AppViewer";
 import { usePanelStore } from "@/store/panelStore";
-import type { PanelDimensions } from "@/models/Panel";
+import type { OccWorkerAPI } from "@/workers/worker.types";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 
 export default function ContentViewer() {
@@ -11,11 +11,7 @@ export default function ContentViewer() {
   // Indique si le moteur OpenCascade est prêt
   const [ocReady, setOcReady] = useState(false);
   const workerRef = useRef<Worker | null>(null);
-  const occProxyRef = useRef<{
-    init: () => Promise<boolean>;
-    createBox: (dims: PanelDimensions) => Promise<{ url: string; edges: EdgeDTO[] }>;
-    getEdges: (shape: unknown, tolerance: number) => Promise<EdgeDTO[]>;
-  } | null>(null);
+  const occProxyRef = useRef<Comlink.Remote<OccWorkerAPI> | null>(null);
   const dimensions = usePanelStore((state) => state.dimensions);
 
   // Initialisation du worker une seule fois
@@ -26,11 +22,7 @@ export default function ContentViewer() {
     );
     workerRef.current = worker;
 
-    const occProxy = Comlink.wrap<{
-      init: () => Promise<boolean>;
-      createBox: (dims: PanelDimensions) => Promise<{ url: string; edges: EdgeDTO[] }>;
-      getEdges: (shape: unknown, tolerance: number) => Promise<EdgeDTO[]>;
-    }>(worker);
+    const occProxy = Comlink.wrap<OccWorkerAPI>(worker);
     occProxyRef.current = occProxy;
 
     // Initialisation du moteur OCCT dans le worker
@@ -51,6 +43,7 @@ export default function ContentViewer() {
 
     (async () => {
       const { url, edges: newEdges } = await proxy.createBox(dimensions);
+      console.log("[ContentViewer] createBox result:", { url, edges: newEdges });
       setModelUrl(url);
       setEdges(newEdges);
     })();
@@ -58,6 +51,9 @@ export default function ContentViewer() {
 
   // Centre de la scène : le modèle est re-positionné autour de l'origine
   const target: [number, number, number] = [0, 0, 0];
+
+  // Log pour vérifier les props passées à AppViewer
+  console.log("[ContentViewer] AppViewer props:", { modelUrl, edges, dimensions });
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">

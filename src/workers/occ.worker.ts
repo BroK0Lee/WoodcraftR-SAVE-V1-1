@@ -2,6 +2,7 @@ import * as Comlink from "comlink";
 import openCascadeFactory from "opencascade.js/dist/opencascade.full.js";
 import wasmURL from "opencascade.js/dist/opencascade.full.wasm?url";
 import shapeToUrl from "../helpers/shapeToUrl"; // doit etre "pur JS" !
+import type { OccWorkerAPI } from "./worker.types";
 import type { PanelDimensions } from "@/models/Panel";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 import type { TopoDS_Shape } from "opencascade.js";
@@ -10,10 +11,9 @@ let oc: Awaited<ReturnType<typeof openCascadeFactory>> | null = null;
 
 async function init() {
   if (!oc) {
-    // openCascadeFactory typings lack options parameter
-    const factory = openCascadeFactory as unknown as (
-      opts: { locateFile: () => string }
-    ) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
+    // Correction du typage pour accepter locateFile
+    type OpenCascadeFactory = (opts: { locateFile: () => string }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
+    const factory = openCascadeFactory as unknown as OpenCascadeFactory;
     oc = await factory({ locateFile: () => wasmURL });
   }
   return true;
@@ -38,10 +38,13 @@ async function createBox({ length, width, thickness }: PanelDimensions): Promise
 function getEdges(shape: TopoDS_Shape, tolerance: number): EdgeDTO[] {
   if (!oc) throw new Error("OpenCascade not ready");
 
+  // Correction du typage dynamique pour les enums OpenCascade.js
+  const TopAbs_EDGE = (oc.TopAbs_ShapeEnum?.TopAbs_EDGE ?? 2);
+  const TopAbs_SHAPE = (oc.TopAbs_ShapeEnum?.TopAbs_SHAPE ?? 7);
   const explorer = new oc.TopExp_Explorer_2(
     shape,
-    oc.TopAbs_ShapeEnum.TopAbs_EDGE,
-    oc.TopAbs_ShapeEnum.TopAbs_SHAPE,
+    TopAbs_EDGE as any,
+    TopAbs_SHAPE as any,
   );
 
   const result: EdgeDTO[] = [];
@@ -76,4 +79,4 @@ function getEdges(shape: TopoDS_Shape, tolerance: number): EdgeDTO[] {
   return result;
 }
 
-Comlink.expose({ init, createBox, getEdges });
+Comlink.expose({ init, createBox, getEdges } as OccWorkerAPI);

@@ -52,8 +52,8 @@ function Model({ url, dimensions }: Pick<Props, "url" | "dimensions">) {
 
   // Calcul du décalage pour centrer
   const offset = [
+    -dimensions.length / 2,
     -dimensions.width / 2,
-    -dimensions.height / 2,
     -dimensions.thickness - 1,
   ] as const;
 
@@ -64,14 +64,14 @@ export default function GLBViewer({ url, target, dimensions, edges }: Props) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
   const boundingRadius = useMemo(() => {
-    const { width, height, thickness } = dimensions;
-    return Math.sqrt(width ** 2 + height ** 2 + thickness ** 2) / 2;
+    const { length, width, thickness } = dimensions;
+    return Math.sqrt(length ** 2 + width ** 2 + thickness ** 2) / 2;
   }, [dimensions]);
 
   const offset = useMemo(
     () => [
+      -dimensions.length / 2,
       -dimensions.width / 2,
-      -dimensions.height / 2,
       -dimensions.thickness - 1,
     ] as const,
     [dimensions]
@@ -97,9 +97,9 @@ export default function GLBViewer({ url, target, dimensions, edges }: Props) {
 
   const axesScale = useMemo(
     () => [
-      (dimensions.width / 2) * 1.2,
-      (dimensions.height / 2) * 1.4,
-      Math.max(dimensions.width, dimensions.height) / 4,
+      (dimensions.length / 2) * 1.2,
+      (dimensions.width / 2) * 1.4,
+      Math.max(dimensions.length, dimensions.width) / 4,
     ] as [number, number, number],
     [dimensions]
   );
