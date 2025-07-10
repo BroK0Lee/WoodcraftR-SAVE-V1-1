@@ -1,14 +1,21 @@
+
+// --- IMPORTS ---
 import * as Comlink from "comlink";
 import openCascadeFactory from "opencascade.js/dist/opencascade.full.js";
 import wasmURL from "opencascade.js/dist/opencascade.full.wasm?url";
+import { shapeToGeometry } from "../helpers/shapeToGeometry";
 import shapeToUrl from "../helpers/shapeToUrl"; // doit etre "pur JS" !
 import type { OccWorkerAPI } from "./worker.types";
 import type { PanelDimensions } from "@/models/Panel";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 import type { TopoDS_Shape } from "opencascade.js";
 
+
+// --- VARIABLES GLOBALES ---
 let oc: Awaited<ReturnType<typeof openCascadeFactory>> | null = null;
 
+
+// --- INIT OPENCASCADE ---
 async function init() {
   if (!oc) {
     // Correction du typage pour accepter locateFile
@@ -19,22 +26,26 @@ async function init() {
   return true;
 }
 
-// Génère un panneau simple selon les dimensions fournies
-async function createBox({ length, width, thickness }: PanelDimensions): Promise<{ url: string; edges: EdgeDTO[] }> {
+
+// --- API PRINCIPALE ---
+
+
+// Fonction unique : génère la géométrie, les edges et l'URL GLB d'un panneau
+async function createBox({ length, width, thickness }: PanelDimensions): Promise<{
+  geometry: import("@/helpers/shapeToGeometry").PanelGeometryDTO;
+  edges: EdgeDTO[];
+  url: string;
+}> {
   if (!oc) throw new Error("OpenCascade not ready");
-
-  const panel = new oc.BRepPrimAPI_MakeBox_2(
-    length,
-    width,
-    thickness,
-  ).Shape();
-
-  const url = shapeToUrl(oc, panel);
+  const panel = new oc.BRepPrimAPI_MakeBox_2(length, width, thickness).Shape();
+  const geometry = shapeToGeometry(oc, panel);
   const edges = getEdges(panel, 0.5);
-  return { url, edges }; // On retourne l'URL du GLB et les arêtes
+  const url = shapeToUrl(oc, panel);
+  return { geometry, edges, url };
 }
 
-// Retourne les arêtes discrétisées d'une forme
+
+// 3. Retourne les arêtes discrétisées d'une forme
 function getEdges(shape: TopoDS_Shape, tolerance: number): EdgeDTO[] {
   if (!oc) throw new Error("OpenCascade not ready");
 
@@ -79,4 +90,5 @@ function getEdges(shape: TopoDS_Shape, tolerance: number): EdgeDTO[] {
   return result;
 }
 
+// --- EXPOSE API ---
 Comlink.expose({ init, createBox, getEdges } as OccWorkerAPI);

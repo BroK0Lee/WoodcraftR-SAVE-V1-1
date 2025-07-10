@@ -1,13 +1,15 @@
 import { useEffect, useState, useRef } from "react";
 import * as Comlink from "comlink";
-import AppViewer from "./AppViewer";
+import PanelViewer from "./AppViewer";
+import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 import type { OccWorkerAPI } from "@/workers/worker.types";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 
 export default function ContentViewer() {
-  const [modelUrl, setModelUrl] = useState<string | undefined>();
+  const [geometry, setGeometry] = useState<PanelGeometryDTO | null>(null);
   const [edges, setEdges] = useState<EdgeDTO[]>([]);
+
   // Indique si le moteur OpenCascade est prêt
   const [ocReady, setOcReady] = useState(false);
   const workerRef = useRef<Worker | null>(null);
@@ -41,34 +43,58 @@ export default function ContentViewer() {
     const proxy = occProxyRef.current;
     if (!proxy || !ocReady) return;
 
+    let isCancelled = false;
+    const currentDimensions = { ...dimensions };
+    
     (async () => {
-      const { url, edges: newEdges } = await proxy.createBox(dimensions);
-      console.log("[ContentViewer] createBox result:", { url, edges: newEdges });
-      setModelUrl(url);
-      setEdges(newEdges);
+      try {
+        if (typeof proxy.createBox !== 'function') {
+          console.error('[ContentViewer] createBox n\'est pas une fonction sur le proxy', proxy);
+          return;
+        }
+        
+        const { geometry: geom, edges: newEdges } = await proxy.createBox(currentDimensions);
+        
+        if (!isCancelled) {
+          // Force la création de nouveaux objets pour éviter la mutation
+          const newGeometry = {
+            positions: new Float32Array(geom.positions),
+            indices: geom.indices.constructor === Uint32Array ? 
+              new Uint32Array(geom.indices) : new Uint16Array(geom.indices),
+          };
+          
+          setGeometry(newGeometry);
+          setEdges([...newEdges]);
+        } else {
+          console.log('[ContentViewer] Réponse ignorée (effet annulé)');
+        }
+      } catch (err) {
+        console.error('[ContentViewer] Erreur lors de l\'appel à createBox', err);
+      }
     })();
+    
+    return () => {
+      isCancelled = true;
+    };
   }, [dimensions, ocReady]);
 
   // Centre de la scène : le modèle est re-positionné autour de l'origine
   const target: [number, number, number] = [0, 0, 0];
 
-  // Log pour vérifier les props passées à AppViewer
-  console.log("[ContentViewer] AppViewer props:", { modelUrl, edges, dimensions });
-
   return (
     <div className="relative flex h-full w-full items-center justify-center">
       {!ocReady ? (
         <p>Chargement d'OpenCascade…</p>
-      ) : modelUrl === undefined ? (
-        <p>Loading…</p>
       ) : (
         <>
-          <AppViewer
-            url={modelUrl}
-            target={target}
-            dimensions={dimensions}
-            edges={edges}
-          />
+          {geometry && (
+            <PanelViewer
+              geometry={geometry}
+              target={target}
+              dimensions={dimensions}
+              edges={edges}
+            />
+          )}
           <p className="absolute bottom-2 right-2 text-xs text-neutral-50">
             {edges.length} edges
           </p>

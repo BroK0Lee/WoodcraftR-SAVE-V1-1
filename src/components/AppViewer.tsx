@@ -1,20 +1,21 @@
 import { Canvas } from "@react-three/fiber";
+import * as THREE from "three";
 import { Suspense, useEffect, useRef, useMemo } from "react";
 import {
   OrbitControls,
   Environment,
-  useGLTF,
 } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three/examples/jsm/controls/OrbitControls.js";
-import { MeshStandardMaterial, Color } from "three";
+// ...existing code...
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
 import type { EdgeDTO } from "@/models/EdgeDTO";
+import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 
 import type { PanelDimensions } from "@/models/Panel";
 
 type Props = {
-  url: string;
+  geometry: PanelGeometryDTO;
   /** Cible à viser par la caméra */
   target: [number, number, number];
   /** Dimensions du panneau pour le centrage */
@@ -23,44 +24,62 @@ type Props = {
   edges?: EdgeDTO[];
 };
 
-function Model({ url, dimensions }: Pick<Props, "url" | "dimensions">) {
-  // Pré-chargement du GLB pour éviter un flash lors du chargement
-  if (useGLTF.preload) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    useGLTF.preload(url);
-  }
 
-  const { scene } = useGLTF(url, true);
 
-  // Forcer un matériau gris uniforme sur toutes les faces
+
+function PanelMesh({ geometry, dimensions }: { geometry: PanelGeometryDTO; dimensions: PanelDimensions }) {
+  const meshRef = useRef<any>(null);
+  
+  // Force la recréation de la géométrie à chaque update
   useEffect(() => {
-    const monoMat = new MeshStandardMaterial({
-      color: new Color(0x888888),
-      roughness: 0.5,
-      metalness: 0,
-    });
-    scene.traverse((obj) => {
-      // Remplace tout material de mesh
-      if ((obj as any).isMesh) {
-        (obj as any).material = monoMat;
-        (obj as any).castShadow = true;
-        (obj as any).receiveShadow = true;
-      }
-    });
-  }, [scene]);
+    if (meshRef.current && meshRef.current.geometry) {
+      meshRef.current.geometry.dispose();
+      
+      // Crée une nouvelle géométrie
+      const newGeometry = new THREE.BufferGeometry();
+      newGeometry.setAttribute('position', new THREE.BufferAttribute(geometry.positions, 3));
+      newGeometry.setIndex(new THREE.BufferAttribute(geometry.indices, 1));
+      newGeometry.computeVertexNormals();
+      
+      meshRef.current.geometry = newGeometry;
+    }
+  }, [geometry, dimensions]);
 
-  // Calcul du décalage pour centrer
-  const offset = [
-    -dimensions.length / 2,
-    -dimensions.width / 2,
-    -dimensions.thickness - 1,
-  ] as const;
-
-  return <primitive object={scene} dispose={null} position={offset} />;
+  return (
+    <mesh 
+      ref={meshRef}
+      position={[-dimensions.length / 2, -dimensions.width / 2, -dimensions.thickness-0.1]} 
+      castShadow 
+      receiveShadow
+      key={`${dimensions.length}-${dimensions.width}-${dimensions.thickness}-${geometry.positions.length}`}
+    >
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          array={geometry.positions}
+          count={geometry.positions.length / 3}
+          itemSize={3}
+          needsUpdate={true}
+        />
+        <bufferAttribute
+          attach="index"
+          array={geometry.indices}
+          count={geometry.indices.length}
+          itemSize={1}
+          needsUpdate={true}
+        />
+      </bufferGeometry>
+      <meshStandardMaterial color="#D2B48C" roughness={0.5} metalness={0} side={THREE.DoubleSide} />
+    </mesh>
+  );
 }
 
-export default function GLBViewer({ url, target, dimensions, edges }: Props) {
+// Composant utilitaire pour forcer le remount sur changement de clé
+function RemountOnKey({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+export default function PanelViewer({ geometry, target, dimensions, edges }: Props) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
   const boundingRadius = useMemo(() => {
@@ -72,7 +91,7 @@ export default function GLBViewer({ url, target, dimensions, edges }: Props) {
     () => [
       -dimensions.length / 2,
       -dimensions.width / 2,
-      -dimensions.thickness - 1,
+      -dimensions.thickness - 0.1, // Légère correction pour éviter les artefacts de shadow
     ] as const,
     [dimensions]
   );
@@ -123,10 +142,14 @@ export default function GLBViewer({ url, target, dimensions, edges }: Props) {
       <Environment preset="city" />
 
       <Suspense fallback={null}>
-        <Model url={url} dimensions={dimensions} />
+        <PanelMesh
+          key={`${dimensions.length}-${dimensions.width}-${dimensions.thickness}`}
+          geometry={geometry}
+          dimensions={dimensions}
+        />
       </Suspense>
 
-      {edges && <EdgesLayer edges={edges} position={offset} />}
+      {edges && <EdgesLayer edges={edges} position={[-dimensions.length / 2, -dimensions.width / 2, -dimensions.thickness -0.1]} />}
 
       <AxesHelper size={1} scale={axesScale} />
 
