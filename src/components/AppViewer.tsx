@@ -28,7 +28,7 @@ type Props = {
 
 
 function PanelMesh({ geometry, dimensions }: { geometry: PanelGeometryDTO; dimensions: PanelDimensions }) {
-  const meshRef = useRef<any>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   
   // Force la recréation de la géométrie à chaque update
   useEffect(() => {
@@ -74,11 +74,6 @@ function PanelMesh({ geometry, dimensions }: { geometry: PanelGeometryDTO; dimen
   );
 }
 
-// Composant utilitaire pour forcer le remount sur changement de clé
-function RemountOnKey({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
-
 export default function PanelViewer({ geometry, target, dimensions, edges }: Props) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
@@ -86,15 +81,6 @@ export default function PanelViewer({ geometry, target, dimensions, edges }: Pro
     const { length, width, thickness } = dimensions;
     return Math.sqrt(length ** 2 + width ** 2 + thickness ** 2) / 2;
   }, [dimensions]);
-
-  const offset = useMemo(
-    () => [
-      -dimensions.length / 2,
-      -dimensions.width / 2,
-      -dimensions.thickness - 0.1, // Légère correction pour éviter les artefacts de shadow
-    ] as const,
-    [dimensions]
-  );
 
   const cameraProps = useMemo(() => {
     const distance = boundingRadius * 2;

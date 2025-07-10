@@ -49,7 +49,7 @@ export default function ContentViewer() {
     (async () => {
       try {
         if (typeof proxy.createBox !== 'function') {
-          console.error('[ContentViewer] createBox n\'est pas une fonction sur le proxy', proxy);
+          console.error('[ContentViewer] Worker API error: createBox is not a function');
           return;
         }
         
@@ -65,11 +65,11 @@ export default function ContentViewer() {
           
           setGeometry(newGeometry);
           setEdges([...newEdges]);
-        } else {
-          console.log('[ContentViewer] Réponse ignorée (effet annulé)');
         }
       } catch (err) {
-        console.error('[ContentViewer] Erreur lors de l\'appel à createBox', err);
+        if (!isCancelled) {
+          console.error('[ContentViewer] Error calling createBox:', err);
+        }
       }
     })();
     

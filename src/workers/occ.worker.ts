@@ -54,7 +54,9 @@ function getEdges(shape: TopoDS_Shape, tolerance: number): EdgeDTO[] {
   const TopAbs_SHAPE = (oc.TopAbs_ShapeEnum?.TopAbs_SHAPE ?? 7);
   const explorer = new oc.TopExp_Explorer_2(
     shape,
-    TopAbs_EDGE as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TopAbs_EDGE as any, // OpenCascade enum casting required
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     TopAbs_SHAPE as any,
   );
 

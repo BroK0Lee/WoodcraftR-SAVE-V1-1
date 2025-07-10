@@ -3,6 +3,7 @@ import { useThree } from "@react-three/fiber";
 import { Group, Raycaster, Vector2, Color } from "three";
 import { useEdgeSelectionStore } from "@/store/edgeSelectionStore";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 
 /**
  * Hook de raycasting et mise à jour du store de sélection des arêtes
@@ -14,14 +15,14 @@ export default function useEdgeSelection(edgesGroup: Group | null) {
 
   const raycasterRef = useRef<Raycaster>();
   const pointer = useRef(new Vector2());
-  const lastSelected = useRef<any>(null);
+  const lastSelected = useRef<LineSegments2 | null>(null);
 
   useEffect(() => {
     if (!edgesGroup) return;
 
     const raycaster = new Raycaster();
-    const sample = edgesGroup.children[0] as any;
-    if (sample) {
+    const sample = edgesGroup.children[0] as LineSegments2;
+    if (sample && sample.geometry) {
       sample.geometry.computeBoundingSphere();
       const r = sample.geometry.boundingSphere?.radius ?? 1;
       raycaster.params.Line.threshold = Math.max(r * 0.02, 1);
@@ -43,7 +44,7 @@ export default function useEdgeSelection(edgesGroup: Group | null) {
       );
 
       if (intersects.length > 0) {
-        const hit = intersects[0].object as any;
+        const hit = intersects[0].object as LineSegments2;
         if (lastSelected.current && lastSelected.current !== hit) {
           const prevMat = lastSelected.current.material as LineMaterial;
           prevMat.color = new Color(0x555555);
@@ -72,13 +73,14 @@ export default function useEdgeSelection(edgesGroup: Group | null) {
 
   useEffect(() => {
     if (!edgesGroup) return;
-    edgesGroup.children.forEach((child: any) => {
-      const mat = child.material as LineMaterial;
-      const id = child.userData.edgeId as number | undefined;
+    edgesGroup.children.forEach((child) => {
+      const lineChild = child as LineSegments2;
+      const mat = lineChild.material as LineMaterial;
+      const id = lineChild.userData.edgeId as number | undefined;
       if (id === selectedEdgeId) {
         mat.color = new Color(0xff0000);
         mat.linewidth = 5;
-        lastSelected.current = child;
+        lastSelected.current = lineChild;
       } else {
         mat.color = new Color(0x555555);
         mat.linewidth = 3;

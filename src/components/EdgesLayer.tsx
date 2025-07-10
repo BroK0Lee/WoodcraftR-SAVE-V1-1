@@ -8,6 +8,20 @@ import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 
+// Helper pour nettoyer les objets 3D de manière type-safe
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const disposeObject = (obj: any) => {
+  if (obj.geometry) obj.geometry.dispose();
+  if (obj.material) {
+    if (Array.isArray(obj.material)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      obj.material.forEach((m: any) => m.dispose());
+    } else {
+      obj.material.dispose();
+    }
+  }
+};
+
 interface Props {
   edges: EdgeDTO[];
   /** Décalage identique au modèle 3D pour que la couche coïncide parfaitement */
@@ -16,24 +30,16 @@ interface Props {
 
 const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(
   { edges, position = [0, 0, 0] },
-  ref,
 ) {
   const groupRef = useRef<Group>(new Group());
-  const { scene, gl, size } = useThree();
+  const { scene, size } = useThree();
 
   useEffect(() => {
     const group = groupRef.current;
     scene.add(group);
     return () => {
       scene.remove(group);
-      group.children.forEach((child: any) => {
-        child.geometry.dispose();
-        if (Array.isArray(child.material)) {
-          child.material.forEach((m) => m.dispose());
-        } else {
-          child.material.dispose();
-        }
-      });
+      group.children.forEach(disposeObject);
       group.clear();
     };
   }, [scene]);
@@ -44,11 +50,7 @@ const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(
 
   useEffect(() => {
     const group = groupRef.current;
-    group.children.forEach((child: any) => {
-      child.geometry.dispose();
-      if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
-      else child.material.dispose();
-    });
+    group.children.forEach(disposeObject);
     group.clear();
 
     edges.forEach((edge) => {
@@ -74,7 +76,7 @@ const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(
     });
   }, [edges, size]);
 
-  // Sélection des arêtes
+  // Sélection des arêtes
   useEdgeSelection(groupRef.current);
 
   return null;

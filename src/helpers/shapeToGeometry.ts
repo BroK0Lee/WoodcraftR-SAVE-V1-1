@@ -19,7 +19,8 @@ export interface PanelGeometryDTO {
  */
 // On ajoute un paramètre optionnel purpose pour la robustesse
 export function shapeToGeometry(
-  oc: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  oc: any, // OpenCascade.js instance - complex typing
   shape: TopoDS_Shape,
   purpose: Poly_MeshPurpose = 0 // Poly_MeshPurpose.NONE par défaut
 ): PanelGeometryDTO {
@@ -45,17 +46,15 @@ export function shapeToGeometry(
   const indices: number[] = [];
   let vertexOffset = 0;
 
-  let totalNodes = 0;
-  let totalTriangles = 0;
   for (const face of faces) {
     const location = new oc.TopLoc_Location_1();
     // Correction : on passe bien 3 arguments à Triangulation
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let triangulation: any;
     try {
       triangulation = oc.BRep_Tool.Triangulation(face, location, purpose);
-    } catch (e) {
-      // Si erreur, log explicite
-      console.error('[shapeToGeometry] Erreur Triangulation(face, location, purpose):', e);
+    } catch {
+      // Skip face if triangulation fails
       continue;
     }
     if (triangulation && typeof triangulation === 'object') {
@@ -68,8 +67,6 @@ export function shapeToGeometry(
     // Extraction via les méthodes du binding JS (Node/NbNodes, Triangle/NbTriangles)
     const nbNodes = triangulation.NbNodes();
     const nbTriangles = triangulation.NbTriangles();
-    totalNodes += nbNodes;
-    totalTriangles += nbTriangles;
 
     // Ajout des sommets
     for (let i = 1; i <= nbNodes; i++) {
