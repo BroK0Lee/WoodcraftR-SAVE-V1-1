@@ -8,10 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
-  RotateCcw, 
-  Lock, 
-  Unlock, 
-  Maximize2 
+  RotateCcw
 } from 'lucide-react';
 
 export function GeneralPanel() {
@@ -22,7 +19,6 @@ export function GeneralPanel() {
     setThickness,
     resetDimensions,
   } = usePanelStore();
-  const [isLocked, setIsLocked] = useState(false);
 
   // Valeurs locales pour permettre la saisie libre avant validation
   const [lengthInput, setLengthInput] = useState(dimensions.length.toString());
@@ -117,22 +113,6 @@ export function GeneralPanel() {
             <Badge variant="secondary" className="self-start text-xs mt-0.5">
              min: {PANEL_LIMITS.thickness.min} mm – max: {PANEL_LIMITS.thickness.max} mm
             </Badge>
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsLocked(!isLocked)}
-              className="flex items-center gap-2"
-            >
-              {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-              {isLocked ? 'Verrouillé' : 'Libre'}
-            </Button>
-            <Button variant="outline" size="sm">
-              <Maximize2 className="h-4 w-4 mr-2" />
-              Maximiser
-            </Button>
           </div>
         </CardContent>
       </Card>

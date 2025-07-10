@@ -4,35 +4,69 @@ import {
   DEFAULT_DIMENSIONS,
   type PanelDimensions,
 } from '@/models/Panel';
+import {
+  type Cut,
+  type CutValidationResult,
+  type CutOverlapInfo,
+  createDefaultCut,
+  updateCutTimestamp,
+} from '@/models/Cut';
 import { clamp } from '@/lib/utils';
 
 /** Store Zustand pour la gestion globale du panneau */
 export interface PanelStore {
+  // === DIMENSIONS DU PANNEAU ===
   dimensions: PanelDimensions;
   setLength: (length: number) => void;
   setWidth: (width: number) => void;
   setThickness: (thickness: number) => void;
   setDimensions: (dims: PanelDimensions) => void;
   resetDimensions: () => void;
+  
+  // === GESTION DES DÉCOUPES ===
+  cuts: Cut[];
+  editingCutId: string | null;
+  
+  // Actions pour les découpes
+  addCut: (cut: Cut) => void;
+  updateCut: (id: string, updatedCut: Partial<Cut>) => void;
+  removeCut: (id: string) => void;
+  clearCuts: () => void;
+  duplicateCut: (id: string) => void;
+  
+  // Gestion du mode édition
+  startEditingCut: (id: string) => void;
+  stopEditingCut: () => void;
+  
+  // Validation et utilitaires
+  validateCutPosition: (cut: Cut) => CutValidationResult;
+  getCutsOverlap: () => CutOverlapInfo[];
+  getCutById: (id: string) => Cut | undefined;
+  getCutsByType: (type: Cut['type']) => Cut[];
 }
 
-export const usePanelStore = create<PanelStore>((set) => ({
+export const usePanelStore = create<PanelStore>((set, get) => ({
+  // === ÉTAT INITIAL ===
   dimensions: DEFAULT_DIMENSIONS,
-  setLength: (length) =>
+  cuts: [],
+  editingCutId: null,
+  
+  // === ACTIONS DIMENSIONS ===
+  setLength: (length: number) =>
     set((state) => ({
       dimensions: {
         ...state.dimensions,
         length: clamp(length, PANEL_LIMITS.length.min, PANEL_LIMITS.length.max),
       },
     })),
-  setWidth: (width) =>
+  setWidth: (width: number) =>
     set((state) => ({
       dimensions: {
         ...state.dimensions,
         width: clamp(width, PANEL_LIMITS.width.min, PANEL_LIMITS.width.max),
       },
     })),
-  setThickness: (thickness) =>
+  setThickness: (thickness: number) =>
     set((state) => ({
       dimensions: {
         ...state.dimensions,
@@ -43,7 +77,7 @@ export const usePanelStore = create<PanelStore>((set) => ({
         ),
       },
     })),
-  setDimensions: (dims) =>
+  setDimensions: (dims: PanelDimensions) =>
     set({
       dimensions: {
         length: clamp(dims.length, PANEL_LIMITS.length.min, PANEL_LIMITS.length.max),
@@ -60,4 +94,152 @@ export const usePanelStore = create<PanelStore>((set) => ({
       },
     }),
   resetDimensions: () => set({ dimensions: DEFAULT_DIMENSIONS }),
+  
+  // === ACTIONS DÉCOUPES ===
+  addCut: (cut: Cut) =>
+    set((state) => ({
+      cuts: [...state.cuts, cut],
+    })),
+    
+  updateCut: (id: string, updatedCut: Partial<Cut>) =>
+    set((state) => ({
+      cuts: state.cuts.map((cut) =>
+        cut.id === id 
+          ? updateCutTimestamp({ ...cut, ...updatedCut } as Cut)
+          : cut
+      ),
+    })),
+    
+  removeCut: (id: string) =>
+    set((state) => ({
+      cuts: state.cuts.filter((cut) => cut.id !== id),
+      editingCutId: state.editingCutId === id ? null : state.editingCutId,
+    })),
+    
+  clearCuts: () =>
+    set({
+      cuts: [],
+      editingCutId: null,
+    }),
+    
+  duplicateCut: (id: string) =>
+    set((state) => {
+      const cutToDuplicate = state.cuts.find((cut) => cut.id === id);
+      if (!cutToDuplicate) return state;
+      
+      const duplicatedCut = createDefaultCut(cutToDuplicate.type, state.cuts.length);
+      // Copier les propriétés de la découpe originale sauf id, name, timestamps
+      const { id: _, name: __, createdAt: ___, updatedAt: ____, ...cutData } = cutToDuplicate;
+      
+      return {
+        cuts: [...state.cuts, { ...duplicatedCut, ...cutData, positionX: cutData.positionX + 20, positionY: cutData.positionY + 20 }],
+      };
+    }),
+    
+  // === GESTION MODE ÉDITION ===
+  startEditingCut: (id: string) =>
+    set({ editingCutId: id }),
+    
+  stopEditingCut: () =>
+    set({ editingCutId: null }),
+    
+  // === MÉTHODES UTILITAIRES ===
+  getCutById: (id: string) => {
+    const state = get();
+    return state.cuts.find((cut) => cut.id === id);
+  },
+  
+  getCutsByType: (type: Cut['type']) => {
+    const state = get();
+    return state.cuts.filter((cut) => cut.type === type);
+  },
+  
+  // === VALIDATION ===
+  validateCutPosition: (cut: Cut): CutValidationResult => {
+    const state = get();
+    const { dimensions } = state;
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    
+    // Vérification des limites du panneau
+    if (cut.positionX < 0) {
+      errors.push('La position X ne peut pas être négative');
+    }
+    if (cut.positionY < 0) {
+      errors.push('La position Y ne peut pas être négative');
+    }
+    
+    // Vérification selon le type de découpe
+    if (cut.type === 'rectangle') {
+      if (cut.positionX + cut.length > dimensions.length) {
+        errors.push('La découpe dépasse la longueur du panneau');
+      }
+      if (cut.positionY + cut.width > dimensions.width) {
+        errors.push('La découpe dépasse la largeur du panneau');
+      }
+    } else if (cut.type === 'circle') {
+      if (cut.positionX - cut.radius < 0 || cut.positionX + cut.radius > dimensions.length) {
+        errors.push('Le cercle dépasse la longueur du panneau');
+      }
+      if (cut.positionY - cut.radius < 0 || cut.positionY + cut.radius > dimensions.width) {
+        errors.push('Le cercle dépasse la largeur du panneau');
+      }
+    }
+    
+    // Vérification de la profondeur
+    if (cut.depth > 0 && cut.depth >= dimensions.thickness) {
+      warnings.push('La profondeur de découpe est proche de l\'épaisseur du panneau');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+    };
+  },
+  
+  getCutsOverlap: (): CutOverlapInfo[] => {
+    const state = get();
+    const overlaps: CutOverlapInfo[] = [];
+    
+    // Vérification simple de chevauchement (à améliorer avec calculs géométriques précis)
+    for (let i = 0; i < state.cuts.length; i++) {
+      for (let j = i + 1; j < state.cuts.length; j++) {
+        const cut1 = state.cuts[i];
+        const cut2 = state.cuts[j];
+        
+        // Calcul basique de chevauchement (à améliorer selon les formes)
+        const hasOverlap = checkBasicOverlap(cut1, cut2);
+        
+        if (hasOverlap) {
+          overlaps.push({
+            cutId1: cut1.id,
+            cutId2: cut2.id,
+            overlapArea: 0, // À calculer précisément
+            severity: 'minor', // À déterminer selon l'ampleur
+          });
+        }
+      }
+    }
+    
+    return overlaps;
+  },
 }));
+
+// === FONCTIONS UTILITAIRES PRIVÉES ===
+
+/**
+ * Vérification basique de chevauchement entre deux découpes
+ * (Version simplifiée - à améliorer avec calculs géométriques précis)
+ */
+function checkBasicOverlap(cut1: Cut, cut2: Cut): boolean {
+  // Pour l'instant, vérification basique de distance entre centres
+  const distance = Math.sqrt(
+    Math.pow(cut2.positionX - cut1.positionX, 2) + 
+    Math.pow(cut2.positionY - cut1.positionY, 2)
+  );
+  
+  // Seuil arbitraire - à améliorer selon les dimensions réelles
+  const minDistance = 20; // 20mm
+  return distance < minDistance;
+}
