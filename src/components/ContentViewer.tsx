@@ -26,6 +26,10 @@ export default function ContentViewer() {
   // Nouvelles données pour les découpes
   const cuts = usePanelStore((state) => state.cuts);
   const editingCutId = usePanelStore((state) => state.editingCutId);
+  
+  // État de prévisualisation depuis le store
+  const previewCut = usePanelStore((state) => state.previewCut);
+  const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
 
   // Initialisation du worker une seule fois
   useEffect(() => {
@@ -65,10 +69,15 @@ export default function ContentViewer() {
       const currentDimensions = { ...dimensions };
       const currentCuts = [...cuts];
       
+      // Ajouter la découpe de prévisualisation aux découpes existantes
+      const allCuts = isPreviewMode && previewCut 
+        ? [...currentCuts, previewCut]
+        : currentCuts;
+      
       try {
-        // Si nous avons des découpes, utiliser la nouvelle fonction createPanelWithCuts
-        if (currentCuts.length > 0) {
-          console.log('[ContentViewer] Recalcul avec découpes:', currentCuts.length);
+        // Si nous avons des découpes (incluant preview), utiliser createPanelWithCuts
+        if (allCuts.length > 0) {
+          console.log('[ContentViewer] Recalcul avec découpes (+ preview):', allCuts.length);
           
           if (typeof proxy.createPanelWithCuts !== 'function') {
             console.error('[ContentViewer] Worker API error: createPanelWithCuts is not a function');
@@ -77,7 +86,7 @@ export default function ContentViewer() {
           
           const { geometry: geom, edges: newEdges, cuttingInfo } = await proxy.createPanelWithCuts({
             dimensions: currentDimensions,
-            cuts: currentCuts
+            cuts: allCuts
           });
           
           if (!isCancelled) {
@@ -98,7 +107,7 @@ export default function ContentViewer() {
             lastValidGeometryRef.current = { geometry: newGeometry, edges: [...newEdges] };
             
             // Log des informations de découpe pour debug
-            console.log('[ContentViewer] ✅ Découpes appliquées:', cuttingInfo);
+            console.log('[ContentViewer] ✅ Découpes appliquées (+ preview):', cuttingInfo);
           }
         } else {
           console.log('[ContentViewer] Recalcul panneau simple');
@@ -165,7 +174,7 @@ export default function ContentViewer() {
       // Recalcul immédiat pour les ajouts/suppressions ou changements de dimensions
       await performCalculation();
     }
-  }, [dimensions, cuts, editingCutId, ocReady]);
+  }, [dimensions, cuts, editingCutId, ocReady, previewCut, isPreviewMode]);
 
   // Calcul du modèle à chaque changement de dimensions ou de découpes
   useEffect(() => {
