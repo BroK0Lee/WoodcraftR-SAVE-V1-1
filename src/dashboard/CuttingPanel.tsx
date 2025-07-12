@@ -208,6 +208,37 @@ export function CuttingPanel() {
               </>
             )}
           </Button>
+          
+          {/* Bouton de test pour découpes Worker OpenCascade */}
+          <Button 
+            onClick={() => {
+              // Créer une découpe rectangulaire de test
+              const testCut = createDefaultCut('rectangle', cuts.length);
+              console.log('🧪 Test découpe worker - Ajout de:', testCut);
+              addCut(testCut);
+            }}
+            variant="secondary" 
+            size="sm"
+            className="w-full mt-2"
+          >
+            <Scissors className="h-4 w-4 mr-2" />
+            Test Worker: Ajouter découpe rectangulaire
+          </Button>
+          
+          <Button 
+            onClick={() => {
+              // Créer une découpe circulaire de test
+              const testCut = createDefaultCut('circle', cuts.length);
+              console.log('🧪 Test découpe worker - Ajout de:', testCut);
+              addCut(testCut);
+            }}
+            variant="secondary" 
+            size="sm"
+            className="w-full mt-1"
+          >
+            <Circle className="h-4 w-4 mr-2" />
+            Test Worker: Ajouter découpe circulaire
+          </Button>
         </CardContent>
       </Card>
 
