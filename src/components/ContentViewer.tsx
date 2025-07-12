@@ -19,6 +19,9 @@ export default function ContentViewer() {
   // État de prévisualisation depuis le store
   const previewCut = usePanelStore((state) => state.previewCut);
   const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
+  
+  // Nouvelles données pour les découpes
+  const cuts = usePanelStore((state) => state.cuts);
 
   // Initialisation du worker une seule fois
   useEffect(() => {
@@ -42,37 +45,67 @@ export default function ContentViewer() {
     };
   }, []);
 
-  // Calcul du modèle à chaque changement de dimensions
+  // Calcul du modèle à chaque changement de dimensions ou de découpes
   useEffect(() => {
     const proxy = occProxyRef.current;
     if (!proxy || !ocReady) return;
 
     let isCancelled = false;
     const currentDimensions = { ...dimensions };
+    const currentCuts = [...cuts];
     
     (async () => {
       try {
-        if (typeof proxy.createBox !== 'function') {
-          console.error('[ContentViewer] Worker API error: createBox is not a function');
-          return;
-        }
-        
-        const { geometry: geom, edges: newEdges } = await proxy.createBox(currentDimensions);
-        
-        if (!isCancelled) {
-          // Force la création de nouveaux objets pour éviter la mutation
-          const newGeometry = {
-            positions: new Float32Array(geom.positions),
-            indices: geom.indices.constructor === Uint32Array ? 
-              new Uint32Array(geom.indices) : new Uint16Array(geom.indices),
-          };
+        // Si nous avons des découpes, utiliser la nouvelle fonction createPanelWithCuts
+        if (currentCuts.length > 0) {
+          if (typeof proxy.createPanelWithCuts !== 'function') {
+            console.error('[ContentViewer] Worker API error: createPanelWithCuts is not a function');
+            return;
+          }
           
-          setGeometry(newGeometry);
-          setEdges([...newEdges]);
+          const { geometry: geom, edges: newEdges, cuttingInfo } = await proxy.createPanelWithCuts({
+            dimensions: currentDimensions,
+            cuts: currentCuts
+          });
+          
+          if (!isCancelled) {
+            // Force la création de nouveaux objets pour éviter la mutation
+            const newGeometry = {
+              positions: new Float32Array(geom.positions),
+              indices: geom.indices.constructor === Uint32Array ? 
+                new Uint32Array(geom.indices) : new Uint16Array(geom.indices),
+            };
+            
+            setGeometry(newGeometry);
+            setEdges([...newEdges]);
+            
+            // Log des informations de découpe pour debug
+            console.log('[ContentViewer] Découpes appliquées:', cuttingInfo);
+          }
+        } else {
+          // Sinon, utiliser la fonction classique pour un panneau simple
+          if (typeof proxy.createBox !== 'function') {
+            console.error('[ContentViewer] Worker API error: createBox is not a function');
+            return;
+          }
+          
+          const { geometry: geom, edges: newEdges } = await proxy.createBox(currentDimensions);
+          
+          if (!isCancelled) {
+            // Force la création de nouveaux objets pour éviter la mutation
+            const newGeometry = {
+              positions: new Float32Array(geom.positions),
+              indices: geom.indices.constructor === Uint32Array ? 
+                new Uint32Array(geom.indices) : new Uint16Array(geom.indices),
+            };
+            
+            setGeometry(newGeometry);
+            setEdges([...newEdges]);
+          }
         }
       } catch (err) {
         if (!isCancelled) {
-          console.error('[ContentViewer] Error calling createBox:', err);
+          console.error('[ContentViewer] Error calling worker functions:', err);
         }
       }
     })();
@@ -80,7 +113,7 @@ export default function ContentViewer() {
     return () => {
       isCancelled = true;
     };
-  }, [dimensions, ocReady]);
+  }, [dimensions, cuts, ocReady]);
 
   // Centre de la scène : le modèle est re-positionné au centre du panneau
   const target: [number, number, number] = [
