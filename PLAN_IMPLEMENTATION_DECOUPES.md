@@ -94,45 +94,156 @@ Implémenter les fonctionnalités de découpe rectangulaire et circulaire avec v
 
 ---
 
-### **ÉTAPE 2 : Refactoring de l'interface CuttingPanel** 🔄 **EN COURS**
-*Durée estimée : 3-4h* | *Priorité : IMMÉDIATE pour tester le store*
+### **ÉTAPE 2 : Refactoring de l'interface CuttingPanel** ✅ **TERMINÉE**
+*Durée réelle : 4h* | *Statut : COMPLÈTE*
 
-> **Justification** : Tester l'intégration du store avant les calculs OpenCascade complexes
+#### 2.1 Connexion au store Zustand ✅
+- **Fichier** : `src/dashboard/CuttingPanel.tsx` ✅ **REFACTORISÉ**
+- **Remplacement** : `useState` local → `usePanelStore()` ✅
+- **Ajout** : Formulaires de paramètres par type de découpe ✅
 
-#### 2.1 Connexion au store Zustand
-- **Fichier** : `src/dashboard/CuttingPanel.tsx`
-- **Remplacement** : `useState` local → `usePanelStore()`
-- **Ajout** : Formulaires de paramètres par type de découpe
+#### 2.2 Composants dédiés par type de découpe ✅
+- **Composant** : `RectangularCutForm` intégré dans CuttingPanel ✅
+  - Formulaire avec validation en temps réel ✅
+  - Position X/Y, longueur, largeur, profondeur ✅
+  - Boutons Annuler/Créer ✅
 
-#### 2.2 Composants dédiés par type de découpe
-- **Fichier** : `src/components/cuts/RectangularCutForm.tsx`
-  ```typescript
-  interface Props {
-    cut?: RectangularCut;
-    onSave: (cut: RectangularCut) => void;
-    onCancel: () => void;
-  }
-  
-  // Formulaire avec validation en temps réel
-  // Position X/Y, longueur, largeur, profondeur
-  ```
+- **Composant** : `CircularCutForm` intégré dans CuttingPanel ✅
+  - Formulaire rayon, position, profondeur ✅
+  - Calcul automatique du diamètre ✅
 
-- **Fichier** : `src/components/cuts/CircularCutForm.tsx`
-  ```typescript
-  // Formulaire rayon, position, profondeur
-  ```
-
-#### 2.3 Gestion du mode édition
-- State pour savoir quelle découpe est en cours d'édition
-- Boutons "Modifier" sur chaque découpe listée
-- Mode "ajout" vs "édition"
+#### 2.3 Workflow utilisateur amélioré ✅
+- **Sélection d'outil** → **Clic "Ajouter"** → **Formulaire paramètres** → **Création** ✅
+- Mode édition préparé (handlers disponibles) ✅
+- Interface réorganisée : Paramètres avant Découpes actives ✅
+- Suppression des boutons inutiles (Libre/Maximiser) dans GeneralPanel ✅
 
 ---
 
-### **ÉTAPE 3 : Extension du WebWorker OpenCascade** 
-*Durée estimée : 4-5h* | *Priorité : APRÈS test du store*
+### **ÉTAPE 3 : Prévisualisation 3D en temps réel** 🚧 **À FAIRE**
+*Durée estimée : 3-4h* | *Priorité : IMMÉDIATE pour l'UX*
 
-#### 3.1 Nouvelles fonctions dans `occ.worker.ts`
+> **Objectif** : Afficher la forme de découpe dans le viewer 3D pendant la configuration des paramètres
+
+#### 3.1 Extension du store pour la prévisualisation
+- **Fichier** : `src/store/panelStore.ts`
+- **Ajouts** :
+  ```typescript
+  interface PanelStore {
+    // ...existing code...
+    
+    // === PRÉVISUALISATION DÉCOUPE ===
+    previewCut: Cut | null;        // Découpe en cours de configuration
+    isPreviewMode: boolean;        // Mode prévisualisation actif
+    
+    // Actions de prévisualisation
+    setPreviewCut: (cut: Cut | null) => void;
+    updatePreviewCut: (updatedCut: Partial<Cut>) => void;
+    enablePreview: () => void;
+    disablePreview: () => void;
+  }
+  ```
+
+#### 3.2 Composant de prévisualisation 3D
+- **Fichier** : `src/components/PreviewCutMesh.tsx`
+  ```typescript
+  interface Props {
+    cut: Cut;
+    dimensions: PanelDimensions;
+    opacity?: number;
+  }
+  
+  export function PreviewCutMesh({ cut, dimensions, opacity = 0.7 }: Props) {
+    // Génération de géométrie Three.js selon le type :
+    // - Rectangle : BoxGeometry(length, width, depth)
+    // - Cercle : CylinderGeometry(radius, radius, depth, 32)
+    
+    // Position relative au panneau centré sur l'origine
+    // Couleur rouge semi-transparente pour la visibilité
+  }
+  ```
+
+#### 3.3 Intégration dans AppViewer
+- **Fichier** : `src/components/AppViewer.tsx`
+- **Props ajoutées** :
+  ```typescript
+  type Props = {
+    // ...existing props...
+    previewCut?: Cut | null;
+    isPreviewMode?: boolean;
+  };
+  ```
+- **Rendu conditionnel** dans le Canvas :
+  ```jsx
+  {isPreviewMode && previewCut && (
+    <PreviewCutMesh 
+      cut={previewCut} 
+      dimensions={dimensions}
+      opacity={0.6}
+    />
+  )}
+  ```
+
+#### 3.4 Connexion interface utilisateur
+- **Fichier** : `src/dashboard/CuttingPanel.tsx`
+- **Modifications** :
+  ```typescript
+  // Activation de la prévisualisation au clic "Ajouter"
+  const handleAddCut = () => {
+    setShowParameterForm(true);
+    enablePreview();
+    const defaultCut = createDefaultCut(selectedTool, cuts.length);
+    setPreviewCut(defaultCut);
+  };
+  
+  // Mise à jour temps réel dans les formulaires
+  const handleInputChange = (field: string, value: number) => {
+    const newData = { ...formData, [field]: value };
+    setFormData(newData);
+    if (previewCut) {
+      updatePreviewCut(newData);
+    }
+  };
+  
+  // Nettoyage lors de l'annulation/création
+  const handleCancel = () => {
+    disablePreview();
+    setShowParameterForm(false);
+  };
+  ```
+
+#### 3.5 Passage des props dans ContentViewer
+- **Fichier** : `src/components/ContentViewer.tsx`
+- **Ajouts** :
+  ```typescript
+  const previewCut = usePanelStore((state) => state.previewCut);
+  const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
+  
+  // Dans le JSX PanelViewer
+  <PanelViewer
+    geometry={geometry}
+    target={target}
+    dimensions={dimensions}
+    edges={edges}
+    previewCut={previewCut}
+    isPreviewMode={isPreviewMode}
+  />
+  ```
+
+#### 3.6 Améliorations UX (optionnelles)
+- **Validation visuelle** : Couleur rouge si découpe hors limites
+- **Auto-focus caméra** : Zoom sur la zone de découpe
+- **Animation** : Pulsation pour attirer l'attention
+- **Grille d'accrochage** : Positionnement précis
+
+**🎯 Résultat attendu** : L'utilisateur voit sa découpe apparaître instantanément dans le viewer 3D et se mettre à jour en temps réel pendant qu'il modifie les paramètres.
+
+---
+
+### **ÉTAPE 4 : Extension du WebWorker OpenCascade** 
+*Durée estimée : 4-5h* | *Priorité : APRÈS prévisualisation*
+
+#### 4.1 Nouvelles fonctions dans `occ.worker.ts`
 - **Fonction** : `createRectangularCut(cut: RectangularCut)`
   ```typescript
   // Crée une boîte de découpe positionnée
@@ -153,7 +264,7 @@ Implémenter les fonctionnalités de découpe rectangulaire et circulaire avec v
   ).Shape();
   ```
 
-#### 3.2 Fonction de booléen principal
+#### 4.2 Fonction de booléen principal
 - **Fonction** : `applyAllCuts(panel: TopoDS_Shape, cuts: Cut[])`
   ```typescript
   // Applique toutes les découpes par soustraction séquentielle
@@ -174,7 +285,7 @@ Implémenter les fonctionnalités de découpe rectangulaire et circulaire avec v
   return resultShape;
   ```
 
-#### 3.3 API Worker mise à jour
+#### 4.3 API Worker mise à jour
 - **Fonction** : `createPanelWithCuts({ dimensions, cuts })`
   - Génère le panneau de base
   - Applique toutes les découpes
@@ -182,35 +293,35 @@ Implémenter les fonctionnalités de découpe rectangulaire et circulaire avec v
 
 ---
 
-### **ÉTAPE 4 : Synchronisation temps réel avec la visualisation 3D**
+### **ÉTAPE 5 : Synchronisation temps réel avec la visualisation 3D**
 *Durée estimée : 3-4h*
 
-#### 4.1 Mise à jour de `ContentViewer.tsx`
+#### 5.1 Mise à jour de `ContentViewer.tsx`
 - **Observer** : Changements dans `store.cuts`
 - **Déclenchement** : Recalcul automatique via le worker quand les découpes changent
 - **Debouncing** : Éviter les recalculs trop fréquents pendant la saisie
 
-#### 4.2 Optimisation des performances
+#### 5.2 Optimisation des performances
 - **Stategie** : Ne recalculer que si une découpe est ajoutée/supprimée/validée
 - **Preview** : Mode aperçu pendant l'édition (géométrie simplifiée)
 - **Cache** : Mémoriser les formes intermédiaires
 
-#### 4.3 Gestion des erreurs OCCT
+#### 5.3 Gestion des erreurs OCCT
 - **Try/catch** : Opérations booléennes peuvent échouer
 - **Feedback** : Messages d'erreur utilisateur
 - **Rollback** : Revenir à l'état précédent en cas d'échec
 
 ---
 
-### **ÉTAPE 5 : Interface utilisateur avancée**
+### **ÉTAPE 6 : Interface utilisateur avancée**
 *Durée estimée : 4-5h*
 
-#### 5.1 Sélection interactive sur le modèle 3D
+#### 6.1 Sélection interactive sur le modèle 3D
 - **Raycasting** : Clic sur une face pour placer une découpe
 - **Helpers visuels** : Grid, guides, dimensions
 - **Preview découpe** : Overlay semi-transparent avant validation
 
-#### 5.2 Liste des découpes avec actions
+#### 6.2 Liste des découpes avec actions
 - **Composant** : `CutsList.tsx`
   ```typescript
   // Pour chaque découpe :
@@ -220,22 +331,22 @@ Implémenter les fonctionnalités de découpe rectangulaire et circulaire avec v
   // - Toggle visibilité
   ```
 
-#### 5.3 Validation et contraintes
+#### 6.3 Validation et contraintes
 - **Messages d'erreur** : Position hors limites, chevauchement
 - **Suggestions automatiques** : Repositionnement intelligent
 - **Aperçu invalide** : Découpe en rouge si problème
 
 ---
 
-### **ÉTAPE 6 : Fonctionnalités avancées et polish**
+### **ÉTAPE 7 : Fonctionnalités avancées et polish**
 *Durée estimée : 3-4h*
 
-#### 6.1 Import/Export de configurations
+#### 7.1 Import/Export de configurations
 - **JSON** : Sauvegarder/charger un set de découpes
 - **Historique** : Undo/Redo des opérations
 - **Templates** : Découpes prédéfinies
 
-#### 6.2 Calculs métier
+#### 7.2 Calculs métier
 - **Surface restante** : Calcul automatique après découpes
 - **Optimisation** : Suggestions de placement optimal
 - **Coût** : Impact des découpes sur le prix
@@ -352,20 +463,30 @@ Le plan est conçu pour être implémenté par étapes incrémentales, chaque é
 
 ## 🎉 RÉSUMÉ DES RÉALISATIONS
 
-### ✅ PHASES TERMINÉES (3/6)
+### ✅ PHASES TERMINÉES (2/7)
 
-**PHASE 1-2-3 : FONDATIONS ET INTERFACE** *(Durée : ~6h)*
+**PHASE 1-2 : FONDATIONS ET INTERFACE** *(Durée : ~6h)*
 - **Modélisation complète** : Interfaces `RectangularCut` et `CircularCut` avec factory functions
 - **Store Zustand étendu** : Gestion d'état complète avec CRUD, validation, édition  
 - **Interface utilisateur moderne** : Formulaires spécialisés, validation temps réel, feedback utilisateur
 - **Tests d'intégration** : Connexion store ↔ UI vérifiée et fonctionnelle
 - **Documentation** : Plan détaillé, guide de test, architecture documentée
 
-### 🎯 PROCHAINES ÉTAPES PRIORITAIRES
+### 🚧 PROCHAINE ÉTAPE IMMÉDIATE
+
+**PHASE 3 : Prévisualisation 3D en temps réel** *(Priorité : HAUTE)*
+- Extension du store avec état de prévisualisation (`previewCut`, `isPreviewMode`)
+- Composant `PreviewCutMesh` pour affichage 3D des découpes en cours de configuration
+- Intégration dans `AppViewer` avec géométrie Three.js (BoxGeometry/CylinderGeometry)
+- Mise à jour temps réel des paramètres depuis les formulaires
+- Feedback visuel immédiat pour l'utilisateur
+
+### 🎯 ÉTAPES SUIVANTES PRIORITAIRES
 
 1. **PHASE 4 : Worker OpenCascade** - Implémentation des calculs géométriques réels
-2. **PHASE 5 : Synchronisation 3D** - Affichage des découpes dans le viewer 3D
-3. **PHASE 6 : Polish UX** - Mode édition avancé, sauvegarde, gestion d'erreurs
+2. **PHASE 5 : Synchronisation 3D** - Affichage des découpes finalisées dans le viewer 3D
+3. **PHASE 6 : Interface avancée** - Sélection interactive, validation visuelle
+4. **PHASE 7 : Polish UX** - Import/Export, historique, templates
 
 ### 📊 ÉTAT TECHNIQUE ACTUEL
 

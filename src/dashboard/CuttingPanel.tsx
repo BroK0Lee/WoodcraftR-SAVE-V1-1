@@ -10,12 +10,14 @@ import {
   Circle,
   Scissors,
   Plus,
-  Trash2
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 // Import du store et des modèles
 import { usePanelStore } from '@/store/panelStore';
-import { createDefaultCut, type Cut } from '@/models/Cut';
+import { createDefaultCut, type Cut, RECTANGULAR_CUT_LIMITS, CIRCULAR_CUT_LIMITS } from '@/models/Cut';
 
 export function CuttingPanel() {
   // === ZUSTAND STORE ===
@@ -23,7 +25,17 @@ export function CuttingPanel() {
     cuts, 
     addCut, 
     removeCut, 
-    editingCutId
+    editingCutId,
+    // Actions de prévisualisation
+    setPreviewCut,
+    enablePreview,
+    disablePreview,
+    isPreviewMode,
+    previewCut,
+    validateCutPosition,
+    // Actions de visibilité (debug)
+    isPanelVisible,
+    togglePanelVisibility
   } = usePanelStore();
   
   // === LOCAL STATE ===
@@ -46,7 +58,14 @@ export function CuttingPanel() {
   // === HANDLERS ===
   const handleAddCut = () => {
     setShowParameterForm(true);
+    
+    // Activer la prévisualisation avec une découpe par défaut
+    const previewCut = createDefaultCut(selectedTool, cuts.length);
+    setPreviewCut(previewCut);
+    enablePreview();
+    
     console.log('📝 Affichage du formulaire de paramètres pour:', selectedTool);
+    console.log('👁️ Prévisualisation activée avec:', previewCut);
   };
 
   const handleAddCutWithParams = (customParams: Partial<Cut>) => {
@@ -55,12 +74,21 @@ export function CuttingPanel() {
     addCut(newCut);
     setShowParameterForm(false); // Masquer le formulaire après création
     
+    // Désactiver la prévisualisation après ajout de la découpe
+    disablePreview();
+    
     console.log('✅ Nouvelle découpe créée:', newCut.name, newCut);
+    console.log('👁️ Prévisualisation désactivée');
   };
 
   const handleCancelForm = () => {
     setShowParameterForm(false);
+    
+    // Désactiver la prévisualisation lors de l'annulation
+    disablePreview();
+    
     console.log('❌ Formulaire de paramètres annulé');
+    console.log('👁️ Prévisualisation désactivée');
   };
 
   const handleRemoveCut = (id: string) => {
@@ -73,6 +101,9 @@ export function CuttingPanel() {
     if (value === 'rectangle' || value === 'circle') {
       setSelectedTool(value as Cut['type']);
       setShowParameterForm(false); // Masquer le formulaire quand on change d'outil
+      
+      // Désactiver la prévisualisation lors du changement d'outil
+      disablePreview();
     }
   };
 
@@ -110,6 +141,72 @@ export function CuttingPanel() {
           <Button onClick={handleAddCut} className="w-full mt-4" variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Ajouter une découpe
+          </Button>
+          
+          {/* Indicateur de mode prévisualisation */}
+          {isPreviewMode && (
+            <div className="mt-3 space-y-2">
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                <div className="text-xs text-blue-800 dark:text-blue-400 flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  Mode prévisualisation actif
+                </div>
+              </div>
+              
+              {/* Validation de la découpe */}
+              {previewCut && (() => {
+                const validation = validateCutPosition(previewCut);
+                return (
+                  <div className={`p-2 border rounded-md ${
+                    validation.isValid 
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                  }`}>
+                    <div className={`text-xs font-medium ${
+                      validation.isValid 
+                        ? 'text-green-800 dark:text-green-400' 
+                        : 'text-red-800 dark:text-red-400'
+                    }`}>
+                      {validation.isValid ? '✓ Découpe valide' : '✗ Découpe invalide'}
+                    </div>
+                    {validation.errors.length > 0 && (
+                      <ul className="mt-1 text-xs text-red-600 dark:text-red-400">
+                        {validation.errors.map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {validation.warnings.length > 0 && (
+                      <ul className="mt-1 text-xs text-orange-600 dark:text-orange-400">
+                        {validation.warnings.map((warning, index) => (
+                          <li key={index}>⚠ {warning}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          
+          {/* Bouton de debug pour cacher/afficher le panneau */}
+          <Button 
+            onClick={togglePanelVisibility}
+            variant="outline" 
+            size="sm"
+            className="w-full mt-3"
+          >
+            {isPanelVisible ? (
+              <>
+                <EyeOff className="h-4 w-4 mr-2" />
+                Cacher le panneau (debug)
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4 mr-2" />
+                Afficher le panneau
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>
@@ -193,16 +290,34 @@ interface CutFormProps {
 }
 
 function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
+  // Accès aux dimensions du panneau
+  const dimensions = usePanelStore((state) => state.dimensions);
+  
   const [formData, setFormData] = useState({
     positionX: 100,
     positionY: 100,
     length: 50,
     width: 30,
-    depth: 0
+    depth: dimensions.thickness // Traversante par défaut = épaisseur panneau
   });
 
+  // Actions de prévisualisation depuis le store
+  const updatePreviewCut = usePanelStore((state) => state.updatePreviewCut);
+
   const handleInputChange = (field: string, value: number) => {
-    setFormData(prev => ({ ...prev, [field]: Math.max(0, value) }));
+    let constrainedValue = Math.max(0, value);
+    
+    // Appliquer les contraintes spécifiques pour rectangle
+    if (field === 'depth') {
+      constrainedValue = Math.max(RECTANGULAR_CUT_LIMITS.depth.min, 
+                                 Math.min(value, dimensions.thickness));
+    }
+    
+    const newFormData = { ...formData, [field]: constrainedValue };
+    setFormData(newFormData);
+    
+    // Mettre à jour la prévisualisation en temps réel
+    updatePreviewCut(newFormData);
   };
 
   const handleAddCut = () => {
@@ -265,12 +380,15 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label className="text-xs">Profondeur (mm) - 0 = traversant</Label>
+        <Label className="text-xs">Profondeur (mm) - {dimensions.thickness}mm = traversant</Label>
         <Input 
           type="number" 
           value={formData.depth}
           onChange={(e) => handleInputChange('depth', Number(e.target.value))}
           className="h-9" 
+          min={RECTANGULAR_CUT_LIMITS.depth.min}
+          max={dimensions.thickness}
+          step={0.1}
         />
       </div>
 
@@ -297,15 +415,33 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
 }
 
 function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
+  // Accès aux dimensions du panneau
+  const dimensions = usePanelStore((state) => state.dimensions);
+  
   const [formData, setFormData] = useState({
     positionX: 100,
     positionY: 100,
     radius: 25,
-    depth: 0
+    depth: dimensions.thickness // Traversante par défaut = épaisseur panneau
   });
 
+  // Actions de prévisualisation depuis le store
+  const updatePreviewCut = usePanelStore((state) => state.updatePreviewCut);
+
   const handleInputChange = (field: string, value: number) => {
-    setFormData(prev => ({ ...prev, [field]: Math.max(0, value) }));
+    let constrainedValue = Math.max(0, value);
+    
+    // Appliquer les contraintes spécifiques pour cercle
+    if (field === 'depth') {
+      constrainedValue = Math.max(CIRCULAR_CUT_LIMITS.depth.min, 
+                                 Math.min(value, dimensions.thickness));
+    }
+    
+    const newFormData = { ...formData, [field]: constrainedValue };
+    setFormData(newFormData);
+    
+    // Mettre à jour la prévisualisation en temps réel
+    updatePreviewCut(newFormData);
   };
 
   const handleAddCut = () => {
@@ -365,12 +501,15 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label className="text-xs">Profondeur (mm) - 0 = traversant</Label>
+        <Label className="text-xs">Profondeur (mm) - {dimensions.thickness}mm = traversant</Label>
         <Input 
           type="number" 
           value={formData.depth}
           onChange={(e) => handleInputChange('depth', Number(e.target.value))}
           className="h-9" 
+          min={CIRCULAR_CUT_LIMITS.depth.min}
+          max={dimensions.thickness}
+          step={0.1}
         />
       </div>
 

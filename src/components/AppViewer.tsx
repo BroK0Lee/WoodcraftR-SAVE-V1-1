@@ -9,8 +9,11 @@ import type { OrbitControls as OrbitControlsImpl } from "three/examples/jsm/cont
 // ...existing code...
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
+import PreviewCutMesh from "./PreviewCutMesh";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
+import type { Cut } from "@/models/Cut";
+import { usePanelStore } from "@/store/panelStore";
 
 import type { PanelDimensions } from "@/models/Panel";
 
@@ -22,6 +25,10 @@ type Props = {
   dimensions: PanelDimensions;
   /** Optional edges to display and interact with */
   edges?: EdgeDTO[];
+  /** Découpe en prévisualisation */
+  previewCut?: Cut | null;
+  /** Mode prévisualisation actif */
+  isPreviewMode?: boolean;
 };
 
 
@@ -48,7 +55,7 @@ function PanelMesh({ geometry, dimensions }: { geometry: PanelGeometryDTO; dimen
   return (
     <mesh 
       ref={meshRef}
-      position={[-dimensions.length / 2, -dimensions.width / 2, -dimensions.thickness-0.1]} 
+      position={[0, 0, 0.1]} 
       castShadow 
       receiveShadow
       key={`${dimensions.length}-${dimensions.width}-${dimensions.thickness}-${geometry.positions.length}`}
@@ -69,13 +76,28 @@ function PanelMesh({ geometry, dimensions }: { geometry: PanelGeometryDTO; dimen
           needsUpdate={true}
         />
       </bufferGeometry>
-      <meshStandardMaterial color="#D2B48C" roughness={0.5} metalness={0} side={THREE.DoubleSide} />
+      <meshStandardMaterial 
+        color="#D2B48C" 
+        roughness={0.5} 
+        metalness={0} 
+        side={THREE.DoubleSide}
+      />
     </mesh>
   );
 }
 
-export default function PanelViewer({ geometry, target, dimensions, edges }: Props) {
+export default function PanelViewer({ geometry, target, dimensions, edges, previewCut, isPreviewMode }: Props) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  
+  // État de visibilité du panneau pour debug
+  const isPanelVisible = usePanelStore((state) => state.isPanelVisible);
+  
+  // Validation de la découpe de prévisualisation
+  const validateCutPosition = usePanelStore((state) => state.validateCutPosition);
+  const isPreviewValid = useMemo(() => {
+    if (!previewCut) return true;
+    return validateCutPosition(previewCut).isValid;
+  }, [previewCut, validateCutPosition]);
 
   const boundingRadius = useMemo(() => {
     const { length, width, thickness } = dimensions;
@@ -127,15 +149,33 @@ export default function PanelViewer({ geometry, target, dimensions, edges }: Pro
       <directionalLight position={[5, 5, 5]} intensity={0.7} castShadow />
       <Environment preset="city" />
 
-      <Suspense fallback={null}>
-        <PanelMesh
-          key={`${dimensions.length}-${dimensions.width}-${dimensions.thickness}`}
-          geometry={geometry}
-          dimensions={dimensions}
-        />
-      </Suspense>
+      {/* Mesh du panneau (peut être caché pour debug) */}
+      {isPanelVisible && (
+        <Suspense fallback={null}>
+          <PanelMesh
+            key={`${dimensions.length}-${dimensions.width}-${dimensions.thickness}`}
+            geometry={geometry}
+            dimensions={dimensions}
+          />
+        </Suspense>
+      )}
 
-      {edges && <EdgesLayer edges={edges} position={[-dimensions.length / 2, -dimensions.width / 2, -dimensions.thickness -0.1]} />}
+      {/* Prévisualisation de la découpe en cours de configuration */}
+      {isPreviewMode && previewCut && (
+        <Suspense fallback={null}>
+          <PreviewCutMesh
+            cut={previewCut}
+            panelThickness={dimensions.thickness}
+            color={isPreviewValid ? "#22c55e" : "#ef4444"}
+            isValid={isPreviewValid}
+          />
+        </Suspense>
+      )}
+
+      {/* Edges du panneau (cachés si panneau caché) */}
+      {edges && isPanelVisible && (
+        <EdgesLayer edges={edges} position={[0, 0, 0.1]} />
+      )}
 
       <AxesHelper size={1} scale={axesScale} />
 
@@ -145,6 +185,7 @@ export default function PanelViewer({ geometry, target, dimensions, edges }: Pro
         enablePan
         enableZoom
         enableRotate
+        target={target}
         minDistance={controlsLimits.minDistance}
         maxDistance={controlsLimits.maxDistance}
       />

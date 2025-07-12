@@ -15,6 +15,10 @@ export default function ContentViewer() {
   const workerRef = useRef<Worker | null>(null);
   const occProxyRef = useRef<Comlink.Remote<OccWorkerAPI> | null>(null);
   const dimensions = usePanelStore((state) => state.dimensions);
+  
+  // État de prévisualisation depuis le store
+  const previewCut = usePanelStore((state) => state.previewCut);
+  const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
 
   // Initialisation du worker une seule fois
   useEffect(() => {
@@ -78,8 +82,12 @@ export default function ContentViewer() {
     };
   }, [dimensions, ocReady]);
 
-  // Centre de la scène : le modèle est re-positionné autour de l'origine
-  const target: [number, number, number] = [0, 0, 0];
+  // Centre de la scène : le modèle est re-positionné au centre du panneau
+  const target: [number, number, number] = [
+    dimensions.length / 2, 
+    dimensions.width / 2, 
+    dimensions.thickness / 2
+  ];
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">
@@ -93,6 +101,8 @@ export default function ContentViewer() {
               target={target}
               dimensions={dimensions}
               edges={edges}
+              previewCut={previewCut}
+              isPreviewMode={isPreviewMode}
             />
           )}
           <p className="absolute bottom-2 right-2 text-xs text-neutral-50">

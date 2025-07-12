@@ -38,6 +38,23 @@ export interface PanelStore {
   startEditingCut: (id: string) => void;
   stopEditingCut: () => void;
   
+  // === PRÉVISUALISATION DÉCOUPE ===
+  previewCut: Cut | null;        // Découpe en cours de configuration
+  isPreviewMode: boolean;        // Mode prévisualisation actif
+  
+  // === DEBUG & VISIBILITÉ ===
+  isPanelVisible: boolean;       // Visibilité du mesh du panneau (pour debug)
+  
+  // Actions de prévisualisation
+  setPreviewCut: (cut: Cut | null) => void;
+  updatePreviewCut: (updatedCut: Partial<Cut>) => void;
+  enablePreview: () => void;
+  disablePreview: () => void;
+  
+  // Actions de visibilité
+  togglePanelVisibility: () => void;
+  setPanelVisibility: (visible: boolean) => void;
+  
   // Validation et utilitaires
   validateCutPosition: (cut: Cut) => CutValidationResult;
   getCutsOverlap: () => CutOverlapInfo[];
@@ -50,6 +67,9 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
   dimensions: DEFAULT_DIMENSIONS,
   cuts: [],
   editingCutId: null,
+  previewCut: null,
+  isPreviewMode: false,
+  isPanelVisible: true, // Panneau visible par défaut
   
   // === ACTIONS DIMENSIONS ===
   setLength: (length: number) =>
@@ -142,6 +162,33 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
     
   stopEditingCut: () =>
     set({ editingCutId: null }),
+    
+  // === ACTIONS PRÉVISUALISATION ===
+  setPreviewCut: (cut: Cut | null) =>
+    set({ previewCut: cut }),
+    
+  updatePreviewCut: (updatedCut: Partial<Cut>) =>
+    set((state) => ({
+      previewCut: state.previewCut 
+        ? updateCutTimestamp({ ...state.previewCut, ...updatedCut } as Cut)
+        : null,
+    })),
+    
+  enablePreview: () =>
+    set({ isPreviewMode: true }),
+    
+  disablePreview: () =>
+    set({ 
+      isPreviewMode: false,
+      previewCut: null,
+    }),
+    
+  // === ACTIONS VISIBILITÉ ===
+  togglePanelVisibility: () =>
+    set((state) => ({ isPanelVisible: !state.isPanelVisible })),
+    
+  setPanelVisibility: (visible: boolean) =>
+    set({ isPanelVisible: visible }),
     
   // === MÉTHODES UTILITAIRES ===
   getCutById: (id: string) => {

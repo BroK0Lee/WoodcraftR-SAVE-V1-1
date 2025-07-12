@@ -3,6 +3,8 @@
  * Définit les interfaces et valeurs par défaut pour les différents types de découpes
  */
 
+import { DEFAULT_DIMENSIONS } from './Panel';
+
 // ===== INTERFACES DE BASE =====
 
 /** Interface de base commune à tous les types de découpes */
@@ -15,7 +17,7 @@ export interface BaseCut {
   positionX: number;
   /** Position Y sur le panneau (en mm, origine en bas-gauche) */
   positionY: number;
-  /** Profondeur de la découpe (en mm, 0 = traversante) */
+  /** Profondeur de la découpe (en mm, traversante) */
   depth: number;
   /** Timestamp de création */
   createdAt: number;
@@ -44,18 +46,21 @@ export type Cut = RectangularCut | CircularCut;
 
 // ===== LIMITES ET CONTRAINTES =====
 
+/** Constante epsilon pour éviter le Z-fighting */
+export const EPSILON_CUT = 0.1;
+
 /** Limites pour les découpes rectangulaires (en mm) */
 export const RECTANGULAR_CUT_LIMITS = {
   length: { min: 5, max: 2000 },
   width: { min: 5, max: 1000 },
-  depth: { min: 0, max: 20 }, // 0 = traversant
+  depth: { min: 0.5, max: 1000 }, // min 0.5mm, max = épaisseur panneau
   position: { min: 0 } // Position minimale (max dépend des dimensions du panneau)
 } as const;
 
 /** Limites pour les découpes circulaires (en mm) */
 export const CIRCULAR_CUT_LIMITS = {
   radius: { min: 2.5, max: 500 },
-  depth: { min: 0, max: 20 }, // 0 = traversant
+  depth: { min: 0.5, max: 1000 }, // min 0.5mm, max = épaisseur panneau
   position: { min: 0 } // Position minimale (max dépend des dimensions du panneau)
 } as const;
 
@@ -68,7 +73,7 @@ export const DEFAULT_RECTANGULAR_CUT: Omit<RectangularCut, 'id' | 'name' | 'crea
   positionY: 100,
   length: 50,
   width: 30,
-  depth: 0 // Traversante par défaut
+  depth: DEFAULT_DIMENSIONS.thickness // Traversante par défaut = épaisseur du panneau
 };
 
 /** Valeurs par défaut pour une découpe circulaire */
@@ -77,10 +82,28 @@ export const DEFAULT_CIRCULAR_CUT: Omit<CircularCut, 'id' | 'name' | 'createdAt'
   positionX: 100,
   positionY: 100,
   radius: 25,
-  depth: 0 // Traversante par défaut
+  depth: DEFAULT_DIMENSIONS.thickness // Traversante par défaut = épaisseur du panneau
 };
 
 // ===== FONCTIONS UTILITAIRES =====
+
+/**
+ * Calcule la hauteur effective de la découpe pour la géométrie 3D
+ * depth.cut = depth + (2 × epsilon.cut)
+ */
+export function calculateCutDepth(depth: number): number {
+  return -(depth + (2 * EPSILON_CUT));
+}
+
+/**
+ * Vérifie si une découpe est traversante
+ * @param depth - Profondeur de la découpe
+ * @param panelThickness - Épaisseur du panneau
+ * @returns true si la découpe est traversante
+ */
+export function isCutThrough(depth: number, panelThickness: number): boolean {
+  return depth >= panelThickness;
+}
 
 /**
  * Génère un identifiant unique pour une nouvelle découpe
