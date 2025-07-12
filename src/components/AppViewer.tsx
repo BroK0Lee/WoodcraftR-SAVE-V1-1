@@ -9,10 +9,8 @@ import type { OrbitControls as OrbitControlsImpl } from "three/examples/jsm/cont
 // ...existing code...
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
-import PreviewCutMesh from "./PreviewCutMesh";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
-import type { Cut } from "@/models/Cut";
 import { usePanelStore } from "@/store/panelStore";
 
 import type { PanelDimensions } from "@/models/Panel";
@@ -25,10 +23,6 @@ type Props = {
   dimensions: PanelDimensions;
   /** Optional edges to display and interact with */
   edges?: EdgeDTO[];
-  /** Découpe en prévisualisation */
-  previewCut?: Cut | null;
-  /** Mode prévisualisation actif */
-  isPreviewMode?: boolean;
 };
 
 
@@ -86,18 +80,11 @@ function PanelMesh({ geometry, dimensions }: { geometry: PanelGeometryDTO; dimen
   );
 }
 
-export default function PanelViewer({ geometry, target, dimensions, edges, previewCut, isPreviewMode }: Props) {
+export default function PanelViewer({ geometry, target, dimensions, edges }: Props) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   
   // État de visibilité du panneau pour debug
   const isPanelVisible = usePanelStore((state) => state.isPanelVisible);
-  
-  // Validation de la découpe de prévisualisation
-  const validateCutPosition = usePanelStore((state) => state.validateCutPosition);
-  const isPreviewValid = useMemo(() => {
-    if (!previewCut) return true;
-    return validateCutPosition(previewCut).isValid;
-  }, [previewCut, validateCutPosition]);
 
   const boundingRadius = useMemo(() => {
     const { length, width, thickness } = dimensions;
@@ -156,18 +143,6 @@ export default function PanelViewer({ geometry, target, dimensions, edges, previ
             key={`${dimensions.length}-${dimensions.width}-${dimensions.thickness}`}
             geometry={geometry}
             dimensions={dimensions}
-          />
-        </Suspense>
-      )}
-
-      {/* Prévisualisation de la découpe en cours de configuration */}
-      {isPreviewMode && previewCut && (
-        <Suspense fallback={null}>
-          <PreviewCutMesh
-            cut={previewCut}
-            panelThickness={dimensions.thickness}
-            color={isPreviewValid ? "#22c55e" : "#ef4444"}
-            isValid={isPreviewValid}
           />
         </Suspense>
       )}
