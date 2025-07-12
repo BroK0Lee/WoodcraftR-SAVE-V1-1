@@ -79,7 +79,11 @@ export const PreviewCutMesh: React.FC<PreviewCutMeshProps> = ({
   return (
     <mesh position={position}>
       {/* Contour/outline de la découpe pour améliorer la visibilité */}
-      <mesh position={[0, 0, cutDepth / 2]} renderOrder={2}>
+      <mesh 
+        position={[0, 0, cutDepth / 2]} 
+        renderOrder={2}
+        rotation={cut.type === 'circle' ? [Math.PI / 2, 0, 0] : [0, 0, 0]}
+      >
         {geometry}
         <meshBasicMaterial
           color={outlineColor}
@@ -89,7 +93,11 @@ export const PreviewCutMesh: React.FC<PreviewCutMeshProps> = ({
       </mesh>
       
       {/* Géométrie de la découpe avec offset pour que l'origine soit sur la face supérieure */}
-      <mesh position={[0, 0, cutDepth / 2]} renderOrder={1}>
+      <mesh 
+        position={[0, 0, cutDepth / 2]} 
+        renderOrder={1}
+        rotation={cut.type === 'circle' ? [Math.PI / 2, 0, 0] : [0, 0, 0]}
+      >
         {geometry}
         <meshStandardMaterial
           color={finalColor}
