@@ -1,17 +1,17 @@
 import { Canvas } from "@react-three/fiber";
-import * as THREE from "three";
-import { Suspense, useEffect, useRef, useMemo } from "react";
+import { Suspense, useEffect, useRef, useMemo, useState } from "react";
 import {
   OrbitControls,
   Environment,
+  OrthographicCamera,
 } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three/examples/jsm/controls/OrbitControls.js";
-// ...existing code...
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
+import * as THREE from "three";
 
 import type { PanelDimensions } from "@/models/Panel";
 
@@ -25,27 +25,18 @@ type Props = {
   edges?: EdgeDTO[];
 };
 
-
-
-
 function PanelMesh({ geometry, dimensions }: { geometry: PanelGeometryDTO; dimensions: PanelDimensions }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  
-  // Force la recréation de la géométrie à chaque update
   useEffect(() => {
     if (meshRef.current && meshRef.current.geometry) {
       meshRef.current.geometry.dispose();
-      
-      // Crée une nouvelle géométrie
       const newGeometry = new THREE.BufferGeometry();
       newGeometry.setAttribute('position', new THREE.BufferAttribute(geometry.positions, 3));
       newGeometry.setIndex(new THREE.BufferAttribute(geometry.indices, 1));
       newGeometry.computeVertexNormals();
-      
       meshRef.current.geometry = newGeometry;
     }
   }, [geometry, dimensions]);
-
   return (
     <mesh 
       ref={meshRef}
@@ -82,7 +73,8 @@ function PanelMesh({ geometry, dimensions }: { geometry: PanelGeometryDTO; dimen
 
 export default function PanelViewer({ geometry, target, dimensions, edges }: Props) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
-  
+  const [isOrtho, setIsOrtho] = useState(false);
+
   // État de visibilité du panneau pour debug
   const isPanelVisible = usePanelStore((state) => state.isPanelVisible);
 
@@ -103,7 +95,7 @@ export default function PanelViewer({ geometry, target, dimensions, edges }: Pro
 
   const controlsLimits = useMemo(
     () => ({
-      minDistance: boundingRadius * 1.1,
+      minDistance: boundingRadius * 0.1,
       maxDistance: boundingRadius * 3,
     }),
     [boundingRadius]
@@ -118,52 +110,141 @@ export default function PanelViewer({ geometry, target, dimensions, edges }: Pro
     [dimensions]
   );
 
+  // Calcul pour orthographic camera
+  const orthoProps = useMemo(() => {
+    const { length, width } = dimensions;
+    const size = Math.max(length, width) * 0.6;
+    return {
+      left: -size,
+      right: size,
+      top: size,
+      bottom: -size,
+      near: -1000,
+      far: 1000,
+      position: [0, 0, size] as [number, number, number],
+      zoom: 50,
+    };
+  }, [dimensions]);
+
   useEffect(() => {
-    controlsRef.current?.target.set(...target);
-    controlsRef.current?.update();
+    const controls = controlsRef.current;
+    if (!controls) return;
+    
+    // Définir le target de manière stable
+    controls.target.set(...target);
+    controls.update();
   }, [target]);
 
   useEffect(() => {
-    const c = controlsRef.current;
-    if (!c) return;
-    c.object.position.set(...cameraProps.position);
-    c.update();
+    const controls = controlsRef.current;
+    if (!controls) return;
+    
+    // Éviter les mises à jour de position pendant le pan
+    // Seulement mettre à jour si on n'est pas en train de faire du pan
+    const currentDistance = controls.object.position.distanceTo(controls.target);
+    const newPosition = cameraProps.position;
+    const newDistance = Math.sqrt(newPosition[0]**2 + newPosition[1]**2 + newPosition[2]**2);
+    
+    // Ne mettre à jour la position que si la distance a significativement changé
+    if (Math.abs(currentDistance - newDistance) > 0.1) {
+      controls.object.position.set(...newPosition);
+      controls.update();
+    }
   }, [cameraProps]);
 
+  // Surveillance pour s'assurer que le pan ne cause pas de rotation parasite
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    let isPanning = false;
+
+    const handleStart = (event: any) => {
+      // Détecter si c'est un pan (bouton milieu ou clic droit selon la config)
+      if (event?.button === 2 || (event?.button === 0 && event?.ctrlKey)) {
+        isPanning = true;
+        // Désactiver temporairement la rotation pendant le pan
+        controls.enableRotate = false;
+      }
+    };
+
+    const handleEnd = () => {
+      if (isPanning) {
+        isPanning = false;
+        // Réactiver la rotation après le pan
+        controls.enableRotate = true;
+      }
+    };
+
+    const handleChange = () => {
+      // Gestionnaire de changement pour les contrôles de caméra
+      // Plus besoin de sauvegarder l'état - simplifié
+    };
+
+    controls.addEventListener('start', handleStart);
+    controls.addEventListener('end', handleEnd);
+    controls.addEventListener('change', handleChange);
+    
+    return () => {
+      controls.removeEventListener('start', handleStart);
+      controls.removeEventListener('end', handleEnd);
+      controls.removeEventListener('change', handleChange);
+    };
+  }, []);
+
   return (
-    <Canvas camera={cameraProps} shadows className="h-full w-full">
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[5, 5, 5]} intensity={0.7} castShadow />
-      <Environment preset="city" />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <button
+        style={{ position: 'absolute', zIndex: 10, top: 10, right: 10, padding: '6px 12px', background: '#eee', borderRadius: 4 }}
+        onClick={() => setIsOrtho((v) => !v)}
+      >
+        {isOrtho ? 'Vue Perspective' : 'Vue Orthographique'}
+      </button>
+      <Canvas camera={isOrtho ? undefined : cameraProps} shadows className="h-full w-full">
+        {isOrtho && <OrthographicCamera makeDefault {...orthoProps} />}
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[5, 5, 5]} intensity={0.7} castShadow />
+        <Environment preset="city" />
 
-      {/* Mesh du panneau (peut être caché pour debug) */}
-      {isPanelVisible && (
-        <Suspense fallback={null}>
-          <PanelMesh
-            key={`${dimensions.length}-${dimensions.width}-${dimensions.thickness}`}
-            geometry={geometry}
-            dimensions={dimensions}
-          />
-        </Suspense>
-      )}
+        {/* Mesh du panneau (peut être caché pour debug) */}
+        {isPanelVisible && (
+          <Suspense fallback={null}>
+            <PanelMesh
+              key={`${dimensions.length}-${dimensions.width}-${dimensions.thickness}`}
+              geometry={geometry}
+              dimensions={dimensions}
+            />
+          </Suspense>
+        )}
 
-      {/* Edges du panneau (cachés si panneau caché) */}
-      {edges && isPanelVisible && (
-        <EdgesLayer edges={edges} position={[0, 0, 0.1]} />
-      )}
+        {/* Edges du panneau (cachés si panneau caché) */}
+        {edges && isPanelVisible && (
+          <EdgesLayer edges={edges} position={[0, 0, 0.1]} />
+        )}
 
-      <AxesHelper size={1} scale={axesScale} />
+        <AxesHelper size={1} scale={axesScale} />
 
-      <OrbitControls
-        ref={controlsRef}
-        makeDefault
-        enablePan
-        enableZoom
-        enableRotate
-        target={target}
-        minDistance={controlsLimits.minDistance}
-        maxDistance={controlsLimits.maxDistance}
-      />
-    </Canvas>
+        <OrbitControls
+          ref={controlsRef}
+          makeDefault
+          enablePan
+          enableZoom
+          enableRotate
+          screenSpacePanning={true}
+          panSpeed={1.0}
+          rotateSpeed={1.0}
+          zoomSpeed={1.0}
+          enableDamping={false}
+          dampingFactor={0.05}
+          minPolarAngle={0}
+          maxPolarAngle={Math.PI}
+          minAzimuthAngle={-Infinity}
+          maxAzimuthAngle={Infinity}
+          target={target}
+          minDistance={controlsLimits.minDistance}
+          maxDistance={controlsLimits.maxDistance}
+        />
+      </Canvas>
+    </div>
   );
 }

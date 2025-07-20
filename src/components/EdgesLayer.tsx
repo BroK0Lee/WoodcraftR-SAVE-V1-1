@@ -28,9 +28,8 @@ interface Props {
   position?: readonly [number, number, number];
 }
 
-const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(
-  { edges, position = [0, 0, 0] },
-) {
+const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(props, ref) {
+  const { edges, position = [0, 0, 0] } = props;
   const groupRef = useRef<Group>(new Group());
   const { scene, size } = useThree();
 
@@ -57,15 +56,16 @@ const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(
       const positions = Array.from(edge.xyz);
       const lineGeo = new LineGeometry();
       lineGeo.setPositions(positions);
-
+      
       const mat2 = new LineMaterial({
-        color: 0x555555,
-        linewidth: 3,
-        depthTest: false,
+        color: 0x000000, // Toujours noir
+        linewidth: 1, // Épaisseur de base
+        depthTest: true,
         depthWrite: false,
-        polygonOffset: false,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+        transparent: false, // Pas de transparence pour un noir constant
       });
       mat2.resolution.set(size.width, size.height);
 
