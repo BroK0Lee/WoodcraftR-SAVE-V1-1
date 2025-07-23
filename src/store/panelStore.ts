@@ -12,6 +12,8 @@ import {
   updateCutTimestamp,
 } from '@/models/Cut';
 import { clamp } from '@/lib/utils';
+import type { PanelGeometryDTO } from '@/helpers/shapeToGeometry';
+import type { EdgeDTO } from '@/models/EdgeDTO';
 
 /** Store Zustand pour la gestion globale du panneau */
 export interface PanelStore {
@@ -22,6 +24,14 @@ export interface PanelStore {
   setThickness: (thickness: number) => void;
   setDimensions: (dims: PanelDimensions) => void;
   resetDimensions: () => void;
+  
+  // === GÉOMÉTRIE ET ARÊTES ===
+  geometry: PanelGeometryDTO | null;
+  edges: EdgeDTO[];
+  isCalculating: boolean;
+  setGeometry: (geometry: PanelGeometryDTO | null) => void;
+  setEdges: (edges: EdgeDTO[]) => void;
+  setCalculating: (calculating: boolean) => void;
   
   // === GESTION DES DÉCOUPES ===
   cuts: Cut[];
@@ -71,6 +81,11 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
   isPreviewMode: false,
   isPanelVisible: true, // Panneau visible par défaut
   
+  // === GÉOMÉTRIE ET ARÊTES ===
+  geometry: null,
+  edges: [],
+  isCalculating: false,
+  
   // === ACTIONS DIMENSIONS ===
   setLength: (length: number) =>
     set((state) => ({
@@ -97,6 +112,11 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
         ),
       },
     })),
+  
+  // === ACTIONS GÉOMÉTRIE ===
+  setGeometry: (geometry: PanelGeometryDTO | null) => set({ geometry }),
+  setEdges: (edges: EdgeDTO[]) => set({ edges }),
+  setCalculating: (isCalculating: boolean) => set({ isCalculating }),
   setDimensions: (dims: PanelDimensions) =>
     set({
       dimensions: {

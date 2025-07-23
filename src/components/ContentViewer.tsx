@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import * as Comlink from "comlink";
 import PanelViewer from "./AppViewer";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
@@ -7,9 +7,6 @@ import type { OccWorkerAPI } from "@/workers/worker.types";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 
 export default function ContentViewer() {
-  const [geometry, setGeometry] = useState<PanelGeometryDTO | null>(null);
-  const [edges, setEdges] = useState<EdgeDTO[]>([]);
-  const [isCalculating, setIsCalculating] = useState(false);
   const [lastCuttingInfo, setLastCuttingInfo] = useState<any>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -21,7 +18,14 @@ export default function ContentViewer() {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastValidGeometryRef = useRef<{ geometry: PanelGeometryDTO; edges: EdgeDTO[] } | null>(null);
   
+  // Store state
   const dimensions = usePanelStore((state) => state.dimensions);
+  const geometry = usePanelStore((state) => state.geometry);
+  const edges = usePanelStore((state) => state.edges);
+  const isCalculating = usePanelStore((state) => state.isCalculating);
+  const setGeometry = usePanelStore((state) => state.setGeometry);
+  const setEdges = usePanelStore((state) => state.setEdges);
+  const setCalculating = usePanelStore((state) => state.setCalculating);
   
   // Nouvelles données pour les découpes
   const cuts = usePanelStore((state) => state.cuts);
@@ -53,18 +57,15 @@ export default function ContentViewer() {
     };
   }, []);
 
-  // Fonction de recalcul optimisée avec debouncing
-  const calculateGeometry = useCallback(async (shouldDebounce = true) => {
+  // Recalcul quand les dimensions/découpes changent
+  useEffect(() => {
     const proxy = occProxyRef.current;
     if (!proxy || !ocReady) return;
 
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
+    console.log('📋 [useEffect] Changement détecté - recalcul nécessaire');
 
     const performCalculation = async () => {
-      setIsCalculating(true);
+      setCalculating(true);
       let isCancelled = false;
       const currentDimensions = { ...dimensions };
       const currentCuts = [...cuts];
@@ -75,70 +76,53 @@ export default function ContentViewer() {
         : currentCuts;
       
       try {
-        // Si nous avons des découpes (incluant preview), utiliser createPanelWithCuts
-        if (allCuts.length > 0) {
-          console.log('[ContentViewer] Recalcul avec découpes (+ preview):', allCuts.length);
+        // Toujours utiliser OpenCascade pour la cohérence
+        console.log('🔄 [ContentViewer] DEBUT - Dimensions demandées:', {
+          length: currentDimensions.length,
+          width: currentDimensions.width, 
+          thickness: currentDimensions.thickness
+        });
+        console.log('🔄 [ContentViewer] Découpes à traiter:', allCuts.length);
+        
+        if (typeof proxy.createPanelWithCuts !== 'function') {
+          console.error('[ContentViewer] Worker API error: createPanelWithCuts is not a function');
+          return;
+        }
+
+        const { geometry: geom, edges: newEdges, cuttingInfo } = await proxy.createPanelWithCuts({
+          dimensions: currentDimensions,
+          cuts: allCuts
+        });
+
+        if (!isCancelled) {
+          // Force la création de nouveaux objets pour éviter la mutation
+          const newGeometry = {
+            positions: new Float32Array(geom.positions),
+            indices: geom.indices.constructor === Uint32Array ? 
+              new Uint32Array(geom.indices) : new Uint16Array(geom.indices),
+          };
           
-          if (typeof proxy.createPanelWithCuts !== 'function') {
-            console.error('[ContentViewer] Worker API error: createPanelWithCuts is not a function');
-            return;
-          }
+          setGeometry(newGeometry);
+          setEdges([...newEdges]);
+          setLastCuttingInfo(cuttingInfo);
+          setLastError(null);
+          setRetryCount(0);
           
-          const { geometry: geom, edges: newEdges, cuttingInfo } = await proxy.createPanelWithCuts({
-            dimensions: currentDimensions,
-            cuts: allCuts
+          // Log de la géométrie générée
+          console.log('✅ [ContentViewer] FIN - Géométrie générée:', {
+            vertices: newGeometry.positions.length / 3,
+            triangles: newGeometry.indices.length / 3,
+            edges: newEdges.length
           });
           
-          if (!isCancelled) {
-            // Force la création de nouveaux objets pour éviter la mutation
-            const newGeometry = {
-              positions: new Float32Array(geom.positions),
-              indices: geom.indices.constructor === Uint32Array ? 
-                new Uint32Array(geom.indices) : new Uint16Array(geom.indices),
-            };
-            
-            setGeometry(newGeometry);
-            setEdges([...newEdges]);
-            setLastCuttingInfo(cuttingInfo);
-            setLastError(null);
-            setRetryCount(0);
-            
-            // Sauvegarder la géométrie valide comme fallback
-            lastValidGeometryRef.current = { geometry: newGeometry, edges: [...newEdges] };
-            
-            // Log des informations de découpe pour debug
-            console.log('[ContentViewer] ✅ Découpes appliquées (+ preview):', cuttingInfo);
-          }
-        } else {
-          console.log('[ContentViewer] Recalcul panneau simple');
+          // Sauvegarder la géométrie valide comme fallback
+          lastValidGeometryRef.current = { geometry: newGeometry, edges: [...newEdges] };
           
-          // Sinon, utiliser la fonction classique pour un panneau simple
-          if (typeof proxy.createBox !== 'function') {
-            console.error('[ContentViewer] Worker API error: createBox is not a function');
-            return;
-          }
-          
-          const { geometry: geom, edges: newEdges } = await proxy.createBox(currentDimensions);
-          
-          if (!isCancelled) {
-            // Force la création de nouveaux objets pour éviter la mutation
-            const newGeometry = {
-              positions: new Float32Array(geom.positions),
-              indices: geom.indices.constructor === Uint32Array ? 
-                new Uint32Array(geom.indices) : new Uint16Array(geom.indices),
-            };
-            
-            setGeometry(newGeometry);
-            setEdges([...newEdges]);
-            setLastCuttingInfo(null);
-            setLastError(null);
-            setRetryCount(0);
-            
-            // Sauvegarder la géométrie valide comme fallback
-            lastValidGeometryRef.current = { geometry: newGeometry, edges: [...newEdges] };
-            
-            console.log('[ContentViewer] ✅ Panneau simple généré');
-          }
+          // Log unifié avec timestamp pour tracer l'ordre
+          const message = allCuts.length > 0 
+            ? `OpenCascade avec ${allCuts.length} découpe(s)`
+            : 'OpenCascade panneau simple (0 découpe)';
+          console.log(`✅ [ContentViewer] RESULTATS - ${message}:`, cuttingInfo);
         }
       } catch (err) {
         if (!isCancelled) {
@@ -157,7 +141,7 @@ export default function ContentViewer() {
         }
       } finally {
         if (!isCancelled) {
-          setIsCalculating(false);
+          setCalculating(false);
         }
       }
       
@@ -166,33 +150,33 @@ export default function ContentViewer() {
       };
     };
 
-    // Appliquer le debouncing seulement si demandé (pas pour les changements initiaux)
-    if (shouldDebounce && editingCutId) {
+    // Pour les changements d'édition, on peut ajouter un debounce si nécessaire
+    if (editingCutId) {
       // Pendant l'édition, on debounce pour éviter les recalculs trop fréquents
+      console.log('⏱️ [useEffect] Mode édition - debounce de 500ms');
       debounceTimeoutRef.current = setTimeout(performCalculation, 500);
     } else {
       // Recalcul immédiat pour les ajouts/suppressions ou changements de dimensions
-      await performCalculation();
+      console.log('⚡ [useEffect] Mode normal - calcul immédiat');
+      performCalculation();
     }
-  }, [dimensions, cuts, editingCutId, ocReady, previewCut, isPreviewMode]);
 
-  // Calcul du modèle à chaque changement de dimensions ou de découpes
-  useEffect(() => {
-    calculateGeometry(false); // Pas de debounce pour les changements initiaux
-    
+    // Cleanup function
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [calculateGeometry]);
+  }, [dimensions, cuts, editingCutId, ocReady, previewCut, isPreviewMode, retryCount]);
 
-  // Centre de la scène : le modèle est re-positionné au centre du panneau
-  const target: [number, number, number] = [
-    dimensions.length / 2, 
-    dimensions.width / 2, 
-    dimensions.thickness / 2
-  ];
+  // Cleanup au démontage du composant
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">
@@ -221,12 +205,7 @@ export default function ContentViewer() {
           )}
           
           {geometry && (
-            <PanelViewer
-              geometry={geometry}
-              target={target}
-              dimensions={dimensions}
-              edges={edges}
-            />
+            <PanelViewer />
           )}
           
           <div className="absolute bottom-2 right-2 text-xs text-neutral-50 space-y-1">

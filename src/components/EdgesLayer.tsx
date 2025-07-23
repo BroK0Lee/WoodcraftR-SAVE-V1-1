@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import { Group } from "three";
-import type { EdgeDTO } from "@/models/EdgeDTO";
+import { usePanelStore } from "@/store/panelStore";
 import useEdgeSelection from "@/hooks/useEdgeSelection";
 // Fat lines imports
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
@@ -23,15 +23,15 @@ const disposeObject = (obj: any) => {
 };
 
 interface Props {
-  edges: EdgeDTO[];
-  /** Décalage identique au modèle 3D pour que la couche coïncide parfaitement */
-  position?: readonly [number, number, number];
+  // Plus de props nécessaires - on lit depuis le store
 }
 
-const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(props, ref) {
-  const { edges, position = [0, 0, 0] } = props;
+const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(_props, _ref) {
   const groupRef = useRef<Group>(new Group());
   const { scene, size } = useThree();
+  
+  // Lire les edges depuis le store au lieu des props
+  const edges = usePanelStore((state) => state.edges);
 
   useEffect(() => {
     const group = groupRef.current;
@@ -44,16 +44,12 @@ const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(props, ref) {
   }, [scene]);
 
   useEffect(() => {
-    groupRef.current.position.set(...position);
-  }, [position]);
-
-  useEffect(() => {
     const group = groupRef.current;
     group.children.forEach(disposeObject);
     group.clear();
 
     edges.forEach((edge) => {
-      const positions = Array.from(edge.xyz);
+      const positions = Array.from(edge.xyz) as number[];
       const lineGeo = new LineGeometry();
       lineGeo.setPositions(positions);
       
