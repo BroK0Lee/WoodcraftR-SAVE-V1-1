@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { OrbitControls, Environment } from "@react-three/drei";
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
+import DimensionLabels from "./DimensionLabels";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 
@@ -67,6 +68,13 @@ export default function PanelViewer(_props: Props) {
   const geometry = usePanelStore((state) => state.geometry);
   const edges = usePanelStore((state) => state.edges);
   const isCalculating = usePanelStore((state) => state.isCalculating);
+  
+  // États pour les cotations
+  const dimensions = usePanelStore((state) => state.dimensions);
+  const editingCutId = usePanelStore((state) => state.editingCutId);
+  const previewCut = usePanelStore((state) => state.previewCut);
+  const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
+  const cuts = usePanelStore((state) => state.cuts);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -92,6 +100,24 @@ export default function PanelViewer(_props: Props) {
 
         {edges.length > 0 && isPanelVisible && !isCalculating && (
           <EdgesLayer />
+        )}
+
+        {/* Cotations lors de l'édition/prévisualisation d'une découpe */}
+        {isPanelVisible && (
+          <>
+            {/* Cotations pour découpe en cours d'édition */}
+            {editingCutId && (() => {
+              const editingCut = cuts.find(cut => cut.id === editingCutId);
+              return editingCut ? (
+                <DimensionLabels cut={editingCut} panelDimensions={dimensions} />
+              ) : null;
+            })()}
+            
+            {/* Cotations pour découpe en prévisualisation */}
+            {isPreviewMode && previewCut && (
+              <DimensionLabels cut={previewCut} panelDimensions={dimensions} />
+            )}
+          </>
         )}
 
         <AxesHelper size={50} />

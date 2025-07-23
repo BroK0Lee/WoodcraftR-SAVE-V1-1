@@ -26,6 +26,7 @@ export function CuttingPanel() {
     addCut, 
     removeCut, 
     editingCutId,
+    startEditingCut,
     // Actions de prévisualisation
     setPreviewCut,
     enablePreview,
@@ -239,6 +240,44 @@ export function CuttingPanel() {
             <Circle className="h-4 w-4 mr-2" />
             Test Worker: Ajouter découpe circulaire
           </Button>
+          
+          <Button 
+            onClick={() => {
+              // Test cotations: créer une découpe en mode prévisualisation
+              const testCut = createDefaultCut('rectangle', cuts.length);
+              testCut.positionX = 150;
+              testCut.positionY = 75;
+              console.log('📐 Test cotations - Prévisualisation découpe:', testCut);
+              setPreviewCut(testCut);
+              enablePreview();
+            }}
+            variant="outline" 
+            size="sm"
+            className="w-full mt-1"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Test Cotations: Prévisualisation
+          </Button>
+          
+          <Button 
+            onClick={() => {
+              // Test cotations: éditer la première découpe s'il y en a une
+              if (cuts.length > 0) {
+                const firstCut = cuts[0];
+                console.log('📐 Test cotations - Édition découpe:', firstCut);
+                startEditingCut(firstCut.id);
+              } else {
+                console.warn('Aucune découpe à éditer - ajoutez d\'abord une découpe');
+              }
+            }}
+            variant="outline" 
+            size="sm"
+            className="w-full mt-1"
+            disabled={cuts.length === 0}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Test Cotations: Édition
+          </Button>
         </CardContent>
       </Card>
 
@@ -370,21 +409,27 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label className="text-xs">Position X (mm)</Label>
+          <Label className="text-xs flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full border-2 border-red-500 bg-red-50"></div>
+            <span className="text-red-600 font-medium">Position X (mm)</span>
+          </Label>
           <Input 
             type="number" 
             value={formData.positionX}
             onChange={(e) => handleInputChange('positionX', Number(e.target.value))}
-            className="h-9" 
+            className="h-9 border-red-300 focus:border-red-500 focus:ring-red-200" 
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-xs">Position Y (mm)</Label>
+          <Label className="text-xs flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full border-2 border-blue-500 bg-blue-50"></div>
+            <span className="text-blue-600 font-medium">Position Y (mm)</span>
+          </Label>
           <Input 
             type="number" 
             value={formData.positionY}
             onChange={(e) => handleInputChange('positionY', Number(e.target.value))}
-            className="h-9" 
+            className="h-9 border-blue-300 focus:border-blue-500 focus:ring-blue-200" 
           />
         </div>
       </div>
@@ -490,21 +535,27 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label className="text-xs">Position X (mm)</Label>
+          <Label className="text-xs flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full border-2 border-red-500 bg-red-50"></div>
+            <span className="text-red-600 font-medium">Position X (mm)</span>
+          </Label>
           <Input 
             type="number" 
             value={formData.positionX}
             onChange={(e) => handleInputChange('positionX', Number(e.target.value))}
-            className="h-9" 
+            className="h-9 border-red-300 focus:border-red-500 focus:ring-red-200" 
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-xs">Position Y (mm)</Label>
+          <Label className="text-xs flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full border-2 border-blue-500 bg-blue-50"></div>
+            <span className="text-blue-600 font-medium">Position Y (mm)</span>
+          </Label>
           <Input 
             type="number" 
             value={formData.positionY}
             onChange={(e) => handleInputChange('positionY', Number(e.target.value))}
-            className="h-9" 
+            className="h-9 border-blue-300 focus:border-blue-500 focus:ring-blue-200" 
           />
         </div>
       </div>
