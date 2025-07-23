@@ -15,7 +15,6 @@ export default function ContentViewer() {
   const [ocReady, setOcReady] = useState(false);
   const workerRef = useRef<Worker | null>(null);
   const occProxyRef = useRef<Comlink.Remote<OccWorkerAPI> | null>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastValidGeometryRef = useRef<{ geometry: PanelGeometryDTO; edges: EdgeDTO[] } | null>(null);
   
   // Store state
@@ -70,8 +69,8 @@ export default function ContentViewer() {
       const currentDimensions = { ...dimensions };
       const currentCuts = [...cuts];
       
-      // Ajouter la découpe de prévisualisation aux découpes existantes
-      const allCuts = isPreviewMode && previewCut 
+      // Ajouter la découpe de prévisualisation aux découpes existantes (toujours active si elle existe)
+      const allCuts = previewCut 
         ? [...currentCuts, previewCut]
         : currentCuts;
       
@@ -150,33 +149,16 @@ export default function ContentViewer() {
       };
     };
 
-    // Pour les changements d'édition, on peut ajouter un debounce si nécessaire
-    if (editingCutId) {
-      // Pendant l'édition, on debounce pour éviter les recalculs trop fréquents
-      console.log('⏱️ [useEffect] Mode édition - debounce de 500ms');
-      debounceTimeoutRef.current = setTimeout(performCalculation, 500);
-    } else {
-      // Recalcul immédiat pour les ajouts/suppressions ou changements de dimensions
-      console.log('⚡ [useEffect] Mode normal - calcul immédiat');
-      performCalculation();
-    }
+    // Mise à jour simplifiée : plus besoin de throttling car CuttingPanel 
+    // utilise maintenant onBlur (comme GeneralPanel) 
+    console.log('⚡ [useEffect] Recalcul géométrique immédiat');
+    performCalculation();
 
-    // Cleanup function
+    // Cleanup automatique par React lors du démontage/changement
     return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
+      // Pas de cleanup nécessaire pour les calculs immédiats
     };
   }, [dimensions, cuts, editingCutId, ocReady, previewCut, isPreviewMode, retryCount]);
-
-  // Cleanup au démontage du composant
-  useEffect(() => {
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">

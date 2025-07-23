@@ -29,10 +29,59 @@ export function GeneralPanel() {
   useEffect(() => setWidthInput(String(dimensions.width)), [dimensions.width]);
   useEffect(() => setThicknessInput(String(dimensions.thickness)), [dimensions.thickness]);
 
+  // Fonction pour appliquer les contraintes min/max localement (sans appeler le store)
+  const applyConstraints = (key: string, value: number): number => {
+    if (key === "length") {
+      return Math.min(Math.max(value, PANEL_LIMITS.length.min), PANEL_LIMITS.length.max);
+    }
+    if (key === "width") {
+      return Math.min(Math.max(value, PANEL_LIMITS.width.min), PANEL_LIMITS.width.max);
+    }
+    if (key === "thickness") {
+      return Math.min(Math.max(value, PANEL_LIMITS.thickness.min), PANEL_LIMITS.thickness.max);
+    }
+    return value;
+  };
+
+  // Fonction pour mettre à jour le store
   const updateDimension = (key: string, value: number) => {
     if (key === "length") setLength(value);
     if (key === "width") setWidth(value);
     if (key === "thickness") setThickness(value);
+  };
+
+  // Fonction pour gérer la validation (onBlur ET onEnter)
+  const handleValidation = (key: string, inputValue: string) => {
+    const newValue = Number(inputValue);
+    const currentStoreValue = key === "length" ? dimensions.length : 
+                             key === "width" ? dimensions.width : dimensions.thickness;
+    
+    // Appliquer les contraintes min/max
+    const constrainedValue = applyConstraints(key, newValue);
+    
+    // Mettre à jour l'affichage de l'input avec la valeur contrainte
+    if (key === "length") setLengthInput(String(constrainedValue));
+    if (key === "width") setWidthInput(String(constrainedValue));
+    if (key === "thickness") setThicknessInput(String(constrainedValue));
+    
+    // Si la valeur contrainte est différente du store, on met à jour le 3D
+    if (constrainedValue !== currentStoreValue) {
+      updateDimension(key, constrainedValue);
+    }
+  };
+
+  // Fonction pour gérer onBlur
+  const handleFieldBlur = (key: string, inputValue: string) => {
+    handleValidation(key, inputValue);
+  };
+
+  // Fonction pour gérer Entrée (SANS quitter le champ)
+  const handleKeyDown = (e: React.KeyboardEvent, key: string, inputValue: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleValidation(key, inputValue);
+      // PAS de blur() - on reste dans le champ
+    }
   };
 
   const resetDimensionsHandler = () => {
@@ -68,7 +117,8 @@ export function GeneralPanel() {
                 type="number"
                 value={lengthInput}
                 onChange={(e) => setLengthInput(e.target.value)}
-                onBlur={() => updateDimension('length', Number(lengthInput))}
+                onBlur={() => handleFieldBlur('length', lengthInput)}
+                onKeyDown={(e) => handleKeyDown(e, 'length', lengthInput)}
                 className="h-9 flex-1"
                 min={PANEL_LIMITS.length.min}
                 max={PANEL_LIMITS.length.max}
@@ -85,7 +135,8 @@ export function GeneralPanel() {
                 type="number"
                 value={widthInput}
                 onChange={(e) => setWidthInput(e.target.value)}
-                onBlur={() => updateDimension('width', Number(widthInput))}
+                onBlur={() => handleFieldBlur('width', widthInput)}
+                onKeyDown={(e) => handleKeyDown(e, 'width', widthInput)}
                 className="h-9 flex-1"
                 min={PANEL_LIMITS.width.min}
                 max={PANEL_LIMITS.width.max}
@@ -104,7 +155,8 @@ export function GeneralPanel() {
               type="number"
               value={thicknessInput}
               onChange={(e) => setThicknessInput(e.target.value)}
-              onBlur={() => updateDimension('thickness', Number(thicknessInput))}
+              onBlur={() => handleFieldBlur('thickness', thicknessInput)}
+              onKeyDown={(e) => handleKeyDown(e, 'thickness', thicknessInput)}
               className="h-9 flex-1"
               min={PANEL_LIMITS.thickness.min}
               max={PANEL_LIMITS.thickness.max}

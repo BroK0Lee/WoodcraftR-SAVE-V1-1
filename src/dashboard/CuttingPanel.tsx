@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -29,9 +29,6 @@ export function CuttingPanel() {
     startEditingCut,
     // Actions de prévisualisation
     setPreviewCut,
-    enablePreview,
-    disablePreview,
-    isPreviewMode,
     previewCut,
     validateCutPosition,
     // Actions de visibilité (debug)
@@ -60,13 +57,12 @@ export function CuttingPanel() {
   const handleAddCut = () => {
     setShowParameterForm(true);
     
-    // Activer la prévisualisation avec une découpe par défaut
-    const previewCut = createDefaultCut(selectedTool, cuts.length);
-    setPreviewCut(previewCut);
-    enablePreview();
+    // Créer une découpe par défaut pour déclencher la prévisualisation
+    const defaultCut = createDefaultCut(selectedTool, cuts.length);
+    setPreviewCut(defaultCut);
     
     console.log('📝 Affichage du formulaire de paramètres pour:', selectedTool);
-    console.log('👁️ Prévisualisation activée avec:', previewCut);
+    console.log('👁️ Découpe par défaut créée pour prévisualisation:', defaultCut);
   };
 
   const handleAddCutWithParams = (customParams: Partial<Cut>) => {
@@ -75,27 +71,30 @@ export function CuttingPanel() {
     addCut(newCut);
     setShowParameterForm(false); // Masquer le formulaire après création
     
-    // Désactiver la prévisualisation après ajout de la découpe
-    disablePreview();
+    // Nettoyer la prévisualisation après ajout de la découpe
+    setPreviewCut(null);
     
     console.log('✅ Nouvelle découpe créée:', newCut.name, newCut);
-    console.log('👁️ Prévisualisation désactivée');
   };
 
   const handleCancelForm = () => {
     setShowParameterForm(false);
     
-    // Désactiver la prévisualisation lors de l'annulation
-    disablePreview();
+    // Nettoyer la prévisualisation lors de l'annulation
+    setPreviewCut(null);
     
     console.log('❌ Formulaire de paramètres annulé');
-    console.log('👁️ Prévisualisation désactivée');
   };
 
   const handleRemoveCut = (id: string) => {
-    const cutToRemove = cuts.find(cut => cut.id === id);
-    removeCut(id);
-    console.log('🗑️ Découpe supprimée:', cutToRemove?.name, cutToRemove);
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette découpe ?')) {
+      removeCut(id);
+      
+      // Nettoyer la prévisualisation si on supprime la découpe en cours de prévisualisation
+      setPreviewCut(null);
+      
+      console.log('🗑️ Découpe supprimée:', id);
+    }
   };
 
   const handleToolChange = (value: string) => {
@@ -103,8 +102,8 @@ export function CuttingPanel() {
       setSelectedTool(value as Cut['type']);
       setShowParameterForm(false); // Masquer le formulaire quand on change d'outil
       
-      // Désactiver la prévisualisation lors du changement d'outil
-      disablePreview();
+      // Nettoyer la prévisualisation lors du changement d'outil
+      setPreviewCut(null);
     }
   };
 
@@ -144,18 +143,18 @@ export function CuttingPanel() {
             Ajouter une découpe
           </Button>
           
-          {/* Indicateur de mode prévisualisation */}
-          {isPreviewMode && (
+          {/* Indicateur de prévisualisation active */}
+          {previewCut && (
             <div className="mt-3 space-y-2">
               <div className="p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
                 <div className="text-xs text-blue-800 dark:text-blue-400 flex items-center gap-1">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                  Mode prévisualisation actif
+                  Prévisualisation en cours
                 </div>
               </div>
               
               {/* Validation de la découpe */}
-              {previewCut && (() => {
+              {(() => {
                 const validation = validateCutPosition(previewCut);
                 return (
                   <div className={`p-2 border rounded-md ${
@@ -243,13 +242,12 @@ export function CuttingPanel() {
           
           <Button 
             onClick={() => {
-              // Test cotations: créer une découpe en mode prévisualisation
+              // Test cotations: créer une découpe de prévisualisation
               const testCut = createDefaultCut('rectangle', cuts.length);
               testCut.positionX = 150;
               testCut.positionY = 75;
               console.log('📐 Test cotations - Prévisualisation découpe:', testCut);
               setPreviewCut(testCut);
-              enablePreview();
             }}
             variant="outline" 
             size="sm"
@@ -360,21 +358,51 @@ interface CutFormProps {
 }
 
 function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
-  // Accès aux dimensions du panneau
+  // Accès aux dimensions du panneau et à la découpe de prévisualisation
   const dimensions = usePanelStore((state) => state.dimensions);
+  const previewCut = usePanelStore((state) => state.previewCut);
   
-  const [formData, setFormData] = useState({
+  // Initialiser avec les valeurs de la découpe de prévisualisation si elle existe
+  const initialData = previewCut && previewCut.type === 'rectangle' ? {
+    positionX: previewCut.positionX,
+    positionY: previewCut.positionY,
+    length: previewCut.length,
+    width: previewCut.width,
+    depth: previewCut.depth
+  } : {
     positionX: 100,
     positionY: 100,
     length: 50,
     width: 30,
-    depth: dimensions.thickness // Traversante par défaut = épaisseur panneau
-  });
+    depth: dimensions.thickness
+  };
+
+  const [formData, setFormData] = useState(initialData);
+
+  // États locaux pour permettre la saisie libre avant validation (comme GeneralPanel)
+  const [positionXInput, setPositionXInput] = useState(formData.positionX.toString());
+  const [positionYInput, setPositionYInput] = useState(formData.positionY.toString());
+  const [lengthInput, setLengthInput] = useState(formData.length.toString());
+  const [widthInput, setWidthInput] = useState(formData.width.toString());
+  const [depthInput, setDepthInput] = useState(formData.depth.toString());
 
   // Actions de prévisualisation depuis le store
   const updatePreviewCut = usePanelStore((state) => state.updatePreviewCut);
 
-  const handleInputChange = (field: string, value: number) => {
+  // Synchroniser avec la découpe de prévisualisation du parent (une seule fois au montage)
+  useEffect(() => {
+    if (previewCut && previewCut.type === 'rectangle') {
+      // Pas besoin de recréer, la découpe existe déjà
+      console.log('🔄 [RectangularCutForm] Découpe de prévisualisation déjà créée:', previewCut);
+    } else {
+      // Créer une nouvelle découpe si aucune n'existe
+      updatePreviewCut(formData);
+      console.log('🆕 [RectangularCutForm] Découpe de prévisualisation créée:', formData);
+    }
+  }, []); // Déclenché uniquement au montage du composant
+
+  // Fonction pour appliquer les contraintes min/max localement
+  const applyConstraints = (field: string, value: number): number => {
     let constrainedValue = Math.max(0, value);
     
     // Appliquer les contraintes spécifiques pour rectangle
@@ -383,11 +411,44 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
                                  Math.min(value, dimensions.thickness));
     }
     
-    const newFormData = { ...formData, [field]: constrainedValue };
-    setFormData(newFormData);
+    return constrainedValue;
+  };
+
+  // Fonction pour gérer la validation (onBlur ET onEnter)
+  const handleValidation = (field: string, inputValue: string) => {
+    const newValue = Number(inputValue);
+    const currentStoreValue = formData[field as keyof typeof formData];
     
-    // Mettre à jour la prévisualisation en temps réel
-    updatePreviewCut(newFormData);
+    // Appliquer les contraintes min/max
+    const constrainedValue = applyConstraints(field, newValue);
+    
+    // Mettre à jour l'affichage de l'input avec la valeur contrainte
+    if (field === 'positionX') setPositionXInput(String(constrainedValue));
+    if (field === 'positionY') setPositionYInput(String(constrainedValue));
+    if (field === 'length') setLengthInput(String(constrainedValue));
+    if (field === 'width') setWidthInput(String(constrainedValue));
+    if (field === 'depth') setDepthInput(String(constrainedValue));
+    
+    // Si la valeur contrainte est différente du store, on met à jour le 3D
+    if (constrainedValue !== currentStoreValue) {
+      const newFormData = { ...formData, [field]: constrainedValue };
+      setFormData(newFormData);
+      updatePreviewCut(newFormData);
+    }
+  };
+
+  // Fonction pour gérer onBlur
+  const handleFieldBlur = (field: string, inputValue: string) => {
+    handleValidation(field, inputValue);
+  };
+
+  // Fonction pour gérer Entrée (SANS quitter le champ)
+  const handleKeyDown = (e: React.KeyboardEvent, field: string, inputValue: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleValidation(field, inputValue);
+      // PAS de blur() - on reste dans le champ
+    }
   };
 
   const handleAddCut = () => {
@@ -415,8 +476,10 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
           </Label>
           <Input 
             type="number" 
-            value={formData.positionX}
-            onChange={(e) => handleInputChange('positionX', Number(e.target.value))}
+            value={positionXInput}
+            onChange={(e) => setPositionXInput(e.target.value)}
+            onBlur={() => handleFieldBlur('positionX', positionXInput)}
+            onKeyDown={(e) => handleKeyDown(e, 'positionX', positionXInput)}
             className="h-9 border-red-300 focus:border-red-500 focus:ring-red-200" 
           />
         </div>
@@ -427,8 +490,10 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
           </Label>
           <Input 
             type="number" 
-            value={formData.positionY}
-            onChange={(e) => handleInputChange('positionY', Number(e.target.value))}
+            value={positionYInput}
+            onChange={(e) => setPositionYInput(e.target.value)}
+            onBlur={() => handleFieldBlur('positionY', positionYInput)}
+            onKeyDown={(e) => handleKeyDown(e, 'positionY', positionYInput)}
             className="h-9 border-blue-300 focus:border-blue-500 focus:ring-blue-200" 
           />
         </div>
@@ -439,8 +504,10 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
           <Label className="text-xs">Longueur (mm)</Label>
           <Input 
             type="number" 
-            value={formData.length}
-            onChange={(e) => handleInputChange('length', Number(e.target.value))}
+            value={lengthInput}
+            onChange={(e) => setLengthInput(e.target.value)}
+            onBlur={() => handleFieldBlur('length', lengthInput)}
+            onKeyDown={(e) => handleKeyDown(e, 'length', lengthInput)}
             className="h-9" 
           />
         </div>
@@ -448,8 +515,10 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
           <Label className="text-xs">Largeur (mm)</Label>
           <Input 
             type="number" 
-            value={formData.width}
-            onChange={(e) => handleInputChange('width', Number(e.target.value))}
+            value={widthInput}
+            onChange={(e) => setWidthInput(e.target.value)}
+            onBlur={() => handleFieldBlur('width', widthInput)}
+            onKeyDown={(e) => handleKeyDown(e, 'width', widthInput)}
             className="h-9" 
           />
         </div>
@@ -459,8 +528,10 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
         <Label className="text-xs">Profondeur (mm) - {dimensions.thickness}mm = traversant</Label>
         <Input 
           type="number" 
-          value={formData.depth}
-          onChange={(e) => handleInputChange('depth', Number(e.target.value))}
+          value={depthInput}
+          onChange={(e) => setDepthInput(e.target.value)}
+          onBlur={() => handleFieldBlur('depth', depthInput)}
+          onKeyDown={(e) => handleKeyDown(e, 'depth', depthInput)}
           className="h-9" 
           min={RECTANGULAR_CUT_LIMITS.depth.min}
           max={dimensions.thickness}
@@ -491,33 +562,90 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
 }
 
 function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
-  // Accès aux dimensions du panneau
+  // Accès aux dimensions du panneau et à la découpe de prévisualisation
   const dimensions = usePanelStore((state) => state.dimensions);
+  const previewCut = usePanelStore((state) => state.previewCut);
   
-  const [formData, setFormData] = useState({
+  // Initialiser avec les valeurs de la découpe de prévisualisation si elle existe
+  const initialData = previewCut && previewCut.type === 'circle' ? {
+    positionX: previewCut.positionX,
+    positionY: previewCut.positionY,
+    radius: previewCut.radius,
+    depth: previewCut.depth
+  } : {
     positionX: 100,
     positionY: 100,
     radius: 25,
-    depth: dimensions.thickness // Traversante par défaut = épaisseur panneau
-  });
+    depth: dimensions.thickness
+  };
+
+  const [formData, setFormData] = useState(initialData);
+
+  // États locaux pour permettre la saisie libre avant validation (comme GeneralPanel)
+  const [positionXInput, setPositionXInput] = useState(formData.positionX.toString());
+  const [positionYInput, setPositionYInput] = useState(formData.positionY.toString());
+  const [radiusInput, setRadiusInput] = useState(formData.radius.toString());
+  const [depthInput, setDepthInput] = useState(formData.depth.toString());
 
   // Actions de prévisualisation depuis le store
   const updatePreviewCut = usePanelStore((state) => state.updatePreviewCut);
 
-  const handleInputChange = (field: string, value: number) => {
-    let constrainedValue = Math.max(0, value);
+  // Synchroniser avec la découpe de prévisualisation du parent (une seule fois au montage)
+  useEffect(() => {
+    if (previewCut && previewCut.type === 'circle') {
+      // Pas besoin de recréer, la découpe existe déjà
+      console.log('🔄 [CircularCutForm] Découpe de prévisualisation déjà créée:', previewCut);
+    } else {
+      // Créer une nouvelle découpe si aucune n'existe
+      updatePreviewCut(formData);
+      console.log('🆕 [CircularCutForm] Découpe de prévisualisation créée:', formData);
+    }
+  }, []); // Déclenché uniquement au montage du composant
+
+  // Fonction de validation et mise à jour centralisée
+  const handleValidation = (field: string, inputValue: string) => {
+    let newValue = Number(inputValue);
+    let constrainedValue = Math.max(0, newValue);
     
     // Appliquer les contraintes spécifiques pour cercle
     if (field === 'depth') {
       constrainedValue = Math.max(CIRCULAR_CUT_LIMITS.depth.min, 
-                                 Math.min(value, dimensions.thickness));
+                                 Math.min(newValue, dimensions.thickness));
     }
     
-    const newFormData = { ...formData, [field]: constrainedValue };
-    setFormData(newFormData);
+    // Corriger la valeur dans l'input si elle a été contrainte
+    if (constrainedValue !== newValue) {
+      setTimeout(() => {
+        switch (field) {
+          case 'positionX': setPositionXInput(constrainedValue.toString()); break;
+          case 'positionY': setPositionYInput(constrainedValue.toString()); break;
+          case 'radius': setRadiusInput(constrainedValue.toString()); break;
+          case 'depth': setDepthInput(constrainedValue.toString()); break;
+        }
+      }, 0);
+    }
     
-    // Mettre à jour la prévisualisation en temps réel
-    updatePreviewCut(newFormData);
+    // Vérifier si la valeur a vraiment changé avant de déclencher le calcul
+    if (formData[field as keyof typeof formData] !== constrainedValue) {
+      const newFormData = { ...formData, [field]: constrainedValue };
+      setFormData(newFormData);
+      // Mettre à jour la prévisualisation uniquement si changement réel
+      updatePreviewCut(newFormData);
+    }
+  };
+
+  // Fonction pour gérer onBlur
+  const handleFieldBlur = (field: string, inputValue: string) => {
+    handleValidation(field, inputValue);
+  };
+
+  // Fonction pour gérer Entrée
+  const handleKeyDown = (e: React.KeyboardEvent, field: string, inputValue: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleValidation(field, inputValue);
+      // Auto-blur supprimé : pas de (e.target as HTMLInputElement).blur();
+    }
   };
 
   const handleAddCut = () => {
@@ -541,8 +669,10 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
           </Label>
           <Input 
             type="number" 
-            value={formData.positionX}
-            onChange={(e) => handleInputChange('positionX', Number(e.target.value))}
+            value={positionXInput}
+            onChange={(e) => setPositionXInput(e.target.value)}
+            onBlur={() => handleFieldBlur('positionX', positionXInput)}
+            onKeyDown={(e) => handleKeyDown(e, 'positionX', positionXInput)}
             className="h-9 border-red-300 focus:border-red-500 focus:ring-red-200" 
           />
         </div>
@@ -553,8 +683,10 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
           </Label>
           <Input 
             type="number" 
-            value={formData.positionY}
-            onChange={(e) => handleInputChange('positionY', Number(e.target.value))}
+            value={positionYInput}
+            onChange={(e) => setPositionYInput(e.target.value)}
+            onBlur={() => handleFieldBlur('positionY', positionYInput)}
+            onKeyDown={(e) => handleKeyDown(e, 'positionY', positionYInput)}
             className="h-9 border-blue-300 focus:border-blue-500 focus:ring-blue-200" 
           />
         </div>
@@ -565,8 +697,10 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
           <Label className="text-xs">Rayon (mm)</Label>
           <Input 
             type="number" 
-            value={formData.radius}
-            onChange={(e) => handleInputChange('radius', Number(e.target.value))}
+            value={radiusInput}
+            onChange={(e) => setRadiusInput(e.target.value)}
+            onBlur={() => handleFieldBlur('radius', radiusInput)}
+            onKeyDown={(e) => handleKeyDown(e, 'radius', radiusInput)}
             className="h-9" 
           />
         </div>
@@ -574,8 +708,13 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
           <Label className="text-xs">Diamètre (mm)</Label>
           <Input 
             type="number" 
-            value={formData.radius * 2}
-            onChange={(e) => handleInputChange('radius', Number(e.target.value) / 2)}
+            value={(Number(radiusInput) * 2).toString()}
+            onChange={(e) => {
+              const newRadius = Number(e.target.value) / 2;
+              setRadiusInput(newRadius.toString());
+            }}
+            onBlur={() => handleFieldBlur('radius', radiusInput)}
+            onKeyDown={(e) => handleKeyDown(e, 'radius', radiusInput)}
             className="h-9" 
             placeholder="Calculé automatiquement"
           />
@@ -586,8 +725,10 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
         <Label className="text-xs">Profondeur (mm) - {dimensions.thickness}mm = traversant</Label>
         <Input 
           type="number" 
-          value={formData.depth}
-          onChange={(e) => handleInputChange('depth', Number(e.target.value))}
+          value={depthInput}
+          onChange={(e) => setDepthInput(e.target.value)}
+          onBlur={() => handleFieldBlur('depth', depthInput)}
+          onKeyDown={(e) => handleKeyDown(e, 'depth', depthInput)}
           className="h-9" 
           min={CIRCULAR_CUT_LIMITS.depth.min}
           max={dimensions.thickness}
