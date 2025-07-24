@@ -12,6 +12,12 @@ interface Props {
  * Style professionnel CAO avec lignes de rappel et flèches
  */
 export default function DimensionLabels({ cut, panelDimensions }: Props) {
+  // Debug: Vérifier que le composant reçoit bien les données
+  console.log('📐 [DimensionLabels] Rendu avec:', {
+    cut: { id: cut.id, type: cut.type, positionX: cut.positionX, positionY: cut.positionY },
+    panelDimensions
+  });
+
   const cotationData = useMemo(() => {
     const { positionX, positionY } = cut;
     const { length, width, thickness } = panelDimensions;

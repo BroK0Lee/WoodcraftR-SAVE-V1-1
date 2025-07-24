@@ -12,7 +12,8 @@ import {
   Plus,
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  Edit
 } from 'lucide-react';
 
 // Import du store et des modèles
@@ -25,8 +26,9 @@ export function CuttingPanel() {
     cuts, 
     addCut, 
     removeCut, 
+    updateCut,
     editingCutId,
-    startEditingCut,
+     startEditingCut,
     // Actions de prévisualisation
     setPreviewCut,
     previewCut,
@@ -39,6 +41,7 @@ export function CuttingPanel() {
   // === LOCAL STATE ===
   const [selectedTool, setSelectedTool] = useState<Cut['type']>('rectangle');
   const [showParameterForm, setShowParameterForm] = useState(false);
+  const [editingCut, setEditingCut] = useState<Cut | null>(null); // Découpe en cours d'édition
 
   // === DEBUG LOGS ===
   console.log('🔧 CuttingPanel Debug:');
@@ -57,6 +60,9 @@ export function CuttingPanel() {
   const handleAddCut = () => {
     setShowParameterForm(true);
     
+    // Réinitialiser le mode édition
+    setEditingCut(null);
+    
     // Créer une découpe par défaut pour déclencher la prévisualisation
     const defaultCut = createDefaultCut(selectedTool, cuts.length);
     setPreviewCut(defaultCut);
@@ -66,22 +72,34 @@ export function CuttingPanel() {
   };
 
   const handleAddCutWithParams = (customParams: Partial<Cut>) => {
-    const newCut = createDefaultCut(selectedTool, cuts.length);
-    Object.assign(newCut, customParams);
-    addCut(newCut);
-    setShowParameterForm(false); // Masquer le formulaire après création
+    if (editingCut) {
+      // Mode édition : mettre à jour la découpe existante
+      const updatedCut = { ...editingCut, ...customParams };
+      updateCut(editingCut.id, updatedCut);
+      
+      console.log('✏️ Découpe mise à jour:', updatedCut.name, updatedCut);
+    } else {
+      // Mode création : créer une nouvelle découpe
+      const newCut = createDefaultCut(selectedTool, cuts.length);
+      Object.assign(newCut, customParams);
+      addCut(newCut);
+      
+      console.log('✅ Nouvelle découpe créée:', newCut.name, newCut);
+    }
     
-    // Nettoyer la prévisualisation après ajout de la découpe
+    setShowParameterForm(false); // Masquer le formulaire après création/modification
+    
+    // Nettoyer la prévisualisation et l'état d'édition
     setPreviewCut(null);
-    
-    console.log('✅ Nouvelle découpe créée:', newCut.name, newCut);
+    setEditingCut(null);
   };
 
   const handleCancelForm = () => {
     setShowParameterForm(false);
     
-    // Nettoyer la prévisualisation lors de l'annulation
+    // Nettoyer la prévisualisation et l'état d'édition lors de l'annulation
     setPreviewCut(null);
+    setEditingCut(null);
     
     console.log('❌ Formulaire de paramètres annulé');
   };
@@ -95,6 +113,23 @@ export function CuttingPanel() {
       
       console.log('🗑️ Découpe supprimée:', id);
     }
+  };
+
+  const handleEditCut = (cut: Cut) => {
+    // Définir le type d'outil sélectionné selon la découpe
+    setSelectedTool(cut.type);
+    
+    // Marquer cette découpe comme étant en édition
+    setEditingCut(cut);
+    
+    // En mode édition, on ne crée pas de prévisualisation séparée
+    // La découpe existante sera modifiée directement dans le store
+    setPreviewCut(null);
+    
+    // Afficher le formulaire de paramètres
+    setShowParameterForm(true);
+    
+    console.log('✏️ Édition de la découpe:', cut.name, cut);
   };
 
   const handleToolChange = (value: string) => {
@@ -288,8 +323,8 @@ export function CuttingPanel() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {selectedTool === 'rectangle' && <RectangularCutForm onAddCut={handleAddCutWithParams} onCancel={handleCancelForm} />}
-            {selectedTool === 'circle' && <CircularCutForm onAddCut={handleAddCutWithParams} onCancel={handleCancelForm} />}
+            {selectedTool === 'rectangle' && <RectangularCutForm onAddCut={handleAddCutWithParams} onCancel={handleCancelForm} editingCut={editingCut} />}
+            {selectedTool === 'circle' && <CircularCutForm onAddCut={handleAddCutWithParams} onCancel={handleCancelForm} editingCut={editingCut} />}
           </CardContent>
         </Card>
       )}
@@ -332,14 +367,26 @@ export function CuttingPanel() {
                       </div>
                     </div>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleRemoveCut(cut.id)}
-                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleEditCut(cut)}
+                      className="h-8 w-8 p-0 text-primary hover:text-primary"
+                      title="Modifier la découpe"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleRemoveCut(cut.id)}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      title="Supprimer la découpe"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -355,15 +402,25 @@ export function CuttingPanel() {
 interface CutFormProps {
   onAddCut: (params: Partial<Cut>) => void;
   onCancel: () => void;
+  editingCut?: Cut | null; // Découpe en cours d'édition (optionnel)
 }
 
-function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
+function RectangularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps) {
   // Accès aux dimensions du panneau et à la découpe de prévisualisation
   const dimensions = usePanelStore((state) => state.dimensions);
   const previewCut = usePanelStore((state) => state.previewCut);
+  const updateCut = usePanelStore((state) => state.updateCut);
   
-  // Initialiser avec les valeurs de la découpe de prévisualisation si elle existe
-  const initialData = previewCut && previewCut.type === 'rectangle' ? {
+  // Initialiser avec les valeurs de la découpe de prévisualisation si elle existe, 
+  // ou avec les valeurs de la découpe en cours d'édition, 
+  // ou avec des valeurs par défaut
+  const initialData = editingCut && editingCut.type === 'rectangle' ? {
+    positionX: editingCut.positionX,
+    positionY: editingCut.positionY,
+    length: editingCut.length,
+    width: editingCut.width,
+    depth: editingCut.depth
+  } : previewCut && previewCut.type === 'rectangle' ? {
     positionX: previewCut.positionX,
     positionY: previewCut.positionY,
     length: previewCut.length,
@@ -389,8 +446,34 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
   // Actions de prévisualisation depuis le store
   const updatePreviewCut = usePanelStore((state) => state.updatePreviewCut);
 
+  // Gérer les changements d'editingCut pour réinitialiser les champs
+  useEffect(() => {
+    if (editingCut && editingCut.type === 'rectangle') {
+      const editData = {
+        positionX: editingCut.positionX,
+        positionY: editingCut.positionY,
+        length: editingCut.length,
+        width: editingCut.width,
+        depth: editingCut.depth
+      };
+      setFormData(editData);
+      setPositionXInput(editingCut.positionX.toString());
+      setPositionYInput(editingCut.positionY.toString());
+      setLengthInput(editingCut.length.toString());
+      setWidthInput(editingCut.width.toString());
+      setDepthInput(editingCut.depth.toString());
+      // En mode édition, pas de prévisualisation séparée - on modifie directement
+    }
+  }, [editingCut]);
+
   // Synchroniser avec la découpe de prévisualisation du parent (une seule fois au montage)
   useEffect(() => {
+    // En mode édition, on ne crée pas de prévisualisation séparée
+    if (editingCut) {
+      console.log('🔄 [RectangularCutForm] Mode édition - pas de prévisualisation séparée');
+      return;
+    }
+    
     if (previewCut && previewCut.type === 'rectangle') {
       // Pas besoin de recréer, la découpe existe déjà
       console.log('🔄 [RectangularCutForm] Découpe de prévisualisation déjà créée:', previewCut);
@@ -433,7 +516,16 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
     if (constrainedValue !== currentStoreValue) {
       const newFormData = { ...formData, [field]: constrainedValue };
       setFormData(newFormData);
-      updatePreviewCut(newFormData);
+      
+      // En mode édition : mettre à jour directement la découpe existante
+      if (editingCut) {
+        updateCut(editingCut.id, newFormData);
+        console.log('🔄 [RectangularCutForm] Mode édition - MAJ directe de la découpe:', field, constrainedValue);
+      } else {
+        // En mode création : utiliser la prévisualisation
+        updatePreviewCut(newFormData);
+        console.log('🔄 [RectangularCutForm] Mode création - MAJ prévisualisation:', field, constrainedValue);
+      }
     }
   };
 
@@ -452,13 +544,17 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
   };
 
   const handleAddCut = () => {
-    onAddCut({
+    const cutData = {
       positionX: formData.positionX,
       positionY: formData.positionY,
       length: formData.length,
       width: formData.width,
       depth: formData.depth
-    });
+    };
+    
+    // Toujours appeler onAddCut - la logique de création vs édition 
+    // est gérée dans handleAddCutWithParams du composant parent
+    onAddCut(cutData);
     
     // Reset form ou laisser les valeurs pour faciliter la création multiple
     // setFormData({ positionX: 100, positionY: 100, length: 50, width: 30, depth: 0 });
@@ -553,21 +649,38 @@ function RectangularCutForm({ onAddCut, onCancel }: CutFormProps) {
           variant="default"
           disabled={!isValid}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Créer
+          {editingCut ? (
+            <>
+              <Edit className="h-4 w-4 mr-2" />
+              Modifier
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Créer
+            </>
+          )}
         </Button>
       </div>
     </div>
   );
 }
 
-function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
+function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps) {
   // Accès aux dimensions du panneau et à la découpe de prévisualisation
   const dimensions = usePanelStore((state) => state.dimensions);
   const previewCut = usePanelStore((state) => state.previewCut);
+  const updateCut = usePanelStore((state) => state.updateCut);
   
-  // Initialiser avec les valeurs de la découpe de prévisualisation si elle existe
-  const initialData = previewCut && previewCut.type === 'circle' ? {
+  // Initialiser avec les valeurs de la découpe de prévisualisation si elle existe,
+  // ou avec les valeurs de la découpe en cours d'édition,
+  // ou avec des valeurs par défaut
+  const initialData = editingCut && editingCut.type === 'circle' ? {
+    positionX: editingCut.positionX,
+    positionY: editingCut.positionY,
+    radius: editingCut.radius,
+    depth: editingCut.depth
+  } : previewCut && previewCut.type === 'circle' ? {
     positionX: previewCut.positionX,
     positionY: previewCut.positionY,
     radius: previewCut.radius,
@@ -584,14 +697,38 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
   // États locaux pour permettre la saisie libre avant validation (comme GeneralPanel)
   const [positionXInput, setPositionXInput] = useState(formData.positionX.toString());
   const [positionYInput, setPositionYInput] = useState(formData.positionY.toString());
-  const [radiusInput, setRadiusInput] = useState(formData.radius.toString());
+  const [diameterInput, setDiameterInput] = useState((formData.radius * 2).toString());
   const [depthInput, setDepthInput] = useState(formData.depth.toString());
 
   // Actions de prévisualisation depuis le store
   const updatePreviewCut = usePanelStore((state) => state.updatePreviewCut);
 
+  // Gérer les changements d'editingCut pour réinitialiser les champs
+  useEffect(() => {
+    if (editingCut && editingCut.type === 'circle') {
+      const editData = {
+        positionX: editingCut.positionX,
+        positionY: editingCut.positionY,
+        radius: editingCut.radius,
+        depth: editingCut.depth
+      };
+      setFormData(editData);
+      setPositionXInput(editingCut.positionX.toString());
+      setPositionYInput(editingCut.positionY.toString());
+      setDiameterInput((editingCut.radius * 2).toString());
+      setDepthInput(editingCut.depth.toString());
+      // En mode édition, pas de prévisualisation séparée - on modifie directement
+    }
+  }, [editingCut]);
+
   // Synchroniser avec la découpe de prévisualisation du parent (une seule fois au montage)
   useEffect(() => {
+    // En mode édition, on ne crée pas de prévisualisation séparée
+    if (editingCut) {
+      console.log('🔄 [CircularCutForm] Mode édition - pas de prévisualisation séparée');
+      return;
+    }
+    
     if (previewCut && previewCut.type === 'circle') {
       // Pas besoin de recréer, la découpe existe déjà
       console.log('🔄 [CircularCutForm] Découpe de prévisualisation déjà créée:', previewCut);
@@ -607,8 +744,15 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
     let newValue = Number(inputValue);
     let constrainedValue = Math.max(0, newValue);
     
-    // Appliquer les contraintes spécifiques pour cercle
-    if (field === 'depth') {
+    // Pour le diamètre, on applique les contraintes de rayon multipliées par 2
+    if (field === 'diameter') {
+      const radiusValue = newValue / 2;
+      const constrainedRadius = Math.max(CIRCULAR_CUT_LIMITS.radius.min, 
+                                        Math.min(radiusValue, CIRCULAR_CUT_LIMITS.radius.max));
+      constrainedValue = constrainedRadius * 2; // Reconvertir en diamètre
+    }
+    // Appliquer les contraintes spécifiques pour la profondeur
+    else if (field === 'depth') {
       constrainedValue = Math.max(CIRCULAR_CUT_LIMITS.depth.min, 
                                  Math.min(newValue, dimensions.thickness));
     }
@@ -619,18 +763,34 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
         switch (field) {
           case 'positionX': setPositionXInput(constrainedValue.toString()); break;
           case 'positionY': setPositionYInput(constrainedValue.toString()); break;
-          case 'radius': setRadiusInput(constrainedValue.toString()); break;
+          case 'diameter': setDiameterInput(constrainedValue.toString()); break;
           case 'depth': setDepthInput(constrainedValue.toString()); break;
         }
       }, 0);
     }
     
+    // Pour le diamètre, on doit mettre à jour le rayon dans formData
+    let fieldToUpdate = field;
+    let valueToUpdate = constrainedValue;
+    if (field === 'diameter') {
+      fieldToUpdate = 'radius';
+      valueToUpdate = constrainedValue / 2;
+    }
+    
     // Vérifier si la valeur a vraiment changé avant de déclencher le calcul
-    if (formData[field as keyof typeof formData] !== constrainedValue) {
-      const newFormData = { ...formData, [field]: constrainedValue };
+    if (formData[fieldToUpdate as keyof typeof formData] !== valueToUpdate) {
+      const newFormData = { ...formData, [fieldToUpdate]: valueToUpdate };
       setFormData(newFormData);
-      // Mettre à jour la prévisualisation uniquement si changement réel
-      updatePreviewCut(newFormData);
+      
+      // En mode édition : mettre à jour directement la découpe existante
+      if (editingCut) {
+        updateCut(editingCut.id, newFormData);
+        console.log('🔄 [CircularCutForm] Mode édition - MAJ directe de la découpe:', fieldToUpdate, valueToUpdate);
+      } else {
+        // En mode création : utiliser la prévisualisation
+        updatePreviewCut(newFormData);
+        console.log('🔄 [CircularCutForm] Mode création - MAJ prévisualisation:', fieldToUpdate, valueToUpdate);
+      }
     }
   };
 
@@ -649,12 +809,16 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
   };
 
   const handleAddCut = () => {
-    onAddCut({
+    const cutData = {
       positionX: formData.positionX,
       positionY: formData.positionY,
       radius: formData.radius,
       depth: formData.depth
-    });
+    };
+    
+    // Toujours appeler onAddCut - la logique de création vs édition 
+    // est gérée dans handleAddCutWithParams du composant parent
+    onAddCut(cutData);
   };
 
   const isValid = formData.radius > 0;
@@ -692,33 +856,20 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label className="text-xs">Rayon (mm)</Label>
-          <Input 
-            type="number" 
-            value={radiusInput}
-            onChange={(e) => setRadiusInput(e.target.value)}
-            onBlur={() => handleFieldBlur('radius', radiusInput)}
-            onKeyDown={(e) => handleKeyDown(e, 'radius', radiusInput)}
-            className="h-9" 
-          />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-xs">Diamètre (mm)</Label>
-          <Input 
-            type="number" 
-            value={(Number(radiusInput) * 2).toString()}
-            onChange={(e) => {
-              const newRadius = Number(e.target.value) / 2;
-              setRadiusInput(newRadius.toString());
-            }}
-            onBlur={() => handleFieldBlur('radius', radiusInput)}
-            onKeyDown={(e) => handleKeyDown(e, 'radius', radiusInput)}
-            className="h-9" 
-            placeholder="Calculé automatiquement"
-          />
-        </div>
+      <div className="space-y-2">
+        <Label className="text-xs">Diamètre ⌀ (mm)</Label>
+        <Input 
+          type="number" 
+          value={diameterInput}
+          onChange={(e) => setDiameterInput(e.target.value)}
+          onBlur={() => handleFieldBlur('diameter', diameterInput)}
+          onKeyDown={(e) => handleKeyDown(e, 'diameter', diameterInput)}
+          className="h-9" 
+          min={CIRCULAR_CUT_LIMITS.radius.min * 2}
+          max={CIRCULAR_CUT_LIMITS.radius.max * 2}
+          step={0.1}
+          placeholder="Diamètre en mm"
+        />
       </div>
 
       <div className="space-y-2">
@@ -750,8 +901,17 @@ function CircularCutForm({ onAddCut, onCancel }: CutFormProps) {
           variant="default"
           disabled={!isValid}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Créer
+          {editingCut ? (
+            <>
+              <Edit className="h-4 w-4 mr-2" />
+              Modifier
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Créer
+            </>
+          )}
         </Button>
       </div>
     </div>

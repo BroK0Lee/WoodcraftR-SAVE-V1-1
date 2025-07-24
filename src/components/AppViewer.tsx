@@ -73,8 +73,14 @@ export default function PanelViewer(_props: Props) {
   const dimensions = usePanelStore((state) => state.dimensions);
   const editingCutId = usePanelStore((state) => state.editingCutId);
   const previewCut = usePanelStore((state) => state.previewCut);
-  const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
   const cuts = usePanelStore((state) => state.cuts);
+
+  // Debug: Vérifier l'état de la prévisualisation
+  console.log('🔍 [AppViewer] État actuel:', {
+    editingCutId,
+    previewCut: previewCut ? { id: previewCut.id, type: previewCut.type } : null,
+    showDimensionLabels: !!previewCut
+  });
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -114,7 +120,7 @@ export default function PanelViewer(_props: Props) {
             })()}
             
             {/* Cotations pour découpe en prévisualisation */}
-            {isPreviewMode && previewCut && (
+            {previewCut && (
               <DimensionLabels cut={previewCut} panelDimensions={dimensions} />
             )}
           </>
