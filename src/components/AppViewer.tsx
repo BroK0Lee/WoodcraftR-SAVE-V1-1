@@ -126,7 +126,7 @@ export default function PanelViewer(_props: Props) {
           </>
         )}
 
-        <AxesHelper size={50} />
+        <AxesHelper />
 
         <OrbitControls 
           enablePan={true}

@@ -1,23 +1,56 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { AxesHelper as ThreeAxesHelper, Group, Vector3, Material } from 'three'
+import { Group, Vector3, Material, BufferGeometry, LineBasicMaterial, Line, Float32BufferAttribute } from 'three'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
+import { usePanelStore } from '@/store/panelStore'
 
 interface AxesHelperProps {
-  size?: number
   scale?: [number, number, number]
 }
 
-export default function AxesHelper({ size = 1, scale }: AxesHelperProps) {
+export default function AxesHelper({ scale }: AxesHelperProps) {
   const { scene, camera, gl } = useThree()
+  
+  // Récupérer les dimensions du panneau depuis le store
+  const dimensions = usePanelStore((state) => state.dimensions)
+  
+  // Calculer les longueurs d'axes adaptatives avec useMemo pour éviter les re-calculs
+  const axesLengths = useMemo(() => {
+    const lengths = {
+      x: dimensions.length + (0.25 * dimensions.length), // Longueur + 25%
+      y: dimensions.width + (0.33 * dimensions.width),   // Largeur + 33%
+      z: 0.33 * dimensions.width                       // 33% Largeur
+    }
+    
+    console.log('📏 [AxesHelper] Dimensions panneau:', dimensions)
+    console.log('📐 [AxesHelper] Longueurs axes calculées:', lengths)
+    
+    return lengths
+  }, [dimensions.length, dimensions.width, dimensions.thickness])
+  
   const groupRef = useRef<Group>(new Group())
   const rendererRef = useRef<CSS2DRenderer>()
 
   useEffect(() => {
     const group = groupRef.current
     group.clear()
-    const axes = new ThreeAxesHelper(size)
-    group.add(axes)
+    
+    // Créer des axes personnalisés avec des longueurs différentes
+    const createCustomAxis = (start: Vector3, end: Vector3, color: number) => {
+      const geometry = new BufferGeometry().setFromPoints([start, end])
+      const material = new LineBasicMaterial({ color })
+      const line = new Line(geometry, material)
+      return line
+    }
+    
+    // Créer les trois axes avec leurs longueurs spécifiques
+    const axisX = createCustomAxis(new Vector3(0, 0, 0), new Vector3(axesLengths.x, 0, 0), 0xff0000) // Rouge
+    const axisY = createCustomAxis(new Vector3(0, 0, 0), new Vector3(0, axesLengths.y, 0), 0x00ff00) // Vert  
+    const axisZ = createCustomAxis(new Vector3(0, 0, 0), new Vector3(0, 0, axesLengths.z), 0x0000ff) // Bleu
+    
+    group.add(axisX)
+    group.add(axisY)
+    group.add(axisZ)
 
     if (scale) {
       group.scale.set(scale[0], scale[1], scale[2])
@@ -37,26 +70,29 @@ export default function AxesHelper({ size = 1, scale }: AxesHelperProps) {
       group.add(obj)
     }
 
-    // Labels X, Y, Z sur chaque axe (� l'extr�mit�)
-    createLabel('X', new Vector3(size, 0, 0))
-    createLabel('Y', new Vector3(0, size, 0))
-    createLabel('Z', new Vector3(0, 0, size))
+    // Labels X, Y, Z avec leurs longueurs spécifiques
+    createLabel('X', new Vector3(axesLengths.x, 0, 0))
+    createLabel('Y', new Vector3(0, axesLengths.y, 0))
+    createLabel('Z', new Vector3(0, 0, axesLengths.z))
 
-    // Label O (origine) l�g�rement d�cal� pour la lisibilit�
-    createLabel('O', new Vector3(-size * 0.05, -size * 0.05, 0))
+    // Label O (origine) décalé proportionnellement à la plus petite dimension
+    const originOffset = Math.min(axesLengths.x, axesLengths.y, axesLengths.z) * 0.05
+    createLabel('O', new Vector3(-originOffset, -originOffset, 0))
 
     scene.add(group)
     return () => {
       scene.remove(group)
       group.clear()
-      axes.geometry.dispose()
-      if (Array.isArray(axes.material)) {
-        axes.material.forEach((m: Material) => m.dispose())
-      } else {
-        axes.material.dispose()
-      }
+      
+      // Nettoyer les géométries et matériaux personnalisés
+      axisX.geometry.dispose()
+      axisY.geometry.dispose() 
+      axisZ.geometry.dispose()
+      ;(axisX.material as Material).dispose()
+      ;(axisY.material as Material).dispose()
+      ;(axisZ.material as Material).dispose()
     }
-  }, [scene, size, scale])
+  }, [scene, axesLengths.x, axesLengths.y, axesLengths.z, scale])
 
   useEffect(() => {
     const labelRenderer = new CSS2DRenderer()
