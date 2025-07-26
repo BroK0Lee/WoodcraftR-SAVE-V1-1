@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { Group, Vector3, Material, BufferGeometry, LineBasicMaterial, Line, Float32BufferAttribute } from 'three'
+import { Group, Vector3, Material, BufferGeometry, LineBasicMaterial, Line } from 'three'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { usePanelStore } from '@/store/panelStore'
 
