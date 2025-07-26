@@ -4,6 +4,7 @@ import { OrbitControls, Environment } from "@react-three/drei";
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
 import DimensionLabels from "./DimensionLabels";
+import { MaterialSelectorModal } from "./MaterialSelectorModal";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 
@@ -155,6 +156,9 @@ export default function PanelViewer(_props: Props) {
           dampingFactor={0.05}
         />
       </Canvas>
+
+      {/* Modal de sélection de matériau */}
+      <MaterialSelectorModal />
     </div>
   );
 }

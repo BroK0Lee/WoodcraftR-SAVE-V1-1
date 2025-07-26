@@ -122,6 +122,9 @@ importers:
       three:
         specifier: ^0.159.0
         version: 0.159.0
+      three-stdlib:
+        specifier: ^2.36.0
+        version: 2.36.0(three@0.159.0)
       vite-plugin-top-level-await:
         specifier: ^1.4.4
         version: 1.6.0(rollup@4.45.1)(vite@6.3.5(@types/node@24.0.15)(jiti@2.4.2)(lightningcss@1.30.1))

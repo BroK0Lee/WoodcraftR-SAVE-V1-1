@@ -5,11 +5,13 @@ import { GeneralPanel } from './GeneralPanel';
 import { CuttingPanel } from './CuttingPanel';
 import { EngravingPanel } from './EngravingPanel';
 import { FinishingPanel } from './FinishingPanel';
+import { MaterialPanel } from './MaterialPanel';
 import { 
   Ruler, 
   Zap, 
   Scissors, 
-  Settings 
+  Settings,
+  TreePine
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -24,13 +26,17 @@ export function Sidebar() {
 
       <ScrollArea className="h-[calc(100%-80px)]">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 gap-1 m-4">
-            <TabsTrigger value="general" className="flex items-center gap-2 text-xs">
-              <Ruler className="h-4 w-4" />
+          <TabsList className="grid w-full grid-cols-3 gap-1 m-4">
+            <TabsTrigger value="general" className="flex items-center gap-1 text-xs">
+              <Ruler className="h-3 w-3" />
               Général
             </TabsTrigger>
-            <TabsTrigger value="cutting" className="flex items-center gap-2 text-xs">
-              <Scissors className="h-4 w-4" />
+            <TabsTrigger value="material" className="flex items-center gap-1 text-xs">
+              <TreePine className="h-3 w-3" />
+              Matériau
+            </TabsTrigger>
+            <TabsTrigger value="cutting" className="flex items-center gap-1 text-xs">
+              <Scissors className="h-3 w-3" />
               Découpes
             </TabsTrigger>
           </TabsList>
@@ -49,6 +55,10 @@ export function Sidebar() {
           <div className="px-4 pb-4">
             <TabsContent value="general" className="mt-0">
               <GeneralPanel />
+            </TabsContent>
+
+            <TabsContent value="material" className="mt-0">
+              <MaterialPanel />
             </TabsContent>
 
             <TabsContent value="cutting" className="mt-0">
