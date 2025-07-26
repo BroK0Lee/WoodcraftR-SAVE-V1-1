@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export function Sidebar() {
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('material');
 
   return (
     <div className="h-full bg-card/30 border-r">
@@ -27,13 +27,13 @@ export function Sidebar() {
       <ScrollArea className="h-[calc(100%-80px)]">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 gap-1 m-4">
-            <TabsTrigger value="general" className="flex items-center gap-1 text-xs">
-              <Ruler className="h-3 w-3" />
-              Général
-            </TabsTrigger>
             <TabsTrigger value="material" className="flex items-center gap-1 text-xs">
               <TreePine className="h-3 w-3" />
               Matériau
+            </TabsTrigger>
+            <TabsTrigger value="general" className="flex items-center gap-1 text-xs">
+              <Ruler className="h-3 w-3" />
+              Général
             </TabsTrigger>
             <TabsTrigger value="cutting" className="flex items-center gap-1 text-xs">
               <Scissors className="h-3 w-3" />
@@ -53,12 +53,12 @@ export function Sidebar() {
           </TabsList>
 
           <div className="px-4 pb-4">
-            <TabsContent value="general" className="mt-0">
-              <GeneralPanel />
-            </TabsContent>
-
             <TabsContent value="material" className="mt-0">
               <MaterialPanel />
+            </TabsContent>
+
+            <TabsContent value="general" className="mt-0">
+              <GeneralPanel />
             </TabsContent>
 
             <TabsContent value="cutting" className="mt-0">
