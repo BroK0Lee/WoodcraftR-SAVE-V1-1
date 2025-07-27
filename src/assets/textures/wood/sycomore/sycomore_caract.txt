@@ -1,0 +1,52 @@
+# Sycomore (Acer pseudoplatanus)
+
+## Caractéristique générale
+L'érable sycomore est un feuillu européen précieux connu pour sa couleur très claire et son grain fin. Son bois est blanc crème à jaune pâle avec un fil droit ou légèrement ondulé et une maillure bien visible; l'aubier n'est pas distinct. Avec une densité d'environ 630 kg/m³, il offre un bois mi‑dur à dur, résistant à l'usure et élastique【192920501089563†L43-L56】. Cependant, sa durabilité naturelle est faible (classe de durabilité V pour les champignons), il est sensible aux insectes et termites et doit être utilisé en intérieur ou sous abri【162732567423588†L149-L157】.
+
+## Couleur / Aspect
+- Couleur dominante : bois très blanc à crème, parfois légèrement jaune ou rosé; aubier peu distinct【192920501089563†L25-L31】【162732567423588†L127-L132】.
+- Variations / veinage : grain fin et régulier, fil droit ou ondulé, maillure apparente avec aspect lustré【192920501089563†L25-L31】【162732567423588†L127-L134】.
+- Contre‑fil / maillure : maillure bien visible, possibilité de figures flammées; fil peut être ondulé.
+
+## Densité (12% H)
+- Valeur typique : 630 kg/m³【192920501089563†L43-L49】.
+- Fourchette courante : 615–650 kg/m³【487460784119314†L205-L210】.
+
+## Dureté
+- Janka (si dispo) : ≈ 4 680 N【647289650524425†L63-L66】【487460784119314†L205-L210】.
+- Classement pratique : **Dur** (bois dur【192920501089563†L54-L56】).
+
+## Applications privilégiées
+- Revêtements intérieurs et parquets【192920501089563†L87-L90】.
+- Menuiserie et agencement intérieur【192920501089563†L87-L90】.
+- Meubles et ébénisterie【162732567423588†L172-L179】.
+- Sculpture et tournage.
+- Lutherie (instruments à cordes)【973121446092575†L174-L185】.
+
+## Classe d’emploi / Durabilité & traitements
+- Classe d’emploi (EN 335) : 1 (intérieur hors contact du sol)【162732567423588†L151-L157】.
+- Durabilité naturelle (EN 350) : non durable (classe V pour les champignons) ; sensible aux insectes et termites【162732567423588†L151-L157】.
+- Remarques sur l’ignifugation / stabilité dimensionnelle : bois imprégnable (classe 1)【162732567423588†L151-L156】; séchage lent et risque de brûlure à l’usinage【192920501089563†L62-L67】【162732567423588†L160-L165】.
+
+## Recommandations de finition
+- Ponçage / scellage / vernis / huile : se ponce bien et donne un poli fin ; accepte facilement teintes et vernis mais sensible aux taches et brûlures【192920501089563†L62-L68】.
+
+## Fichiers générés
+- BaseColor (sRGB) : `sycomore_basecolor.jpg` — 4096²
+- Normal (linéaire, tangent OpenGL Y+) : `sycomore_normal.jpg`
+- Roughness (linéaire) : `sycomore_roughness.jpg`
+- Ambient Occlusion (linéaire) : `sycomore_ao.jpg`
+- Dossier : `/public/textures/wood/sycomore/`
+
+## Contrôles rapides (qualité PBR)
+- Tileable sans couture : oui
+- BaseColor sans ombres/reflets : oui
+- Normal Y+ (OpenGL) : oui
+- Roughness 0.3–0.7 pour bois brut poncé : oui
+- AO légère, non bloquante : à générer
+
+## Sources (consultées le 27 juillet 2025)
+- Érable sycomore – Bois de France : description du bois, densité 630 kg/m³, dureté 4,7 N/mm et durabilité non durable【192920501089563†L25-L56】【192920501089563†L71-L85】.
+- Sycomore – Peltier Bois : densité 0,64 (≈640 kg/m³), Monnin 4,7, durabilité classe 5, recommandations d’usage intérieur et propriétés mécaniques【162732567423588†L135-L157】.
+- Sycomore – Top‑Wood.com : poids 615–650 kg/m³, dureté Janka 4680 N et informations sur la couleur ivoire et les caractéristiques du sycomore【487460784119314†L205-L210】【487460784119314†L189-L204】.
+- Érable sycomore – Encyclopédie Sambuc : densité moyenne 0,62 et dureté Janka 4680 N【647289650524425†L63-L66】.

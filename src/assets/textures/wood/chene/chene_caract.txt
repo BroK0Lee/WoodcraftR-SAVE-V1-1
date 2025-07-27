@@ -1,0 +1,54 @@
+# Chêne (Quercus robur / Q. petraea)
+
+## Caractéristique générale
+Le chêne d’Europe comprend principalement le chêne pédonculé (Quercus robur) et le chêne sessile (Q. petraea). C’est un bois feuillu dense, lourd et dur, apprécié pour sa stabilité, sa résistance naturelle et sa longévité【132846906614144†L135-L140】【945648841543222†L194-L207】. Sa structure à cernes marqués lui confère un veinage régulier et une excellente tenue mécanique. La forte teneur en tanins protège le duramen contre les insectes et champignons, permettant de l’utiliser en extérieur sans traitement dans certaines conditions【945648841543222†L206-L219】.
+
+## Couleur / Aspect
+- Couleur dominante : blond clair à brun doré, fonçant avec le temps et se patinant en gris clair à l’extérieur【945648841543222†L226-L232】.
+- Variations / veinage : veinage marqué avec maillure nacrée ; grain généralement moyen mais pouvant être fin à grossier selon la provenance【132846906614144†L135-L139】.
+- Contre-fil / maillure : fil généralement droit avec contrefil limité ; maillure large et bien visible surtout sur les plans tangents.
+
+## Densité (12% H) 
+- Valeur typique : ~710 kg/m³ à 12 % d’humidité【132846906614144†L135-L140】.
+- Fourchette courante : 500–800 kg/m³ selon la provenance【132846906614144†L135-L140】.
+
+## Dureté
+- Janka (si dispo) : environ 6000–7000 N【945648841543222†L201-L207】.
+- Classement pratique : **Dur**
+
+## Applications privilégiées
+- Charpente et structures portantes
+- Parquets et planchers
+- Mobilier et menuiserie intérieure
+- Tonnellerie et traverses
+- Escaliers et ouvrages d’escalier
+- Bardage et aménagement extérieur
+
+## Classe d’emploi / Durabilité & traitements
+- Classe d’emploi (EN 335) : classes 1 à 3 sans traitement ; le duramen est utilisable en classe 3 et peut atteindre la classe 4 après traitement【182330753205465†L90-L95】.
+- Durabilité naturelle (EN 350) : classe 2 à 3 ; duramen durable à moyennement durable, aubier moins durable【182330753205465†L74-L95】.
+- Remarques sur l’ignifugation / stabilité dimensionnelle : la présence de tanins confère une bonne résistance aux insectes et champignons mais peut provoquer des réactions avec certains métaux ; le bois est stable mais nécessite un séchage lent et soigné pour éviter les déformations【132846906614144†L135-L140】【945648841543222†L211-L218】.
+
+## Recommandations de finition
+- Ponçage : grains progressifs pour fermer les pores ; bouchage conseillé pour obtenir une surface lisse.
+- Scellage / vernis : appliquer un primaire bloquant les tanins avant vernis ou peinture ; vernis polyuréthane ou huiles-cire adaptées selon l’usage.
+- Huile / huile-cire : pour les parquets et meubles intérieurs ; nécessite un entretien régulier.
+
+## Fichiers générés
+- BaseColor (sRGB) : `chene_basecolor.jpg` — 4096²
+- Normal (linéaire, tangent OpenGL Y+) : `chene_normal.jpg`
+- Roughness (linéaire) : `chene_roughness.jpg`
+- Ambient Occlusion (linéaire) : `chene_ao.jpg`
+- Dossier : `/public/textures/wood/chene/`
+
+## Contrôles rapides (qualité PBR)
+- Tileable sans couture : oui
+- BaseColor sans ombres/reflets : oui
+- Normal Y+ (OpenGL) : oui
+- Roughness 0.3–0.7 pour bois brut poncé : oui
+- AO légère, non bloquante : oui
+
+## Sources (consultées le 27 juillet 2025)
+- Fiche essence « Le Chêne » – Boismag / France Bois Forêt【132846906614144†L135-L140】.
+- Dossier « Chêne » – Bois de France【182330753205465†L90-L95】.
+- Article « Chêne : une essence de bois noble et intemporelle » – Fabricant-fenetre-bois.fr【945648841543222†L194-L207】.

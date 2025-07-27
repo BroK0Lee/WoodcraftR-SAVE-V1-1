@@ -1,13 +1,13 @@
 import React from 'react';
+import { WoodMaterial } from '@/services/woodMaterialService';
 
 interface MaterialCardProps {
-  name: string;
-  image: string;
+  material: WoodMaterial;
   onSelect: () => void;
   isSelected: boolean;
 }
 
-const MaterialCard: React.FC<MaterialCardProps> = ({ name, image, onSelect, isSelected }) => {
+const MaterialCard: React.FC<MaterialCardProps> = ({ material, onSelect, isSelected }) => {
   const handleClick = () => {
     onSelect();
   };
@@ -24,21 +24,28 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ name, image, onSelect, isSe
         }
       `}
       onClick={handleClick}
+      title={`${material.displayName} - ${material.characteristics.colorAspect.dominantColor}`}
     >
       <div className="w-full h-24 overflow-hidden rounded-t-lg">
         <img 
-          src={image}
-          alt={name}
+          src={material.baseColorImage}
+          alt={material.displayName}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
           style={{ pointerEvents: 'none' }}
         />
       </div>
-      <div className="flex-1 flex items-center justify-center px-2">
+      <div className="flex-1 flex flex-col items-center justify-center px-2">
         <span className={`
           text-sm font-medium text-center transition-colors duration-200
           ${isSelected ? 'text-amber-800' : 'text-gray-700'}
         `}>
-          {name}
+          {material.displayName}
+        </span>
+        <span className={`
+          text-xs text-center mt-1 transition-colors duration-200
+          ${isSelected ? 'text-amber-600' : 'text-gray-500'}
+        `}>
+          {material.characteristics.hardness.classification}
         </span>
       </div>
     </div>

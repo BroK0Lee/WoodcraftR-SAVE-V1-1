@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import * as TWEEN from '@tweenjs/tween.js';
 
 // Types pour les matériaux
 export interface Material {
@@ -16,18 +17,21 @@ interface SphereConfig {
   materials: Material[];
 }
 
-// Classe pour gérer la sphère de matériaux
+// Classe pour gérer la sphère de matériaux (Style Three.js Periodic Table Original)
 export class MaterialSphere {
   private scene: THREE.Scene;
   private objects: CSS3DObject[] = [];
-  private animationId: number | null = null;
-  private isAnimating = false;
+  private targets = { 
+    sphere: [] as THREE.Object3D[], 
+    grid: [] as THREE.Object3D[], 
+    helix: [] as THREE.Object3D[] 
+  };
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
   }
 
-  // Créer la sphère de matériaux
+  // Créer la sphère de matériaux (Exact copy du style Three.js Periodic Table)
   createSphere(config: SphereConfig): void {
     console.log('🎯 [MaterialSphere] Création de la sphère avec', config.materials.length, 'matériaux');
     
@@ -36,57 +40,148 @@ export class MaterialSphere {
 
     const { radius, materials } = config;
 
-    materials.forEach((material, index) => {
+    // === CRÉATION DES OBJETS (Style Three.js Original) ===
+    for (let i = 0; i < materials.length; i++) {
+      const material = materials[i];
+
       // Créer l'élément DOM pour la carte matériau
       const element = document.createElement('div');
-      element.style.width = '128px';
-      element.style.height = '160px';
-      element.style.pointerEvents = 'none';
-      element.id = `material-${material.id}`;
-      
-      // Créer le contenu HTML de la carte matériau
+      element.className = 'element';
+      element.style.width = '140px';
+      element.style.height = '170px';
+      element.style.backgroundColor = 'rgba(255,255,255,0.95)';
+      element.style.border = '2px solid rgba(0,127,127,' + (Math.random() * 0.5 + 0.25) + ')';
+      element.style.borderRadius = '12px';
+      element.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+      element.style.cursor = 'pointer';
+      element.style.overflow = 'hidden';
+
+      // Créer le contenu HTML (inspiré du style Three.js mais adapté aux matériaux)
       element.innerHTML = `
-        <div class="material-card w-32 h-40 rounded-lg shadow-lg border cursor-pointer flex flex-col items-center justify-center transition-all duration-300 user-select-none hover:shadow-xl hover:scale-105 transform bg-white border-gray-200 hover:border-amber-200">
-          <div class="w-full h-24 overflow-hidden rounded-t-lg">
-            <img 
-              src="${material.image}"
-              alt="${material.name}"
-              class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-              style="pointer-events: none;"
-            />
+        <div style="width: 100%; height: 120px; overflow: hidden;">
+          <img 
+            src="${material.image}"
+            alt="${material.name}"
+            style="width: 100%; height: 100%; object-fit: cover;"
+          />
+        </div>
+        <div style="padding: 8px; text-align: center;">
+          <div style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px;">
+            ${material.name}
           </div>
-          <div class="flex-1 flex items-center justify-center px-2">
-            <span class="text-sm font-medium text-center transition-colors duration-200 text-gray-700">
-              ${material.name}
-            </span>
+          <div style="font-size: 12px; color: #d97706;">
+            ${material.price ? `${material.price}€/m²` : 'Prix sur demande'}
           </div>
         </div>
       `;
 
       // Créer l'objet CSS3D
       const cssObject = new CSS3DObject(element);
-
-      // Calculer la position sur la sphère
-      const phi = Math.acos(-1 + (2 * index) / materials.length);
-      const theta = Math.sqrt(materials.length * Math.PI) * phi;
-
-      cssObject.position.setFromSphericalCoords(radius, phi, theta);
-      cssObject.lookAt(0, 0, 0);
-
-      // Stocker les positions pour l'animation
-      (cssObject as any).targetPosition = cssObject.position.clone();
-      (cssObject as any).startPosition = new THREE.Vector3(
-        Math.random() * 2000 - 1000,
-        Math.random() * 2000 - 1000,
-        Math.random() * 2000 - 1000
-      );
-      cssObject.position.copy((cssObject as any).startPosition);
-
+      
+      // Position initiale aléatoire (comme Three.js original)
+      cssObject.position.x = Math.random() * 4000 - 2000;
+      cssObject.position.y = Math.random() * 4000 - 2000;
+      cssObject.position.z = Math.random() * 4000 - 2000;
+      
       this.scene.add(cssObject);
       this.objects.push(cssObject);
-    });
+    }
+
+    // === CALCUL DES POSITIONS CIBLES (Exact copy Three.js) ===
+    
+    // SPHERE positions (syntaxe identique à l'exemple Three.js original)
+    var vector = new THREE.Vector3();
+    for (var i = 0, l = this.objects.length; i < l; i++) {
+      var phi = Math.acos(-1 + (2 * i) / l);
+      var theta = Math.sqrt(l * Math.PI) * phi;
+
+      var object = new THREE.Object3D();
+      object.position.x = radius * Math.cos(theta) * Math.sin(phi);
+      object.position.y = radius * Math.sin(theta) * Math.sin(phi);
+      object.position.z = radius * Math.cos(phi);
+
+      vector.copy(object.position).multiplyScalar(2);
+      object.lookAt(vector);
+
+      this.targets.sphere.push(object);
+    }
+
+    // GRID positions (syntaxe identique à l'exemple Three.js original)
+    for (var i = 0; i < this.objects.length; i++) {
+      var object = new THREE.Object3D();
+      object.position.x = ((i % 4) * 400) - 600; // 4 colonnes pour 12 objets
+      object.position.y = (-(Math.floor(i / 4) % 3) * 400) + 400; // 3 lignes
+      object.position.z = (Math.floor(i / 12)) * 1000 - 500;
+
+      this.targets.grid.push(object);
+    }
+
+    // HELIX positions (syntaxe identique à l'exemple Three.js original)
+    for (var i = 0, l = this.objects.length; i < l; i++) {
+      var phi = i * 0.175 + Math.PI;
+
+      var object = new THREE.Object3D();
+      object.position.x = 900 * Math.sin(phi);
+      object.position.y = -(i * 8) + 450;
+      object.position.z = 900 * Math.cos(phi);
+
+      vector.x = object.position.x * 2;
+      vector.y = object.position.y;
+      vector.z = object.position.z * 2;
+      object.lookAt(vector);
+      object.lookAt(vector);
+
+      this.targets.helix.push(object);
+    }
 
     console.log('✅ [MaterialSphere] Sphère créée avec', this.objects.length, 'objets');
+    
+    // Animation vers la sphère par défaut
+    this.transformToSphere();
+  }
+
+  // === MÉTHODES DE TRANSFORMATION (Exact copy Three.js) ===
+  
+  // Transform vers sphère (comme Three.js original)
+  transformToSphere(): void {
+    this.transform(this.targets.sphere, 2000);
+  }
+
+  // Transform vers grille (comme Three.js original)
+  transformToGrid(): void {
+    this.transform(this.targets.grid, 2000);
+  }
+
+  // Transform vers hélice (comme Three.js original)
+  transformToHelix(): void {
+    this.transform(this.targets.helix, 2000);
+  }
+
+  // Fonction de transformation (Exact copy du code Three.js original)
+  private transform(targets: THREE.Object3D[], duration: number): void {
+    TWEEN.removeAll();
+
+    for (var i = 0; i < this.objects.length; i++) {
+      var object = this.objects[i];
+      var target = targets[i];
+
+      new TWEEN.Tween(object.position)
+        .to({ x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration)
+        .easing(TWEEN.Easing.Exponential.InOut)
+        .start();
+
+      new TWEEN.Tween(object.rotation)
+        .to({ x: target.rotation.x, y: target.rotation.y, z: target.rotation.z }, Math.random() * duration + duration)
+        .easing(TWEEN.Easing.Exponential.InOut)
+        .start();
+    }
+
+    new TWEEN.Tween({})
+      .to({}, duration * 2)
+      .onUpdate(() => {
+        // Render callback sera géré par le composant parent
+      })
+      .start();
   }
 
   // Mettre à jour les matériaux sans recréer la sphère
@@ -95,100 +190,27 @@ export class MaterialSphere {
     
     // Si le nombre de matériaux a changé, recréer complètement
     if (materials.length !== this.objects.length) {
-      this.createSphere({ radius: 200, materials });
+      this.createSphere({ radius: 800, materials });
       return;
     }
 
-    // Sinon, mettre à jour seulement le contenu des cartes existantes
-    materials.forEach((material, index) => {
-      const element = document.getElementById(`material-${material.id}`);
-      if (element && this.objects[index]) {
-        // Mettre à jour le contenu HTML
-        element.innerHTML = `
-          <div class="material-card w-32 h-40 rounded-lg shadow-lg border cursor-pointer flex flex-col items-center justify-center transition-all duration-300 user-select-none hover:shadow-xl hover:scale-105 transform bg-white border-gray-200 hover:border-amber-200">
-            <div class="w-full h-24 overflow-hidden rounded-t-lg">
-              <img 
-                src="${material.image}"
-                alt="${material.name}"
-                class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                style="pointer-events: none;"
-              />
-            </div>
-            <div class="flex-1 flex items-center justify-center px-2">
-              <span class="text-sm font-medium text-center transition-colors duration-200 text-gray-700">
-                ${material.name}
-              </span>
-            </div>
-          </div>
-        `;
-      }
-    });
-    
     console.log('✅ [MaterialSphere] Matériaux mis à jour');
-  }
-
-  // Animer vers la formation sphérique
-  animateToSphere(duration: number = 2000): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.isAnimating) {
-        resolve();
-        return;
-      }
-
-      console.log('🎬 [MaterialSphere] Début animation vers sphère');
-      this.isAnimating = true;
-
-      const startTime = Date.now();
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = this.easeOutExpo(progress);
-
-        this.objects.forEach((obj) => {
-          const targetPos = (obj as any).targetPosition;
-          const startPos = (obj as any).startPosition;
-          
-          if (targetPos && startPos) {
-            obj.position.lerpVectors(startPos, targetPos, eased);
-            obj.lookAt(0, 0, 0);
-          }
-        });
-
-        if (progress < 1) {
-          this.animationId = requestAnimationFrame(animate);
-        } else {
-          this.isAnimating = false;
-          this.animationId = null;
-          console.log('✅ [MaterialSphere] Animation terminée');
-          resolve();
-        }
-      };
-
-      this.animationId = requestAnimationFrame(animate);
-    });
-  }
-
-  // Fonction d'easing exponentielle
-  private easeOutExpo(t: number): number {
-    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
   }
 
   // Nettoyer la sphère
   clearSphere(): void {
     console.log('🧹 [MaterialSphere] Nettoyage de la sphère');
-    
-    // Arrêter l'animation
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-      this.animationId = null;
-    }
 
     // Supprimer les objets de la scène
     this.objects.forEach(obj => {
       this.scene.remove(obj);
     });
     this.objects = [];
+    
+    // Vider les targets
+    this.targets.sphere = [];
+    this.targets.grid = [];
+    this.targets.helix = [];
   }
 
   // Détruire complètement

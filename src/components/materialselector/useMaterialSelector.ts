@@ -2,6 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import { MaterialSphere, Material } from './MaterialSphere';
 import { MaterialInteractionManager } from './MaterialInteractionManager';
 import { useWoodMaterialSelectorInit } from '@/hooks/useWoodMaterialSelectorInit';
+import * as TWEEN from '@tweenjs/tween.js';
 
 interface UseMaterialSelectorConfig {
   materials: Material[];
@@ -60,9 +61,9 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
         // Créer le gestionnaire de sphère
         sphereRef.current = new MaterialSphere(scene);
         
-        // Créer la sphère de matériaux
+        // Créer la sphère de matériaux (rayon identique à l'exemple Three.js)
         sphereRef.current.createSphere({
-          radius: 200,
+          radius: 800,  // Même rayon que l'exemple Three.js original
           materials
         });
 
@@ -87,13 +88,17 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
 
       // Démarrer l'animation vers la sphère
       if (sphereRef.current) {
-        await sphereRef.current.animateToSphere(2000);
+        sphereRef.current.transformToSphere();
       }
 
       // Configurer l'animation continue
       let animationId: number;
       const animate = () => {
         animationId = requestAnimationFrame(animate);
+        
+        // Mettre à jour TWEEN.js (indispensable pour les animations Three.js)
+        TWEEN.update();
+        
         if (controls) {
           controls.update();
         }
@@ -149,9 +154,9 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
   // Fonction pour mettre à jour la sélection
   const updateSelection = useCallback((_newSelectedId: string | null): void => {
     if (sphereRef.current) {
-      // Recréer la sphère avec la nouvelle sélection
+      // Recréer la sphère avec la nouvelle sélection (rayon identique à l'exemple Three.js)
       sphereRef.current.createSphere({
-        radius: 200,
+        radius: 800,  // Même rayon que l'exemple Three.js original
         materials
       });
 
@@ -166,12 +171,39 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
     }
   }, [materials]);
 
+  // === NOUVELLES MÉTHODES INSPIRÉES DU TABLEAU PÉRIODIQUE THREE.JS ===
+  
+  // Transformer vers une grille
+  const transformToGrid = useCallback((): void => {
+    if (sphereRef.current) {
+      sphereRef.current.transformToGrid();
+    }
+  }, []);
+  
+  // Transformer vers une hélice
+  const transformToHelix = useCallback((): void => {
+    if (sphereRef.current) {
+      sphereRef.current.transformToHelix();
+    }
+  }, []);
+  
+  // Retourner vers la sphère
+  const transformToSphere = useCallback((): void => {
+    if (sphereRef.current) {
+      sphereRef.current.transformToSphere();
+    }
+  }, []);
+
   return {
     isReady,
     error,
     isInitialized,
     initializeSelector,
     cleanupSelector,
-    updateSelection
+    updateSelection,
+    // Nouvelles méthodes de transformation
+    transformToGrid,
+    transformToHelix,
+    transformToSphere
   };
 }

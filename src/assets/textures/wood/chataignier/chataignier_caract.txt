@@ -1,0 +1,54 @@
+# Châtaignier (Castanea sativa)
+
+## Caractéristique générale
+Le châtaignier est un feuillu européen réputé pour sa durabilité naturelle et sa teinte claire et chaude. C’est un bois mi‑lourd (environ 600 kg/m³) dont le duramen est très durable grâce à sa teneur élevée en tanins【421651525733325†L183-L200】. Le bois présente un grain moyen et un fil généralement droit. Il est relativement stable, flexible et facile à travailler, ce qui en fait un matériau de choix pour les charpentes, bardages et menuiseries extérieures.
+
+## Couleur / Aspect
+- Couleur dominante : jaune clair à brun jaunâtre【571462627243869†L140-L143】
+- Variations / veinage : grain moyen à grossier avec pores marqués ; aubier bien distinct, plus clair, transition nette【645043239541296†L126-L134】
+- Contre‑fil / maillure : fil assez droit ; maillure visible en sciage sur dosse
+
+## Densité (12% H) 
+- Valeur typique : env. 600 kg/m³【421651525733325†L183-L244】
+- Fourchette courante : 550–640 kg/m³【571462627243869†L140-L147】
+
+## Dureté
+- Janka (si dispo) : ≈ 5 400 N (valeur indicative)
+- Classement pratique : **Mi‑dur** (Monnin 2,9 N/mm²【571462627243869†L141-L143】)
+
+## Applications privilégiées
+- Bardage et revêtement extérieur (terrasses, platelages)【571462627243869†L200-L221】
+- Menuiserie intérieure et extérieure (portes, fenêtres, escaliers)【571462627243869†L209-L212】
+- Charpente lourde et structure bois【571462627243869†L220-L221】
+- Parquets, lambris et meubles【645043239541296†L170-L180】
+- Ganivelles, piquets et clôtures【560597854622411†L161-L168】
+
+## Classe d’emploi / Durabilité & traitements
+- Classe d’emploi (EN 335) : 3 (usage extérieur hors contact du sol)【571462627243869†L160-L162】 ; classe 4 possible si le duramen est purgé d’aubier【421651525733325†L195-L198】
+- Durabilité naturelle (EN 350) : duramen très durable (classe II) ; aubier peu durable【571462627243869†L152-L157】
+- Remarques sur l’ignifugation / stabilité dimensionnelle : bois riche en tanins ; les tannins peuvent migrer et tacher en extérieur【421651525733325†L252-L265】 ; utiliser des fixations inox et un primaire bloqueur de tanin ; imprégnabilité faible (classe 4 non imprégnable)【645043239541296†L150-L154】
+
+## Recommandations de finition
+- Ponçage suivi d’un saturateur pour stabiliser le tanin et limiter les coulures noirâtres【421651525733325†L252-L265】
+- Utiliser des vis et clous en acier inox pour éviter les taches noires dues à la corrosion【421651525733325†L267-L270】
+- Possibilité de céruser ou lasurer ; collage correct mais éviter les colles alcalines【571462627243869†L187-L193】
+
+## Fichiers générés
+- BaseColor (sRGB) : `chataignier_basecolor.jpg` — 4096²
+- Normal (linéaire, tangent OpenGL Y+) : `chataignier_normal.jpg`
+- Roughness (linéaire) : `chataignier_roughness.jpg`
+- Ambient Occlusion (linéaire) : `chataignier_ao.jpg`
+- Dossier : `/public/textures/wood/chataignier/`
+
+## Contrôles rapides (qualité PBR)
+- Tileable sans couture (oui/non) : oui
+- BaseColor sans ombres/reflets (oui/non) : oui
+- Normal Y+ (OpenGL) (oui/non) : oui
+- Roughness 0.3–0.7 pour bois brut poncé (oui/non) : oui
+- AO légère, non bloquante (oui/non) : oui
+
+## Sources (consultées le 27 juillet 2025)
+- Peltier Bois – fiche Châtaignier : densité 0,64, dureté Monnin 2,9, description du bois et durabilité (champignons classe 2, insectes durable, classe de risque 3)【645043239541296†L126-L155】
+- WoodPartners – guide du châtaignier : densité 550–640 kg/m³, dureté Monnin 2,9, durabilité du duramen (classe II) et classe d’emploi 3, utilisations (bardage, charpente, menuiserie, meubles)【571462627243869†L140-L162】【571462627243869†L200-L221】
+- E-Wood – caractéristiques : densité 600 kg/m³ et classe d’emploi 4 hors aubier, durabilité très bonne et description de couleur【421651525733325†L183-L200】【421651525733325†L240-L255】
+- Ducerf – essence Châtaignier : masse volumique 565–750 kg/m³, bonne stabilité, classes d’emploi 3a à 4, usages variés【651680825089124†L90-L109】

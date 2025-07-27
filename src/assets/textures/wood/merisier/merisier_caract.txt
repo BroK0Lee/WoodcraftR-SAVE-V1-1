@@ -1,0 +1,52 @@
+# Merisier (Prunus avium)
+
+## Caractéristique générale
+Le merisier, ou cerisier sauvage, est un bois de feuillu européen de densité moyenne. Son aubier rose pâle contraste avec un duramen brun‑rosé à couleur miel, et son fil est généralement droit avec un grain fin à moyen et parfois des figures flammées. Il offre de bonnes propriétés mécaniques et une aptitude au cintrage, mais sa durabilité naturelle est faible : le duramen est moyennement à peu durable et l’aubier n’est pas durable, ce qui limite l’usage à l’intérieur. Il est apprécié en ébénisterie pour son aspect chaleureux et sa facilité de finition【806572482369692†L40-L46】【664861644044921†L139-L143】.
+
+## Couleur / Aspect
+- Couleur dominante : duramen brun rose à jaune miel avec veinures verdâtres ; aubier rose pâle【806572482369692†L40-L44】【664861644044921†L110-L116】.
+- Variations / veinage : grain fin à moyen, fil généralement droit, figure flammée sur dosse, parfois moirée【664861644044921†L110-L117】.
+- Contre‑fil / maillure : maillure discrète, fil peu ondulé, tendance à présenter un contre‑fil occasionnel.
+
+## Densité (12% H) 
+- Valeur typique : 610 kg/m³【806572482369692†L54-L57】.
+- Fourchette courante : 550–650 kg/m³【664861644044921†L139-L166】.
+
+## Dureté
+- Janka (si dispo) : ≈ 5 600 N (≈ 1260 lbf)【760889879327775†L58-L61】.
+- Classement pratique : **Mi‑dur** (bois mi‑dur【831475614505311†L52-L55】).
+
+## Applications privilégiées
+- Meubles et ébénisterie de style【806572482369692†L74-L76】.
+- Menuiserie intérieure (portes, escaliers)【664861644044921†L153-L157】.
+- Parquets et planchers.
+- Placages décoratifs.
+- Petits objets et tournage【664861644044921†L153-L159】.
+
+## Classe d’emploi / Durabilité & traitements
+- Classe d’emploi (EN 335) : classe 1–2 pour des usages en intérieur sec ou humide ; non recommandé pour l’extérieur.
+- Durabilité naturelle (EN 350) : duramen moyennement à peu durable (classe III–IV) ; aubier non durable (classe V)【664861644044921†L139-L144】.
+- Remarques sur l’ignifugation / stabilité dimensionnelle : séchage assez lent avec risques de déformations【664861644044921†L145-L147】 ; bois sensible aux insectes (anobium, lyctus)【664861644044921†L139-L143】 ; nécessite protection si exposé.
+
+## Recommandations de finition
+- Ponçage / scellage / vernis / huile : surface lisse après ponçage, poli facile à obtenir ; accepte bien les vernis et huiles transparents ; éviter les colles acides qui tachent【831475614505311†L60-L66】.
+
+## Fichiers générés
+- BaseColor (sRGB) : `merisier_basecolor.jpg` — 4096²
+- Normal (linéaire, tangent OpenGL Y+) : `merisier_normal.jpg`
+- Roughness (linéaire) : `merisier_roughness.jpg`
+- Ambient Occlusion (linéaire) : `merisier_ao.jpg`
+- Dossier : `/public/textures/wood/merisier/`
+
+## Contrôles rapides (qualité PBR)
+- Tileable sans couture : oui
+- BaseColor sans ombres/reflets : oui
+- Normal Y+ (OpenGL) : oui
+- Roughness 0.3–0.7 pour bois brut poncé : oui
+- AO légère, non bloquante : oui
+
+## Sources (consultées le 27 juillet 2025)
+- Merisier – FrenchTimber : description, masse volumique 610 kg/m³ et dureté Brinell 29 N/mm²【806572482369692†L40-L46】【806572482369692†L54-L57】.
+- Merisier – Bois de France : description du bois, densité 600 kg/m³, dureté Monnin 4,3 N/mm et propriétés mécaniques【831475614505311†L42-L55】.
+- Mérisier – Hout Info Bois : couleur, grain, durabilité naturelle classes III–V, usinage, usages intérieurs et masse volumique moyenne 600 kg/m³【664861644044921†L110-L117】【664861644044921†L139-L166】.
+- Test de Janka (PDF) – DecoSurfaces : valeur Janka de 1260 lbf pour le merisier【760889879327775†L58-L61】.

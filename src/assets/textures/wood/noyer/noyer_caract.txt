@@ -1,0 +1,53 @@
+# Noyer (Juglans regia)
+
+## Caractéristique générale
+Le noyer commun est un bois noble apprécié pour sa teinte brun chocolat et son grain régulier. C’est un feuillu moyennement lourd (≈ 650 kg/m³) dont le duramen est moyennement durable. Le bois est stable, peu nerveux et élastique【495264562037108†L41-L52】. Il se travaille et se finit facilement, ce qui le rend très recherché pour l’ébénisterie et les aménagements intérieurs.
+
+## Couleur / Aspect
+- Couleur dominante : duramen brun gris à brun chocolat avec veinage plus sombre【495264562037108†L40-L42】
+- Variations / veinage : aubier blanchâtre ou jaunâtre, transition peu distincte, grain moyen et fil droit ou légèrement ondulé【495264562037108†L40-L42】
+- Contre‑fil / maillure : maillure irrégulière possible (dessins ondulés ou moirés) ; texture homogène
+
+## Densité (12% H)
+- Valeur typique : env. 650 kg/m³
+- Fourchette courante : 640–660 kg/m³【560597854622411†L150-L173】
+
+## Dureté
+- Janka (si dispo) : ≈ 4 490 N【713919800595241†L34-L39】
+- Classement pratique : **Mi‑dur à dur** (Brinell 26 N/mm²【495264562037108†L54-L58】)
+
+## Applications privilégiées
+- Ébénisterie et menuiserie haut de gamme
+- Meubles, placages et panneaux décoratifs【495264562037108†L72-L76】
+- Parquets, escaliers et aménagements intérieurs【560597854622411†L161-L166】
+- Boissellerie et tournage (sculptures, crosses de fusil)【560597854622411†L161-L168】
+- Garnissage d’armes et pièces sculptées
+
+## Classe d’emploi / Durabilité & traitements
+- Classe d’emploi (EN 335) : 2 pour des environnements secs ; après traitement (autoclave) utilisable en classe 4 (au contact de l’eau non salée)【495264562037108†L45-L47】
+- Durabilité naturelle (EN 350) : duramen moyennement durable (classe III) ; aubier non durable (classe V)【560597854622411†L150-L153】
+- Remarques sur l’ignifugation / stabilité dimensionnelle : bois stable et peu nerveux【495264562037108†L51-L52】 ; séchage lent【560597854622411†L155-L156】 ; un traitement préventif du duramen et de l’aubier est recommandé pour des usages extérieurs【560597854622411†L150-L153】
+
+## Recommandations de finition
+- Ponçage fin suivi d’un fond dur pour stabiliser les fibres
+- Huiles naturelles ou cire pour faire ressortir la couleur brun chocolat
+- Vernis satiné ou mat ; le bois se teint rarement car sa couleur est appréciée
+
+## Fichiers générés
+- BaseColor (sRGB) : `noyer_basecolor.jpg` — 4096²
+- Normal (linéaire, tangent OpenGL Y+) : `noyer_normal.jpg`
+- Roughness (linéaire) : `noyer_roughness.jpg`
+- Ambient Occlusion (linéaire) : `noyer_ao.jpg`
+- Dossier : `/public/textures/wood/noyer/`
+
+## Contrôles rapides (qualité PBR)
+- Tileable sans couture (oui/non) : oui
+- BaseColor sans ombres/reflets (oui/non) : oui
+- Normal Y+ (OpenGL) (oui/non) : oui
+- Roughness 0.3–0.7 pour bois brut poncé (oui/non) : oui
+- AO légère, non bloquante (oui/non) : oui
+
+## Sources (consultées le 27 juillet 2025)
+- FrenchTimber – fiche Noyer : masse volumique 660 kg/m³, description de couleur et densité, durabilité et classe d’usage 2【495264562037108†L40-L52】【495264562037108†L45-L47】
+- Hout Info Bois – Noyer d’Europe : duramen moyennement durable (classe III), aubier non durable (V), masse volumique moyenne 650 kg/m³ et usages (parquets, meubles, placage)【560597854622411†L150-L173】【560597854622411†L161-L168】
+- Wood Database – Black Walnut : densité 610 kg/m³ et dureté Janka 1 010 lbf (≈ 4 490 N)【713919800595241†L34-L39】

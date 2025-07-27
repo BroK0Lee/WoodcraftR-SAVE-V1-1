@@ -9,6 +9,8 @@ export { default as MaterialModal } from './MaterialModal';
 export { MaterialSphere } from './MaterialSphere';
 export { MaterialInteractionManager } from './MaterialInteractionManager';
 export { useMaterialSelector } from './useMaterialSelector';
+export { WoodMaterialService } from './WoodMaterialService';
 
 // Types
 export type { Material } from './MaterialSphere';
+export type { WoodMaterial } from './WoodMaterialService';

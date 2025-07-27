@@ -2,14 +2,14 @@ import { useEffect, useState, useRef } from 'react';
 import { useLoadingStore } from '@/store/loadingStore';
 import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
 
 // Cache global pour les instances 3D
 interface WoodMaterialSelectorCache {
   scene: THREE.Scene | null;
   renderer: CSS3DRenderer | null;
   camera: THREE.PerspectiveCamera | null;
-  controls: OrbitControls | null;
+  controls: TrackballControls | null;
   materialSphere: any | null; // Instance de MaterialSphere
   isInitialized: boolean;
   isSphereCreated: boolean;
@@ -51,12 +51,13 @@ export function useWoodMaterialSelectorInit() {
 
         // Créer les instances 3D de base (sans montage DOM)
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        
+        // === CAMÉRA IDENTIQUE À L'EXEMPLE THREE.JS ORIGINAL ===
+        const camera = new THREE.PerspectiveCamera(40, 1, 1, 10000);
+        camera.position.z = 3000; // Position exacte de l'exemple Three.js
+        
         const renderer = new CSS3DRenderer();
-
-        // Configuration de base
-        camera.position.set(0, 0, 400);
-        renderer.setSize(800, 600); // Taille par défaut, sera ajustée au montage
+        renderer.setSize(800, 600);           // Taille par défaut, sera ajustée au montage
 
         // Sauvegarder dans le cache global
         globalCache = {
@@ -109,9 +110,14 @@ export function useWoodMaterialSelectorInit() {
 
       // Créer les controls s'ils n'existent pas
       if (!globalCache.controls && globalCache.camera) {
-        globalCache.controls = new OrbitControls(globalCache.camera, globalCache.renderer.domElement);
-        globalCache.controls.enableDamping = true;
-        globalCache.controls.dampingFactor = 0.05;
+        globalCache.controls = new TrackballControls(globalCache.camera, globalCache.renderer.domElement);
+        
+        // === CONFIGURATION IDENTIQUE À L'EXEMPLE THREE.JS ORIGINAL ===
+        globalCache.controls.rotateSpeed = 0.5;
+        globalCache.controls.minDistance = 500;
+        globalCache.controls.maxDistance = 6000;
+        
+        console.log('✅ TrackballControls configurés selon l\'exemple Three.js');
       }
 
       console.log('✅ WoodMaterialSelector monté dans le DOM');
