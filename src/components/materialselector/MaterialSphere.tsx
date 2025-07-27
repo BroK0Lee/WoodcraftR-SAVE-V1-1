@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import * as TWEEN from '@tweenjs/tween.js';
+import TWEEN, { TweenGroup } from '@/lib/tween';
 
 // Types pour les matériaux
 export interface Material {
@@ -144,44 +144,91 @@ export class MaterialSphere {
   
   // Transform vers sphère (comme Three.js original)
   transformToSphere(): void {
+    console.log('🌐 [MaterialSphere] Transform vers sphère - objets:', this.objects.length, 'targets:', this.targets.sphere.length);
     this.transform(this.targets.sphere, 2000);
   }
 
   // Transform vers grille (comme Three.js original)
   transformToGrid(): void {
+    console.log('🔲 [MaterialSphere] Transform vers grille - objets:', this.objects.length, 'targets:', this.targets.grid.length);
     this.transform(this.targets.grid, 2000);
   }
 
   // Transform vers hélice (comme Three.js original)
   transformToHelix(): void {
+    console.log('🌀 [MaterialSphere] Transform vers hélice - objets:', this.objects.length, 'targets:', this.targets.helix.length);
     this.transform(this.targets.helix, 2000);
   }
 
   // Fonction de transformation (Exact copy du code Three.js original)
   private transform(targets: THREE.Object3D[], duration: number): void {
-    TWEEN.removeAll();
+    console.log(`🎬 [MaterialSphere] Transform début - suppression des anciens tweens`);
+    
+    // Vérifier le nombre de tweens avant suppression
+    const tweensBeforeRemove = TweenGroup.getAll().length;
+    console.log(`🎬 [MaterialSphere] Tweens avant suppression: ${tweensBeforeRemove}`);
+    
+    TweenGroup.removeAll();
+    
+    const tweensAfterRemove = TweenGroup.getAll().length;
+    console.log(`🎬 [MaterialSphere] Tweens après suppression: ${tweensAfterRemove}`);
 
+    console.log(`🎬 [MaterialSphere] Création de ${this.objects.length} nouvelles animations`);
     for (var i = 0; i < this.objects.length; i++) {
       var object = this.objects[i];
       var target = targets[i];
 
-      new TWEEN.Tween(object.position)
-        .to({ x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration)
-        .easing(TWEEN.Easing.Exponential.InOut)
-        .start();
+      console.log(`🎬 [MaterialSphere] Objet ${i}: position de (${object.position.x.toFixed(1)}, ${object.position.y.toFixed(1)}, ${object.position.z.toFixed(1)}) vers (${target.position.x.toFixed(1)}, ${target.position.y.toFixed(1)}, ${target.position.z.toFixed(1)})`);
 
-      new TWEEN.Tween(object.rotation)
+      // Créer et démarrer le tween de position avec le groupe explicite
+      const positionTween = new TWEEN.Tween(object.position, TweenGroup)
+        .to({ x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration)
+        .easing(TWEEN.Easing.Exponential.InOut);
+      
+      console.log(`🎬 [MaterialSphere] Position tween créé pour objet ${i}`);
+      positionTween.start();
+      console.log(`🎬 [MaterialSphere] Position tween démarré pour objet ${i}`);
+
+      // Créer et démarrer le tween de rotation avec le groupe explicite
+      const rotationTween = new TWEEN.Tween(object.rotation, TweenGroup)
         .to({ x: target.rotation.x, y: target.rotation.y, z: target.rotation.z }, Math.random() * duration + duration)
-        .easing(TWEEN.Easing.Exponential.InOut)
-        .start();
+        .easing(TWEEN.Easing.Exponential.InOut);
+      
+      console.log(`🎬 [MaterialSphere] Rotation tween créé pour objet ${i}`);
+      rotationTween.start();
+      console.log(`🎬 [MaterialSphere] Rotation tween démarré pour objet ${i}`);
     }
 
-    new TWEEN.Tween({})
-      .to({}, duration * 2)
-      .onUpdate(() => {
-        // Render callback sera géré par le composant parent
-      })
+    const activeTweens = TweenGroup.getAll().length;
+    console.log(`🎬 [MaterialSphere] ${activeTweens} tweens actifs après création`);
+    
+    // Test avancé: vérifier TWEEN en détail
+    console.log('🔍 [MaterialSphere] Test TWEEN avancé:');
+    console.log('🔍 [MaterialSphere] TweenGroup object:', TweenGroup);
+    console.log('🔍 [MaterialSphere] TweenGroup.getAll:', typeof TweenGroup.getAll);
+    console.log('🔍 [MaterialSphere] TweenGroup.update:', typeof TweenGroup.update);
+    console.log('🔍 [MaterialSphere] TweenGroup.removeAll:', typeof TweenGroup.removeAll);
+    
+    // Test simple avec callback pour voir si le tween fonctionne réellement
+    const testObject = { x: 0 };
+    console.log('🔍 [MaterialSphere] Objet test initial:', testObject);
+    
+    const testTween = new TWEEN.Tween(testObject, TweenGroup)
+      .to({ x: 1 }, 100)
+      .onStart(() => console.log('🔍 [MaterialSphere] Test tween STARTED'))
+      .onUpdate(() => console.log('🔍 [MaterialSphere] Test tween UPDATE:', testObject.x))
+      .onComplete(() => console.log('🔍 [MaterialSphere] Test tween COMPLETED'))
       .start();
+    
+    console.log('🔍 [MaterialSphere] Test tween créé:', testTween);
+    console.log('🔍 [MaterialSphere] Tweens après test simple:', TweenGroup.getAll().length);
+    
+    // Forcer un update immédiat pour voir ce qui se passe
+    setTimeout(() => {
+      console.log('🔍 [MaterialSphere] Update manuel après 50ms...');
+      TweenGroup.update();
+      console.log('🔍 [MaterialSphere] Objet test après update:', testObject);
+    }, 50);
   }
 
   // Mettre à jour les matériaux sans recréer la sphère

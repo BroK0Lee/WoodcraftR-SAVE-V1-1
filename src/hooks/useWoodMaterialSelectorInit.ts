@@ -3,6 +3,7 @@ import { useLoadingStore } from '@/store/loadingStore';
 import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
+import { TweenGroup } from '@/lib/tween';
 
 // Cache global pour les instances 3D
 interface WoodMaterialSelectorCache {
@@ -13,6 +14,7 @@ interface WoodMaterialSelectorCache {
   materialSphere: any | null; // Instance de MaterialSphere
   isInitialized: boolean;
   isSphereCreated: boolean;
+  animationId: number | null; // ID de l'animation pour pouvoir l'arrêter
 }
 
 let globalCache: WoodMaterialSelectorCache = {
@@ -22,8 +24,31 @@ let globalCache: WoodMaterialSelectorCache = {
   controls: null,
   materialSphere: null,
   isInitialized: false,
-  isSphereCreated: false
+  isSphereCreated: false,
+  animationId: null
 };
+
+// Boucle d'animation globale (identique à l'exemple Three.js original)
+function animate() {
+  globalCache.animationId = requestAnimationFrame(animate);
+  
+  // Mettre à jour TWEEN.js (CRUCIAL pour les transformations)
+  const tweenCount = TweenGroup.getAll().length;
+  if (tweenCount > 0) {
+    console.log(`🔄 [Global Animation] ${tweenCount} tweens actifs`);
+  }
+  TweenGroup.update();
+  
+  // Mettre à jour les controls si ils existent
+  if (globalCache.controls) {
+    globalCache.controls.update();
+  }
+  
+  // Render automatique si on a tout ce qu'il faut
+  if (globalCache.renderer && globalCache.scene && globalCache.camera) {
+    globalCache.renderer.render(globalCache.scene, globalCache.camera);
+  }
+}
 
 export function useWoodMaterialSelectorInit() {
   const [isInitialized, setIsInitialized] = useState(globalCache.isInitialized);
@@ -67,8 +92,13 @@ export function useWoodMaterialSelectorInit() {
           controls: null, // Les controls seront créés au montage
           materialSphere: null, // Sera créé au premier montage
           isInitialized: true,
-          isSphereCreated: false
+          isSphereCreated: false,
+          animationId: null
         };
+
+        // Démarrer la boucle d'animation globale (comme Three.js original)
+        console.log('🎬 Démarrage de la boucle d\'animation globale');
+        animate();
 
         console.log('✅ WoodMaterialSelector initialisé avec succès (cache)');
         
@@ -176,6 +206,11 @@ export function useWoodMaterialSelectorInit() {
       globalCache.materialSphere.destroy();
     }
     
+    // Arrêter la boucle d'animation
+    if (globalCache.animationId) {
+      cancelAnimationFrame(globalCache.animationId);
+    }
+    
     globalCache = {
       scene: null,
       renderer: null,
@@ -183,7 +218,8 @@ export function useWoodMaterialSelectorInit() {
       controls: null,
       materialSphere: null,
       isInitialized: false,
-      isSphereCreated: false
+      isSphereCreated: false,
+      animationId: null
     };
     
     setIsInitialized(false);

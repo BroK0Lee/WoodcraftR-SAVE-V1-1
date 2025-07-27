@@ -51,6 +51,7 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
         const loadedMaterials = await materialService.loadAllMaterials();
         setMaterials(loadedMaterials);
         console.log(`✅ [WoodMaterialSelector] ${loadedMaterials.length} matériaux chargés`);
+        console.log('📋 [WoodMaterialSelector] Matériaux:', loadedMaterials.map(m => m.name).join(', '));
       } catch (error) {
         console.error('❌ [WoodMaterialSelector] Erreur lors du chargement des matériaux:', error);
         // Fallback vers une liste vide
@@ -70,7 +71,10 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
     isInitialized,
     initializeSelector,
     cleanupSelector,
-    updateSelection
+    updateSelection,
+    transformToGrid,
+    transformToHelix,
+    transformToSphere
   } = useMaterialSelector({
     materials: materials.map(convertToMaterial),
     onMaterialSelect: (material: Material) => {
@@ -87,13 +91,13 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
     selectedMaterialId: selectedMaterial || undefined
   });
 
-  // Effet pour initialiser/nettoyer le sélecteur quand isInitialized change
+  // Effet pour initialiser/nettoyer le sélecteur quand isInitialized ET materials sont prêts
   useEffect(() => {
-    if (!mountRef.current || !isInitialized) {
+    if (!mountRef.current || !isInitialized || materials.length === 0 || isLoadingMaterials) {
       return;
     }
 
-    console.log('🎬 [WoodMaterialSelector] Montage du composant');
+    console.log('🎬 [WoodMaterialSelector] Montage du composant avec', materials.length, 'matériaux');
     
     const container = mountRef.current;
     let isMounted = true;
@@ -120,10 +124,20 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
       console.log('🧹 [WoodMaterialSelector] Démontage du composant');
       cleanupSelector(container);
     };
-    // Volontairement ne pas inclure initializeSelector et cleanupSelector 
-    // car ils sont maintenant stables avec useCallback
+    // Dépendances : isInitialized, materials et isLoadingMaterials
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized]);
+  }, [isInitialized, materials.length, isLoadingMaterials]);
+
+  // Effet pour déclencher l'animation vers la sphère quand tout est prêt
+  useEffect(() => {
+    if (isReady && materials.length > 0 && !isLoadingMaterials) {
+      console.log('🌐 [WoodMaterialSelector] Animation automatique vers la sphère');
+      // Petite pause pour laisser le rendu s'initialiser
+      setTimeout(() => {
+        transformToSphere?.();
+      }, 500);
+    }
+  }, [isReady, materials.length, isLoadingMaterials, transformToSphere]);
 
   // Effet pour mettre à jour la sélection
   useEffect(() => {
@@ -220,6 +234,42 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
           Cliquez sur un matériau pour le sélectionner. Utilisez la souris pour faire tourner la vue.
         </p>
       </div>
+
+      {/* Menu de transformation (Style Three.js Original) */}
+      {isReady && (
+        <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg">
+          <div className="flex flex-col space-y-2">
+            <p className="text-xs font-semibold text-gray-700 mb-2">Formations :</p>
+            <button
+              onClick={() => {
+                console.log('🌐 [WoodMaterialSelector] Clic bouton Sphère');
+                transformToSphere?.();
+              }}
+              className="px-3 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors"
+            >
+              🌐 Sphère
+            </button>
+            <button
+              onClick={() => {
+                console.log('🔲 [WoodMaterialSelector] Clic bouton Grille');
+                transformToGrid?.();
+              }}
+              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              🔲 Grille
+            </button>
+            <button
+              onClick={() => {
+                console.log('🌀 [WoodMaterialSelector] Clic bouton Hélice');
+                transformToHelix?.();
+              }}
+              className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            >
+              🌀 Hélice
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal de sélection de matériau */}
       <MaterialModal

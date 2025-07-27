@@ -2,7 +2,6 @@ import { useRef, useState, useCallback } from 'react';
 import { MaterialSphere, Material } from './MaterialSphere';
 import { MaterialInteractionManager } from './MaterialInteractionManager';
 import { useWoodMaterialSelectorInit } from '@/hooks/useWoodMaterialSelectorInit';
-import * as TWEEN from '@tweenjs/tween.js';
 
 interface UseMaterialSelectorConfig {
   materials: Material[];
@@ -42,7 +41,7 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
       }
 
       // Récupérer les instances du cache
-      const { scene, camera, controls, materialSphere, isSphereCreated } = getCachedInstances();
+      const { scene, camera, materialSphere, isSphereCreated } = getCachedInstances();
       if (!scene || !camera) {
         throw new Error('Instances du cache invalides');
       }
@@ -52,10 +51,9 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
         console.log('♻️ [useMaterialSelector] Réutilisation de la sphère mise en cache');
         sphereRef.current = materialSphere;
         
-        // Mettre à jour seulement les matériaux si nécessaire
-        if (sphereRef.current) {
-          sphereRef.current.updateMaterials(materials);
-        }
+        // Ne PAS mettre à jour les matériaux si la sphère existe déjà
+        // pour préserver l'état des transformations
+        console.log('✅ [useMaterialSelector] Sphère réutilisée sans modification');
       } else {
         console.log('🆕 [useMaterialSelector] Création d\'une nouvelle sphère');
         // Créer le gestionnaire de sphère
@@ -91,25 +89,8 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
         sphereRef.current.transformToSphere();
       }
 
-      // Configurer l'animation continue
-      let animationId: number;
-      const animate = () => {
-        animationId = requestAnimationFrame(animate);
-        
-        // Mettre à jour TWEEN.js (indispensable pour les animations Three.js)
-        TWEEN.update();
-        
-        if (controls) {
-          controls.update();
-        }
-        if (renderer && scene && camera) {
-          renderer.render(scene, camera);
-        }
-      };
-      animationId = requestAnimationFrame(animate);
-
-      // Stocker l'ID d'animation pour le cleanup
-      (container as any)._animationId = animationId;
+      // La boucle d'animation est maintenant gérée globalement dans useWoodMaterialSelectorInit
+      console.log('✅ [useMaterialSelector] Animation globale déjà active');
 
       setIsReady(true);
       console.log('✅ [useMaterialSelector] Sélecteur initialisé avec succès');
@@ -175,22 +156,34 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
   
   // Transformer vers une grille
   const transformToGrid = useCallback((): void => {
+    console.log('🔲 [useMaterialSelector] Transformation vers grille demandée');
     if (sphereRef.current) {
+      console.log('✅ [useMaterialSelector] Sphère trouvée, lancement transformation grille');
       sphereRef.current.transformToGrid();
+    } else {
+      console.warn('⚠️ [useMaterialSelector] Aucune sphère disponible pour transformation grille');
     }
   }, []);
   
   // Transformer vers une hélice
   const transformToHelix = useCallback((): void => {
+    console.log('🌀 [useMaterialSelector] Transformation vers hélice demandée');
     if (sphereRef.current) {
+      console.log('✅ [useMaterialSelector] Sphère trouvée, lancement transformation hélice');
       sphereRef.current.transformToHelix();
+    } else {
+      console.warn('⚠️ [useMaterialSelector] Aucune sphère disponible pour transformation hélice');
     }
   }, []);
   
   // Retourner vers la sphère
   const transformToSphere = useCallback((): void => {
+    console.log('🌐 [useMaterialSelector] Transformation vers sphère demandée');
     if (sphereRef.current) {
+      console.log('✅ [useMaterialSelector] Sphère trouvée, lancement transformation sphère');
       sphereRef.current.transformToSphere();
+    } else {
+      console.warn('⚠️ [useMaterialSelector] Aucune sphère disponible pour transformation sphère');
     }
   }, []);
 
