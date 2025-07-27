@@ -47,8 +47,8 @@ export class MaterialSphere {
       // Créer l'élément DOM pour la carte matériau
       const element = document.createElement('div');
       element.className = 'element';
-      element.style.width = '140px';
-      element.style.height = '170px';
+      element.style.width = '180px'; // Agrandi de 140px à 180px pour une meilleure visibilité
+      element.style.height = '220px'; // Agrandi de 170px à 220px pour une meilleure visibilité
       element.style.backgroundColor = 'rgba(255,255,255,0.95)';
       element.style.border = '2px solid rgba(0,127,127,' + (Math.random() * 0.5 + 0.25) + ')';
       element.style.borderRadius = '12px';
@@ -58,18 +58,18 @@ export class MaterialSphere {
 
       // Créer le contenu HTML (inspiré du style Three.js mais adapté aux matériaux)
       element.innerHTML = `
-        <div style="width: 100%; height: 120px; overflow: hidden;">
+        <div style="width: 100%; height: 150px; overflow: hidden;"> <!-- Agrandi de 120px à 150px -->
           <img 
             src="${material.image}"
             alt="${material.name}"
             style="width: 100%; height: 100%; object-fit: cover;"
           />
         </div>
-        <div style="padding: 8px; text-align: center;">
-          <div style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px;">
+        <div style="padding: 10px; text-align: center;"> <!-- Agrandi le padding de 8px à 10px -->
+          <div style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 4px;"> <!-- Agrandi de 14px à 16px -->
             ${material.name}
           </div>
-          <div style="font-size: 12px; color: #d97706;">
+          <div style="font-size: 13px; color: #d97706;"> <!-- Agrandi de 12px à 13px -->
             ${material.price ? `${material.price}€/m²` : 'Prix sur demande'}
           </div>
         </div>

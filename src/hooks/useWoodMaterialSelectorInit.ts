@@ -86,7 +86,7 @@ export function useWoodMaterialSelectorInit() {
         
         // === CAMÉRA IDENTIQUE À L'EXEMPLE THREE.JS ORIGINAL ===
         const camera = new THREE.PerspectiveCamera(40, 1, 1, 10000);
-        camera.position.z = 3000; // Position exacte de l'exemple Three.js
+        camera.position.z = 2750; // Rapproché de 3000 à 2000 pour une meilleure vision des cartes
         
         const renderer = new CSS3DRenderer();
         renderer.setSize(800, 600);           // Taille par défaut, sera ajustée au montage
@@ -151,8 +151,8 @@ export function useWoodMaterialSelectorInit() {
         
         // === CONFIGURATION IDENTIQUE À L'EXEMPLE THREE.JS ORIGINAL ===
         globalCache.controls.rotateSpeed = 3.0; // Réduit de 5.0 à 3.0 pour une rotation plus douce
-        globalCache.controls.minDistance = 500;
-        globalCache.controls.maxDistance = 6000;
+        globalCache.controls.minDistance = 300; // Réduit de 500 à 300 pour permettre un zoom plus proche
+        globalCache.controls.maxDistance = 4000; // Réduit de 6000 à 4000 pour rester dans une plage raisonnable
         
         // Désactiver le panning (déplacement latéral)
         globalCache.controls.noPan = true;
