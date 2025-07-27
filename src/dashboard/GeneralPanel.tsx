@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { usePanelStore } from "@/store/panelStore";
-import { useMaterialStore } from "@/store/materialStore";
 import { PANEL_LIMITS } from "@/models/Panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -9,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
-  RotateCcw,
-  TreePine
+  RotateCcw
 } from 'lucide-react';
 
 export function GeneralPanel() {
@@ -21,8 +19,6 @@ export function GeneralPanel() {
     setThickness,
     resetDimensions,
   } = usePanelStore();
-
-  const { selectedMaterial } = useMaterialStore();
 
   // Valeurs locales pour permettre la saisie libre avant validation
   const [lengthInput, setLengthInput] = useState(dimensions.length.toString());
@@ -197,18 +193,6 @@ export function GeneralPanel() {
               {(dimensions.length * dimensions.width * dimensions.thickness * 0.0007).toFixed(1)} kg
             </Badge>
           </div>
-          {selectedMaterial && (
-            <>
-              <Separator />
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Matière:</span>
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <TreePine className="w-3 h-3" />
-                  {selectedMaterial.name}
-                </Badge>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
     </div>
