@@ -1,8 +1,8 @@
 import React from 'react';
-import { WoodMaterial } from '@/services/woodMaterialService';
+import { GlobalWoodMaterial } from '@/store/globalMaterialStore';
 
 interface MaterialCardProps {
-  material: WoodMaterial;
+  material: GlobalWoodMaterial;
   onSelect: () => void;
   isSelected: boolean;
 }
@@ -28,7 +28,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, onSelect, isSelec
     >
       <div className="w-full h-24 overflow-hidden rounded-t-lg">
         <img 
-          src={material.baseColorImage}
+          src={material.image}
           alt={material.displayName}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
           style={{ pointerEvents: 'none' }}

@@ -1,18 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useMaterialSelector } from './useMaterialSelector';
 import MaterialModal from './MaterialModal';
-import { WoodMaterialService, WoodMaterial } from './WoodMaterialService';
+import { useGlobalMaterialStore, GlobalWoodMaterial } from '@/store/globalMaterialStore';
 
-// Instance du service
-const materialService = WoodMaterialService.getInstance();
-
-// Fonction pour convertir WoodMaterial vers Material (compatible MaterialSphere)
-const convertToMaterial = (woodMaterial: WoodMaterial): Material => ({
-  id: woodMaterial.id,
-  name: woodMaterial.name,
-  image: woodMaterial.image,
-  price: woodMaterial.price,
-  description: woodMaterial.description
+// Fonction pour convertir GlobalWoodMaterial vers Material (compatible MaterialSphere)
+const convertToMaterial = (globalMaterial: GlobalWoodMaterial): Material => ({
+  id: globalMaterial.id,
+  name: globalMaterial.displayName,
+  image: globalMaterial.image,
+  price: globalMaterial.price,
+  description: globalMaterial.description
 });
 
 interface Material {
@@ -24,7 +21,7 @@ interface Material {
 }
 
 interface WoodMaterialSelectorProps {
-  onMaterialSelect?: (material: WoodMaterial) => void;
+  onMaterialSelect?: (material: GlobalWoodMaterial) => void;
   selectedMaterialId?: string;
 }
 
@@ -34,35 +31,26 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
 }) => {
   // État local
   const [selectedMaterial, setSelectedMaterial] = useState<string | null>(selectedMaterialId || null);
-  const [modalMaterial, setModalMaterial] = useState<WoodMaterial | null>(null);
+  const [modalMaterial, setModalMaterial] = useState<GlobalWoodMaterial | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [materials, setMaterials] = useState<WoodMaterial[]>([]);
-  const [isLoadingMaterials, setIsLoadingMaterials] = useState(true);
   
   // Référence au conteneur
   const mountRef = useRef<HTMLDivElement>(null);
 
-  // Chargement des matériaux au montage
-  useEffect(() => {
-    const loadMaterials = async () => {
-      try {
-        console.log('🌳 [WoodMaterialSelector] Chargement des matériaux...');
-        setIsLoadingMaterials(true);
-        const loadedMaterials = await materialService.loadAllMaterials();
-        setMaterials(loadedMaterials);
-        console.log(`✅ [WoodMaterialSelector] ${loadedMaterials.length} matériaux chargés`);
-        console.log('📋 [WoodMaterialSelector] Matériaux:', loadedMaterials.map(m => m.name).join(', '));
-      } catch (error) {
-        console.error('❌ [WoodMaterialSelector] Erreur lors du chargement des matériaux:', error);
-        // Fallback vers une liste vide
-        setMaterials([]);
-      } finally {
-        setIsLoadingMaterials(false);
-      }
-    };
+  // Utiliser le store global pour les matériaux
+  const { materials, isLoaded, isLoading, error: materialError } = useGlobalMaterialStore();
 
-    loadMaterials();
-  }, []);
+  // Chargement des matériaux depuis le cache global
+  useEffect(() => {
+    if (isLoaded && materials.length > 0) {
+      console.log(`✅ [WoodMaterialSelector] ${materials.length} matériaux disponibles depuis le cache global`);
+      console.log('📋 [WoodMaterialSelector] Matériaux:', materials.map(m => m.displayName).join(', '));
+    } else if (isLoading) {
+      console.log('⏳ [WoodMaterialSelector] Matériaux en cours de chargement...');
+    } else if (materialError) {
+      console.error('❌ [WoodMaterialSelector] Erreur de chargement des matériaux:', materialError);
+    }
+  }, [materials, isLoaded, isLoading, materialError]);
   
   // Hook personnalisé pour la gestion du sélecteur
   const {
@@ -93,7 +81,7 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
 
   // Effet pour initialiser/nettoyer le sélecteur quand isInitialized ET materials sont prêts
   useEffect(() => {
-    if (!mountRef.current || !isInitialized || materials.length === 0 || isLoadingMaterials) {
+    if (!mountRef.current || !isInitialized || materials.length === 0 || isLoading) {
       return;
     }
 
@@ -126,18 +114,18 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
     };
     // Dépendances : isInitialized, materials et isLoadingMaterials
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized, materials.length, isLoadingMaterials]);
+  }, [isInitialized, materials.length, isLoading]);
 
   // Effet pour déclencher l'animation vers la sphère quand tout est prêt
   useEffect(() => {
-    if (isReady && materials.length > 0 && !isLoadingMaterials) {
+    if (isReady && materials.length > 0 && !isLoading) {
       console.log('🌐 [WoodMaterialSelector] Animation automatique vers la sphère');
       // Petite pause pour laisser le rendu s'initialiser
       setTimeout(() => {
         transformToSphere?.();
       }, 500);
     }
-  }, [isReady, materials.length, isLoadingMaterials, transformToSphere]);
+  }, [isReady, materials.length, isLoading, transformToSphere]);
 
   // Effet pour mettre à jour la sélection
   useEffect(() => {
@@ -199,7 +187,7 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
       />
 
       {/* Indicateurs d'état */}
-      {isLoadingMaterials && (
+      {isLoading && (
         <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg z-10">
           <div className="flex items-center space-x-2">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
@@ -207,7 +195,7 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
           </div>
         </div>
       )}
-      {!isReady && isInitialized && !isLoadingMaterials && (
+      {!isReady && isInitialized && !isLoading && (
         <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
           <div className="flex items-center space-x-2">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-600"></div>

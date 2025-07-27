@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
 import { TweenGroup } from '@/lib/tween';
+import { materialPreloader } from '@/services/materialPreloader';
 
 // Cache global pour les instances 3D
 interface WoodMaterialSelectorCache {
@@ -73,6 +74,12 @@ export function useWoodMaterialSelectorInit() {
 
         initializationInProgress.current = true;
         console.log('🎨 Initialisation WoodMaterialSelector...');
+
+        // Précharger les matériaux en arrière-plan
+        materialPreloader.preloadMaterials().catch(error => {
+          console.warn('⚠️ Erreur lors du préchargement des matériaux:', error);
+          // Continuer l'initialisation même si le préchargement échoue
+        });
 
         // Créer les instances 3D de base (sans montage DOM)
         const scene = new THREE.Scene();
