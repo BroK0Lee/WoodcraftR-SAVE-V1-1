@@ -35,7 +35,7 @@ interface MaterialModalProps {
   onConfirm: (material: Material) => void;
 }
 
-// Données détaillées pour chaque matériau
+// Données détaillées pour chaque matière
 const materialDetails: Record<string, MaterialDetails> = {
   oak: {
     images: [
@@ -322,7 +322,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({ material, isOpen, onClose
             </div>
           </div>
 
-          {/* Détails du matériau */}
+          {/* Détails de la matière */}
           <div className="space-y-6">
             {/* Description */}
             <div>
@@ -404,7 +404,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({ material, isOpen, onClose
             className="bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2"
           >
             <Check className="w-4 h-4" />
-            Sélectionner ce matériau
+            Sélectionner cette matière
           </Button>
         </DialogFooter>
       </DialogContent>

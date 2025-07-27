@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GeneralPanel } from './GeneralPanel';
@@ -6,6 +5,7 @@ import { CuttingPanel } from './CuttingPanel';
 import { EngravingPanel } from './EngravingPanel';
 import { FinishingPanel } from './FinishingPanel';
 import { MaterialPanel } from './MaterialPanel';
+import { useDashboardStore } from '@/store/dashboardStore';
 import { 
   Ruler, 
   Zap, 
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 export function Sidebar() {
-  const [activeTab, setActiveTab] = useState('material');
+  const { activeTab, setActiveTab } = useDashboardStore();
 
   return (
     <div className="h-full bg-card/30 border-r">
@@ -25,11 +25,11 @@ export function Sidebar() {
       </div>
 
       <ScrollArea className="h-[calc(100%-80px)]">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
           <TabsList className="grid w-full grid-cols-3 gap-1 m-4">
             <TabsTrigger value="material" className="flex items-center gap-1 text-xs">
               <TreePine className="h-3 w-3" />
-              Matériau
+              Matière
             </TabsTrigger>
             <TabsTrigger value="general" className="flex items-center gap-1 text-xs">
               <Ruler className="h-3 w-3" />

@@ -84,7 +84,7 @@ export default function AxesHelper({ scale }: AxesHelperProps) {
       scene.remove(group)
       group.clear()
       
-      // Nettoyer les géométries et matériaux personnalisés
+      // Nettoyer les géométries et matières personnalisés
       axisX.geometry.dispose()
       axisY.geometry.dispose() 
       axisZ.geometry.dispose()

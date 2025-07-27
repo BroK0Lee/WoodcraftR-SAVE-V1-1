@@ -2,17 +2,17 @@
 
 ## 📋 **Résumé des modifications**
 
-La sélection de matériaux a été **restructurée** pour mieux s'intégrer dans l'architecture de l'application, créant un panneau dédié complet.
+La sélection de matières a été **restructurée** pour mieux s'intégrer dans l'architecture de l'application, créant un panneau dédié complet.
 
 ## ✅ **Modifications réalisées**
 
 ### **1. Création du MaterialPanel.tsx**
 - **📁 Emplacement** : `/src/dashboard/MaterialPanel.tsx`
-- **🎯 Fonction** : Panneau dédié à la sélection et gestion des matériaux
+- **🎯 Fonction** : Panneau dédié à la sélection et gestion des matières
 - **🔧 Fonctionnalités** :
-  - Sélection rapide avec 6 matériaux populaires
-  - Sélecteur 3D complet (12 matériaux)
-  - Affichage détaillé du matériau sélectionné
+  - Sélection rapide avec 6 matières populaires
+  - Sélecteur 3D complet (12 matières)
+  - Affichage détaillé de la matière sélectionnée
   - Caractéristiques techniques complètes
   - Applications recommandées
   - Description détaillée

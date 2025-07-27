@@ -1,17 +1,15 @@
 import { useMaterialStore, Material } from "@/store/materialStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   TreePine,
-  Palette,
   Info,
   Star,
   Hammer,
   Shield
 } from 'lucide-react';
 
-// Données des matériaux (importées du WoodMaterialSelector)
+// Données des matières (importées du WoodMaterialSelector)
 const materials: Material[] = [
   { id: 'oak', name: 'Chêne', image: 'https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg?auto=compress&cs=tinysrgb&w=120&h=100&fit=crop' },
   { id: 'walnut', name: 'Noyer', image: 'https://images.pexels.com/photos/1108573/pexels-photo-1108573.jpeg?auto=compress&cs=tinysrgb&w=120&h=100&fit=crop' },
@@ -103,28 +101,23 @@ const materialInfo: Record<string, {
 export function MaterialPanel() {
   const { 
     selectedMaterial, 
-    setSelectedMaterial,
-    setMaterialSelectorOpen 
+    setSelectedMaterial
   } = useMaterialStore();
 
   const handleMaterialSelect = (material: Material) => {
     setSelectedMaterial(material);
   };
 
-  const openMaterialSelector = () => {
-    setMaterialSelectorOpen(true);
-  };
-
   const selectedInfo = selectedMaterial ? materialInfo[selectedMaterial.id] : null;
 
   return (
     <div className="p-4 space-y-4 h-full overflow-y-auto">
-      {/* Sélection du matériau */}
+      {/* Sélection de la matière */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <TreePine className="w-4 h-4" />
-            Sélection de Matériau
+            Sélection de Matière
           </CardTitle>
           <CardDescription className="text-xs">
             Choisissez le type de bois pour votre panneau
@@ -133,7 +126,7 @@ export function MaterialPanel() {
         <CardContent className="space-y-3">
           {selectedMaterial ? (
             <div className="space-y-3">
-              {/* Matériau sélectionné */}
+              {/* Matière sélectionnée */}
               <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
                 <div className="flex items-center gap-3">
                   <img 
@@ -143,18 +136,9 @@ export function MaterialPanel() {
                   />
                   <div>
                     <p className="font-medium text-sm">{selectedMaterial.name}</p>
-                    <p className="text-xs text-amber-700">Matériau sélectionné</p>
+                    <p className="text-xs text-amber-700">Matière sélectionnée</p>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={openMaterialSelector}
-                  className="flex items-center gap-1"
-                >
-                  <Palette className="w-3 h-3" />
-                  Changer
-                </Button>
               </div>
               
               {/* Sélecteur rapide */}
@@ -180,14 +164,9 @@ export function MaterialPanel() {
                     </button>
                   ))}
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={openMaterialSelector}
-                  className="w-full text-xs"
-                >
-                  Voir tous les matériaux (12)
-                </Button>
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  Pour voir toutes les matières (12), passez à l'onglet Matière dans la vue principale.
+                </p>
               </div>
             </div>
           ) : (
@@ -195,20 +174,15 @@ export function MaterialPanel() {
               {/* Pas de sélection */}
               <div className="text-center p-4 border-2 border-dashed border-gray-200 rounded-lg">
                 <TreePine className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-2">Aucun matériau sélectionné</p>
-                <Button 
-                  onClick={openMaterialSelector}
-                  className="bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 mx-auto"
-                  size="sm"
-                >
-                  <TreePine className="w-4 h-4" />
-                  Choisir un matériau
-                </Button>
+                <p className="text-sm text-gray-600 mb-2">Aucune matière sélectionnée</p>
+                <p className="text-xs text-gray-500">
+                  Sélectionnez une matière ci-dessous ou utilisez la vue 3D principale.
+                </p>
               </div>
               
               {/* Sélecteur rapide */}
               <div className="space-y-2">
-                <p className="text-xs font-medium text-gray-700">Matériaux populaires :</p>
+                <p className="text-xs font-medium text-gray-700">Matières populaires :</p>
                 <div className="grid grid-cols-2 gap-2">
                   {materials.slice(0, 4).map((material) => (
                     <button
@@ -231,7 +205,7 @@ export function MaterialPanel() {
         </CardContent>
       </Card>
 
-      {/* Informations détaillées du matériau sélectionné */}
+      {/* Informations détaillées de la matière sélectionnée */}
       {selectedMaterial && selectedInfo && (
         <>
           <Card>
@@ -300,7 +274,7 @@ export function MaterialPanel() {
           <div className="flex justify-center">
             <Badge variant="secondary" className="flex items-center gap-1">
               <Shield className="w-3 h-3" />
-              Matériau validé pour découpe
+              Matière validée pour découpe
             </Badge>
           </div>
         </>

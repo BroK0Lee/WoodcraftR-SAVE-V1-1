@@ -443,7 +443,7 @@ interface OccWorkerAPI {
 2. **3D** : Découpes en biais, chanfreins, congés
 3. **Import** : DXF/SVG pour profils personnalisés
 4. **Optimisation** : Algorithmes de placement automatique
-5. **Simulation** : Rendu réaliste, ombres, matériaux
+5. **Simulation** : Rendu réaliste, ombres, matières
 
 ---
 

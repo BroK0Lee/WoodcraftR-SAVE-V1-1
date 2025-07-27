@@ -21,14 +21,10 @@ export interface MaterialDetails {
 
 interface MaterialStore {
   selectedMaterial: Material | null;
-  isMaterialSelectorOpen: boolean;
   setSelectedMaterial: (material: Material | null) => void;
-  setMaterialSelectorOpen: (open: boolean) => void;
 }
 
 export const useMaterialStore = create<MaterialStore>((set) => ({
   selectedMaterial: null,
-  isMaterialSelectorOpen: false,
   setSelectedMaterial: (material) => set({ selectedMaterial: material }),
-  setMaterialSelectorOpen: (open) => set({ isMaterialSelectorOpen: open }),
 }));

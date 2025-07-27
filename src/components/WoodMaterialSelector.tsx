@@ -356,7 +356,7 @@ const WoodMaterialSelector: React.FC<WoodMaterialSelectorProps> = ({
       <div className="absolute top-4 left-4 z-10">
         <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
           <h2 className="text-lg font-bold text-gray-800 mb-1">
-            Sélecteur de Matériaux
+            Sélecteur de Matières
           </h2>
           <p className="text-xs text-gray-600">
             {isAnimating 

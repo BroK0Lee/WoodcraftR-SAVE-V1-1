@@ -201,7 +201,7 @@ export function GeneralPanel() {
             <>
               <Separator />
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Matériau:</span>
+                <span className="text-muted-foreground">Matière:</span>
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <TreePine className="w-3 h-3" />
                   {selectedMaterial.name}
