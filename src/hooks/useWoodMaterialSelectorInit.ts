@@ -143,11 +143,14 @@ export function useWoodMaterialSelectorInit() {
         globalCache.controls = new TrackballControls(globalCache.camera, globalCache.renderer.domElement);
         
         // === CONFIGURATION IDENTIQUE À L'EXEMPLE THREE.JS ORIGINAL ===
-        globalCache.controls.rotateSpeed = 0.5;
+        globalCache.controls.rotateSpeed = 10.0; // Augmenté de 0.5 à 10.0 pour plus de réactivité
         globalCache.controls.minDistance = 500;
         globalCache.controls.maxDistance = 6000;
         
-        console.log('✅ TrackballControls configurés selon l\'exemple Three.js');
+        // Désactiver le panning (déplacement latéral)
+        globalCache.controls.noPan = true;
+        
+        console.log('✅ TrackballControls configurés selon l\'exemple Three.js (panning désactivé)');
       }
 
       console.log('✅ WoodMaterialSelector monté dans le DOM');
