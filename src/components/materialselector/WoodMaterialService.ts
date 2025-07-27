@@ -144,7 +144,6 @@ export class WoodMaterialService {
     // Expressions régulières pour extraire les données du markdown
     const densityMatch = content.match(/(?:Densité.*?(\d+)\s*kg\/m³|(\d+)\s*kg\/m³)/i);
     const hardnessMatch = content.match(/(?:Janka.*?(\d+)\s*N|Brinell\s*(\d+))/i);
-    const durabiliteMatch = content.match(/duramen\s+([^,\n]+)/i);
     const couleurMatch = content.match(/Couleur dominante\s*:\s*([^\n\[]+)/i);
     const grainMatch = content.match(/grain\s+([^,\n]+)/i);
     const classementMatch = content.match(/Classement pratique\s*:\s*\*\*([^*]+)\*\*/i);
@@ -173,7 +172,6 @@ export class WoodMaterialService {
     // Extraction des autres informations
     const color = couleurMatch ? couleurMatch[1].trim() : 'Naturel';
     const grain = grainMatch ? grainMatch[1].trim() : 'Moyen';
-    const durability = durabiliteMatch ? durabiliteMatch[1].trim() : 'durable';
 
     return {
       hardness: {
