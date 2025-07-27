@@ -2,12 +2,12 @@ import { create } from 'zustand';
 
 interface LoadingState {
   isAppLoading: boolean;
-  isOpenCascadeLoaded: boolean;
+  isWorkerReady: boolean; // OpenCascade worker
   isMaterialsLoaded: boolean;
   isComponentsLoaded: boolean;
   isWoodMaterialSelectorLoaded: boolean;
   setAppLoading: (loading: boolean) => void;
-  setOpenCascadeLoaded: (loaded: boolean) => void;
+  setWorkerReady: (ready: boolean) => void;
   setMaterialsLoaded: (loaded: boolean) => void;
   setComponentsLoaded: (loaded: boolean) => void;
   setWoodMaterialSelectorLoaded: (loaded: boolean) => void;
@@ -16,13 +16,13 @@ interface LoadingState {
 
 export const useLoadingStore = create<LoadingState>((set, get) => ({
   isAppLoading: true,
-  isOpenCascadeLoaded: false,
+  isWorkerReady: false,
   isMaterialsLoaded: false,
   isComponentsLoaded: false,
   isWoodMaterialSelectorLoaded: false,
   
   setAppLoading: (loading) => set({ isAppLoading: loading }),
-  setOpenCascadeLoaded: (loaded) => set({ isOpenCascadeLoaded: loaded }),
+  setWorkerReady: (ready) => set({ isWorkerReady: ready }),
   setMaterialsLoaded: (loaded) => set({ isMaterialsLoaded: loaded }),
   setComponentsLoaded: (loaded) => set({ isComponentsLoaded: loaded }),
   setWoodMaterialSelectorLoaded: (loaded) => set({ isWoodMaterialSelectorLoaded: loaded }),
@@ -31,35 +31,28 @@ export const useLoadingStore = create<LoadingState>((set, get) => ({
     const state = get();
     
     try {
-      // Étape 1: Initialiser OpenCascade
-      if (!state.isOpenCascadeLoaded) {
-        // L'initialisation d'OpenCascade sera gérée par initOcc.ts
-        await new Promise(resolve => setTimeout(resolve, 100)); // Simulation
-        set({ isOpenCascadeLoaded: true });
-      }
+      // Le worker OpenCascade sera géré par ContentViewer
+      // Ici on s'occupe juste des autres composants
       
-      // Étape 2: Charger les matières
+      // Étape 1: Charger les matières
       if (!state.isMaterialsLoaded) {
         // Précharger les images des matières si nécessaire
         await new Promise(resolve => setTimeout(resolve, 100));
         set({ isMaterialsLoaded: true });
       }
       
-      // Étape 3: Initialiser les composants
+      // Étape 2: Initialiser les composants
       if (!state.isComponentsLoaded) {
         await new Promise(resolve => setTimeout(resolve, 100));
         set({ isComponentsLoaded: true });
       }
       
-      // Finalisation
-      set({ isAppLoading: false });
+      // Pas de finalisation ici - on attend que le worker et WoodMaterialSelector soient prêts
       
     } catch (error) {
       console.error('Erreur lors de l\'initialisation de l\'application:', error);
       // En cas d'erreur, on continue quand même
       set({ 
-        isAppLoading: false,
-        isOpenCascadeLoaded: true,
         isMaterialsLoaded: true,
         isComponentsLoaded: true
       });

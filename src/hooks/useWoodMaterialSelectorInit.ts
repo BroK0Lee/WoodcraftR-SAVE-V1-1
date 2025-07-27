@@ -10,7 +10,9 @@ interface WoodMaterialSelectorCache {
   renderer: CSS3DRenderer | null;
   camera: THREE.PerspectiveCamera | null;
   controls: OrbitControls | null;
+  materialSphere: any | null; // Instance de MaterialSphere
   isInitialized: boolean;
+  isSphereCreated: boolean;
 }
 
 let globalCache: WoodMaterialSelectorCache = {
@@ -18,7 +20,9 @@ let globalCache: WoodMaterialSelectorCache = {
   renderer: null,
   camera: null,
   controls: null,
-  isInitialized: false
+  materialSphere: null,
+  isInitialized: false,
+  isSphereCreated: false
 };
 
 export function useWoodMaterialSelectorInit() {
@@ -60,7 +64,9 @@ export function useWoodMaterialSelectorInit() {
           renderer,
           camera,
           controls: null, // Les controls seront créés au montage
-          isInitialized: true
+          materialSphere: null, // Sera créé au premier montage
+          isInitialized: true,
+          isSphereCreated: false
         };
 
         console.log('✅ WoodMaterialSelector initialisé avec succès (cache)');
@@ -137,8 +143,17 @@ export function useWoodMaterialSelectorInit() {
       scene: globalCache.scene,
       renderer: globalCache.renderer,
       camera: globalCache.camera,
-      controls: globalCache.controls
+      controls: globalCache.controls,
+      materialSphere: globalCache.materialSphere,
+      isSphereCreated: globalCache.isSphereCreated
     };
+  };
+
+  // Méthode pour sauvegarder la sphère dans le cache
+  const setCachedSphere = (materialSphere: any) => {
+    globalCache.materialSphere = materialSphere;
+    globalCache.isSphereCreated = true;
+    console.log('💾 [useWoodMaterialSelectorInit] Sphère sauvegardée dans le cache');
   };
 
   // Nettoyage complet du cache (pour les tests ou réinitialisations)
@@ -150,12 +165,19 @@ export function useWoodMaterialSelectorInit() {
       globalCache.renderer.domElement.remove();
     }
     
+    // Nettoyer la sphère si elle existe
+    if (globalCache.materialSphere) {
+      globalCache.materialSphere.destroy();
+    }
+    
     globalCache = {
       scene: null,
       renderer: null,
       camera: null,
       controls: null,
-      isInitialized: false
+      materialSphere: null,
+      isInitialized: false,
+      isSphereCreated: false
     };
     
     setIsInitialized(false);
@@ -168,6 +190,7 @@ export function useWoodMaterialSelectorInit() {
     mountRenderer,
     unmountRenderer,
     getCachedInstances,
+    setCachedSphere,
     clearCache
   };
 }

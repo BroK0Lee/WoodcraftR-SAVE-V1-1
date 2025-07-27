@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { TreePine, Loader2, CheckCircle } from 'lucide-react';
-import { useOpenCascadeInit } from '@/hooks/useOpenCascadeInit';
 import { useLoadingStore } from '@/store/loadingStore';
 
 interface LoadingStep {
@@ -22,15 +21,14 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<LoadingStep[]>([
-    { id: 'opencascade', label: 'Initialisation OpenCascade...', status: 'pending' },
+    { id: 'worker', label: 'Initialisation OpenCascade Worker...', status: 'pending' },
     { id: 'materials', label: 'Chargement des matières...', status: 'pending' },
     { id: 'components', label: 'Préparation des composants...', status: 'pending' },
-    { id: 'ready', label: 'Application prête !', status: 'pending' }
+    { id: 'selector', label: 'Initialisation WoodMaterialSelector...', status: 'pending' }
   ]);
 
-  // Initialisation d'OpenCascade
-  useOpenCascadeInit(); // Lance l'initialisation
-  const { isOpenCascadeLoaded } = useLoadingStore();
+  // Store state pour suivre l'avancement du chargement
+  const { initializeApp } = useLoadingStore();
 
   useEffect(() => {
     // Animation d'entrée du logo
@@ -74,17 +72,23 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   }, []);
 
   const startLoadingProcess = async () => {
-    // Étape 1: Attendre OpenCascade
+    // Lancer l'initialisation de l'app (matières, composants)
+    initializeApp();
+    
+    // Étape 1: Attendre OpenCascade Worker
     setCurrentStep(0);
     setSteps(prev => prev.map((step, i) => ({
       ...step,
       status: i === 0 ? 'loading' : 'pending'
     })));
 
-    // Attendre que OpenCascade soit chargé
-    while (!isOpenCascadeLoaded) {
+    // Attendre que le worker OpenCascade soit prêt
+    console.log('⏳ [MainLoadingPage] En attente du worker OpenCascade...');
+    while (!useLoadingStore.getState().isWorkerReady) {
+      console.log('⏳ [MainLoadingPage] Worker pas encore prêt, attente... isWorkerReady:', useLoadingStore.getState().isWorkerReady);
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+    console.log('✅ [MainLoadingPage] Worker OpenCascade prêt !');
 
     setSteps(prev => prev.map((step, i) => ({
       ...step,
@@ -93,45 +97,65 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
     // Étape 2: Matières
     setCurrentStep(1);
+    console.log('⏳ [MainLoadingPage] Étape 2: Chargement matières...');
     setSteps(prev => prev.map((step, i) => ({
       ...step,
       status: i === 1 ? 'loading' : i < 1 ? 'completed' : 'pending'
     })));
 
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Attendre que les matières soient chargées
+    while (!useLoadingStore.getState().isMaterialsLoaded) {
+      console.log('⏳ [MainLoadingPage] Matières pas encore chargées, attente... isMaterialsLoaded:', useLoadingStore.getState().isMaterialsLoaded);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    console.log('✅ [MainLoadingPage] Matières chargées !');
     
     setSteps(prev => prev.map((step, i) => ({
       ...step,
       status: i <= 1 ? 'completed' : 'pending'
     })));
 
-    // Étape 3: Composants
+    // Étape 3: Composants  
     setCurrentStep(2);
+    console.log('⏳ [MainLoadingPage] Étape 3: Chargement composants...');
     setSteps(prev => prev.map((step, i) => ({
       ...step,
       status: i === 2 ? 'loading' : i < 2 ? 'completed' : 'pending'
     })));
 
-    await new Promise(resolve => setTimeout(resolve, 600));
-    
+    // Attendre que les composants soient chargés
+    while (!useLoadingStore.getState().isComponentsLoaded) {
+      console.log('⏳ [MainLoadingPage] Composants pas encore chargés, attente... isComponentsLoaded:', useLoadingStore.getState().isComponentsLoaded);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    console.log('✅ [MainLoadingPage] Composants chargés !');
+
     setSteps(prev => prev.map((step, i) => ({
       ...step,
       status: i <= 2 ? 'completed' : 'pending'
     })));
 
-    // Étape 4: Finalisation
+    // Étape 4: Finalisation (attendre WoodMaterialSelector)
     setCurrentStep(3);
+    console.log('⏳ [MainLoadingPage] Étape 4: Finalisation...');
     setSteps(prev => prev.map((step, i) => ({
       ...step,
       status: i === 3 ? 'loading' : i < 3 ? 'completed' : 'pending'
     })));
 
-    await new Promise(resolve => setTimeout(resolve, 400));
+    // Attendre que WoodMaterialSelector soit initialisé
+    while (!useLoadingStore.getState().isWoodMaterialSelectorLoaded) {
+      console.log('⏳ [MainLoadingPage] WoodMaterialSelector pas encore chargé, attente... isWoodMaterialSelectorLoaded:', useLoadingStore.getState().isWoodMaterialSelectorLoaded);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    console.log('✅ [MainLoadingPage] WoodMaterialSelector chargé !');
     
     setSteps(prev => prev.map(step => ({
       ...step,
       status: 'completed'
     })));
+
+    console.log('🎉 [MainLoadingPage] Toutes les étapes terminées !');
 
     // Animations finales
     gsap.to(progressBarRef.current, {

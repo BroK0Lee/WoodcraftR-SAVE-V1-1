@@ -1,9 +1,8 @@
 import { useEffect, useState, useRef } from "react";
-import * as Comlink from "comlink";
 import PanelViewer from "./AppViewer";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
-import type { OccWorkerAPI } from "@/workers/worker.types";
+import { useOpenCascadeWorker } from "@/hooks/useOpenCascadeWorker";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 
 export default function ContentViewer() {
@@ -11,10 +10,8 @@ export default function ContentViewer() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  // Indique si le moteur OpenCascade est prêt
-  const [ocReady, setOcReady] = useState(false);
-  const workerRef = useRef<Worker | null>(null);
-  const occProxyRef = useRef<Comlink.Remote<OccWorkerAPI> | null>(null);
+  // Utiliser le worker global au lieu de créer le nôtre
+  const { isReady: ocReady, getWorkerProxy } = useOpenCascadeWorker();
   const lastValidGeometryRef = useRef<{ geometry: PanelGeometryDTO; edges: EdgeDTO[] } | null>(null);
   
   // Store state
@@ -34,32 +31,13 @@ export default function ContentViewer() {
   const previewCut = usePanelStore((state) => state.previewCut);
   const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
 
-  // Initialisation du worker une seule fois
-  useEffect(() => {
-    const worker = new Worker(
-      new URL("../workers/occ.worker.ts", import.meta.url),
-      { type: "module" }
-    );
-    workerRef.current = worker;
-
-    const occProxy = Comlink.wrap<OccWorkerAPI>(worker);
-    occProxyRef.current = occProxy;
-
-    // Initialisation du moteur OCCT dans le worker
-    (async () => {
-      const ready = await occProxy.init();
-      setOcReady(ready);
-    })();
-
-    return () => {
-      workerRef.current?.terminate();
-    };
-  }, []);
-
   // Recalcul quand les dimensions/découpes changent
   useEffect(() => {
-    const proxy = occProxyRef.current;
-    if (!proxy || !ocReady) return;
+    const proxy = getWorkerProxy();
+    if (!proxy || !ocReady) {
+      console.log('� [ContentViewer] Worker pas encore prêt, attente...');
+      return;
+    }
 
     console.log('📋 [useEffect] Changement détecté - recalcul nécessaire');
 
