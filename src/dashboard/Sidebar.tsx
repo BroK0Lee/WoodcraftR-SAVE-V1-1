@@ -1,19 +1,21 @@
-import { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GeneralPanel } from './GeneralPanel';
 import { CuttingPanel } from './CuttingPanel';
 import { EngravingPanel } from './EngravingPanel';
 import { FinishingPanel } from './FinishingPanel';
+import { MaterialPanel } from './MaterialPanel';
+import { useDashboardStore } from '@/store/dashboardStore';
 import { 
   Ruler, 
   Zap, 
   Scissors, 
-  Settings 
+  Settings,
+  TreePine
 } from 'lucide-react';
 
 export function Sidebar() {
-  const [activeTab, setActiveTab] = useState('general');
+  const { activeTab, setActiveTab } = useDashboardStore();
 
   return (
     <div className="h-full bg-card/30 border-r">
@@ -23,14 +25,18 @@ export function Sidebar() {
       </div>
 
       <ScrollArea className="h-[calc(100%-80px)]">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 gap-1 m-4">
-            <TabsTrigger value="general" className="flex items-center gap-2 text-xs">
-              <Ruler className="h-4 w-4" />
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 gap-1 m-4">
+            <TabsTrigger value="material" className="flex items-center gap-1 text-xs">
+              <TreePine className="h-3 w-3" />
+              Matière
+            </TabsTrigger>
+            <TabsTrigger value="general" className="flex items-center gap-1 text-xs">
+              <Ruler className="h-3 w-3" />
               Général
             </TabsTrigger>
-            <TabsTrigger value="cutting" className="flex items-center gap-2 text-xs">
-              <Scissors className="h-4 w-4" />
+            <TabsTrigger value="cutting" className="flex items-center gap-1 text-xs">
+              <Scissors className="h-3 w-3" />
               Découpes
             </TabsTrigger>
           </TabsList>
@@ -47,6 +53,10 @@ export function Sidebar() {
           </TabsList>
 
           <div className="px-4 pb-4">
+            <TabsContent value="material" className="mt-0">
+              <MaterialPanel />
+            </TabsContent>
+
             <TabsContent value="general" className="mt-0">
               <GeneralPanel />
             </TabsContent>

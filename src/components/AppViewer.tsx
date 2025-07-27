@@ -1,144 +1,160 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useRef, useMemo } from "react";
-import {
-  OrbitControls,
-  Environment,
-  useGLTF,
-} from "@react-three/drei";
-import type { OrbitControls as OrbitControlsImpl } from "three/examples/jsm/controls/OrbitControls.js";
-import { MeshStandardMaterial, Color } from "three";
+import { Suspense } from "react";
+import { OrbitControls, Environment } from "@react-three/drei";
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
-import type { EdgeDTO } from "@/models/EdgeDTO";
-
-import type { PanelDimensions } from "@/models/Panel";
+import DimensionLabels from "./DimensionLabels";
+import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
+import { usePanelStore } from "@/store/panelStore";
 
 type Props = {
-  url: string;
-  /** Cible à viser par la caméra */
-  target: [number, number, number];
-  /** Dimensions du panneau pour le centrage */
-  dimensions: PanelDimensions;
-  /** Optional edges to display and interact with */
-  edges?: EdgeDTO[];
+  // Plus besoin de props - on lit tout depuis le store
 };
 
-function Model({ url, dimensions }: Pick<Props, "url" | "dimensions">) {
-  // Pré-chargement du GLB pour éviter un flash lors du chargement
-  if (useGLTF.preload) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    useGLTF.preload(url);
+function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
+  // Calculs optimisés des dimensions une seule fois
+  const positions = geometry.positions;
+  const indices = geometry.indices;
+  
+  // Calcul simple des dimensions sans répéter les opérations
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  let minZ = Infinity, maxZ = -Infinity;
+  
+  for (let i = 0; i < positions.length; i += 3) {
+    const x = positions[i];
+    const y = positions[i + 1];
+    const z = positions[i + 2];
+    
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+    if (z < minZ) minZ = z;
+    if (z > maxZ) maxZ = z;
   }
-
-  const { scene } = useGLTF(url, true);
-
-  // Forcer un matériau gris uniforme sur toutes les faces
-  useEffect(() => {
-    const monoMat = new MeshStandardMaterial({
-      color: new Color(0x888888),
-      roughness: 0.5,
-      metalness: 0,
-    });
-    scene.traverse((obj) => {
-      // Remplace tout material de mesh
-      if ((obj as any).isMesh) {
-        (obj as any).material = monoMat;
-        (obj as any).castShadow = true;
-        (obj as any).receiveShadow = true;
-      }
-    });
-  }, [scene]);
-
-  // Calcul du décalage pour centrer
-  const offset = [
-    -dimensions.width / 2,
-    -dimensions.height / 2,
-    -dimensions.thickness - 1,
-  ] as const;
-
-  return <primitive object={scene} dispose={null} position={offset} />;
+  
+  const calculatedDimensions = {
+    width: (maxX - minX).toFixed(2),
+    height: (maxY - minY).toFixed(2), 
+    depth: (maxZ - minZ).toFixed(2),
+    vertices: positions.length / 3,
+    triangles: indices.length / 3
+  };
+  
+  console.log('🎯 [PanelMesh] Rendu mesh:', calculatedDimensions);
+  
+  return (
+    <mesh position={[0, 0, 0]} castShadow receiveShadow>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          array={geometry.positions}
+          count={geometry.positions.length / 3}
+          itemSize={3}
+        />
+        <bufferAttribute
+          attach="index"
+          array={geometry.indices}
+          count={geometry.indices.length}
+          itemSize={1}
+        />
+      </bufferGeometry>
+    </mesh>
+  );
 }
+export default function PanelViewer(_props: Props) {
+  const isPanelVisible = usePanelStore((state) => state.isPanelVisible);
+  const geometry = usePanelStore((state) => state.geometry);
+  const edges = usePanelStore((state) => state.edges);
+  const isCalculating = usePanelStore((state) => state.isCalculating);
+  
+  // États pour les cotations
+  const dimensions = usePanelStore((state) => state.dimensions);
+  const editingCutId = usePanelStore((state) => state.editingCutId);
+  const previewCut = usePanelStore((state) => state.previewCut);
+  const cuts = usePanelStore((state) => state.cuts);
 
-export default function GLBViewer({ url, target, dimensions, edges }: Props) {
-  const controlsRef = useRef<OrbitControlsImpl | null>(null);
-
-  const boundingRadius = useMemo(() => {
-    const { width, height, thickness } = dimensions;
-    return Math.sqrt(width ** 2 + height ** 2 + thickness ** 2) / 2;
-  }, [dimensions]);
-
-  const offset = useMemo(
-    () => [
-      -dimensions.width / 2,
-      -dimensions.height / 2,
-      -dimensions.thickness - 1,
-    ] as const,
-    [dimensions]
-  );
-
-  const cameraProps = useMemo(() => {
-    const distance = boundingRadius * 2;
-    return {
-      position: [distance, distance, distance] as [number, number, number],
-      fov: 50,
-      near: 0.1,
-      far: boundingRadius * 10,
-    };
-  }, [boundingRadius]);
-
-  const controlsLimits = useMemo(
-    () => ({
-      minDistance: boundingRadius * 1.1,
-      maxDistance: boundingRadius * 3,
-    }),
-    [boundingRadius]
-  );
-
-  const axesScale = useMemo(
-    () => [
-      (dimensions.width / 2) * 1.2,
-      (dimensions.height / 2) * 1.4,
-      Math.max(dimensions.width, dimensions.height) / 4,
-    ] as [number, number, number],
-    [dimensions]
-  );
-
-  useEffect(() => {
-    controlsRef.current?.target.set(...target);
-    controlsRef.current?.update();
-  }, [target]);
-
-  useEffect(() => {
-    const c = controlsRef.current;
-    if (!c) return;
-    c.object.position.set(...cameraProps.position);
-    c.update();
-  }, [cameraProps]);
+  // Debug: Vérifier l'état de la prévisualisation
+  console.log('🔍 [AppViewer] État actuel:', {
+    editingCutId,
+    previewCut: previewCut ? { id: previewCut.id, type: previewCut.type } : null,
+    showDimensionLabels: !!previewCut
+  });
 
   return (
-    <Canvas camera={cameraProps} shadows className="h-full w-full">
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[5, 5, 5]} intensity={0.7} castShadow />
-      <Environment preset="city" />
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <Canvas 
+        camera={{ 
+          position: [500, 500, 500],
+          fov: 50,
+          near: 1,
+          far: 10000
+        }}
+        shadows 
+        className="h-full w-full"
+      >
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[10, 10, 10]} intensity={0.8} castShadow />
+        <Environment preset="city" />
 
-      <Suspense fallback={null}>
-        <Model url={url} dimensions={dimensions} />
-      </Suspense>
+        {isPanelVisible && geometry && !isCalculating && (
+          <Suspense fallback={null}>
+            <PanelMesh geometry={geometry} />
+          </Suspense>
+        )}
 
-      {edges && <EdgesLayer edges={edges} position={offset} />}
+        {edges.length > 0 && isPanelVisible && !isCalculating && (
+          <EdgesLayer />
+        )}
 
-      <AxesHelper size={1} scale={axesScale} />
+        {/* Cotations lors de l'édition/prévisualisation d'une découpe */}
+        {isPanelVisible && (
+          <>
+            {/* Cotations pour découpe en cours d'édition */}
+            {editingCutId && (() => {
+              const editingCut = cuts.find(cut => cut.id === editingCutId);
+              return editingCut ? (
+                <DimensionLabels cut={editingCut} panelDimensions={dimensions} />
+              ) : null;
+            })()}
+            
+            {/* Cotations pour découpe en prévisualisation */}
+            {previewCut && (
+              <DimensionLabels cut={previewCut} panelDimensions={dimensions} />
+            )}
+          </>
+        )}
 
-      <OrbitControls
-        ref={controlsRef}
-        makeDefault
-        enablePan
-        enableZoom
-        enableRotate
-        minDistance={controlsLimits.minDistance}
-        maxDistance={controlsLimits.maxDistance}
-      />
-    </Canvas>
+        <AxesHelper />
+
+        <OrbitControls 
+          enablePan={true}
+          enableZoom={true}
+          enableRotate={true}
+          target={[0, 0, 0]}
+          
+          // Configuration stricte des contrôles souris
+          mouseButtons={{
+            LEFT: 0,   // Clic gauche = Rotation uniquement
+            MIDDLE: null, // Molette clic = Désactivé
+            RIGHT: 2   // Clic droit = Pan uniquement
+          }}
+          
+          // Sensibilité optimisée
+          panSpeed={0.8}
+          rotateSpeed={0.6}
+          zoomSpeed={1.0}
+          
+          // Contraintes de rotation pour éviter les rotations indésirables
+          minPolarAngle={0}
+          maxPolarAngle={Math.PI}
+          
+          // Amortissement pour des mouvements plus fluides
+          enableDamping={true}
+          dampingFactor={0.05}
+        />
+      </Canvas>
+    </div>
   );
 }

@@ -1,69 +1,67 @@
 import { forwardRef, useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import { Group } from "three";
-import type { EdgeDTO } from "@/models/EdgeDTO";
+import { usePanelStore } from "@/store/panelStore";
 import useEdgeSelection from "@/hooks/useEdgeSelection";
 // Fat lines imports
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 
+// Helper pour nettoyer les objets 3D de manière type-safe
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const disposeObject = (obj: any) => {
+  if (obj.geometry) obj.geometry.dispose();
+  if (obj.material) {
+    if (Array.isArray(obj.material)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      obj.material.forEach((m: any) => m.dispose());
+    } else {
+      obj.material.dispose();
+    }
+  }
+};
+
 interface Props {
-  edges: EdgeDTO[];
-  /** Décalage identique au modèle 3D pour que la couche coïncide parfaitement */
-  position?: readonly [number, number, number];
+  // Plus de props nécessaires - on lit depuis le store
 }
 
-const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(
-  { edges, position = [0, 0, 0] },
-  ref,
-) {
+const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(_props, _ref) {
   const groupRef = useRef<Group>(new Group());
-  const { scene, gl, size } = useThree();
+  const { scene, size } = useThree();
+  
+  // Lire les edges depuis le store au lieu des props
+  const edges = usePanelStore((state) => state.edges);
 
   useEffect(() => {
     const group = groupRef.current;
     scene.add(group);
     return () => {
       scene.remove(group);
-      group.children.forEach((child: any) => {
-        child.geometry.dispose();
-        if (Array.isArray(child.material)) {
-          child.material.forEach((m) => m.dispose());
-        } else {
-          child.material.dispose();
-        }
-      });
+      group.children.forEach(disposeObject);
       group.clear();
     };
   }, [scene]);
 
   useEffect(() => {
-    groupRef.current.position.set(...position);
-  }, [position]);
-
-  useEffect(() => {
     const group = groupRef.current;
-    group.children.forEach((child: any) => {
-      child.geometry.dispose();
-      if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
-      else child.material.dispose();
-    });
+    group.children.forEach(disposeObject);
     group.clear();
 
     edges.forEach((edge) => {
-      const positions = Array.from(edge.xyz);
+      const positions = Array.from(edge.xyz) as number[];
       const lineGeo = new LineGeometry();
       lineGeo.setPositions(positions);
-
+      
       const mat2 = new LineMaterial({
-        color: 0x555555,
-        linewidth: 3,
-        depthTest: false,
+        color: 0x000000, // Toujours noir
+        linewidth: 1, // Épaisseur de base
+        depthTest: true,
         depthWrite: false,
-        polygonOffset: false,
-        polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+        transparent: false, // Pas de transparence pour un noir constant
       });
       mat2.resolution.set(size.width, size.height);
 
@@ -74,7 +72,7 @@ const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(
     });
   }, [edges, size]);
 
-  // Sélection des arêtes
+  // Sélection des arêtes
   useEdgeSelection(groupRef.current);
 
   return null;

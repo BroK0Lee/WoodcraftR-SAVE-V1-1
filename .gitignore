@@ -23,3 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Obsolete files - prevent recreation
+src/components/MaterialCard.tsx
+src/components/MaterialModal.tsx
+src/components/MaterialSelectorModal.tsx
+src/components/WoodMaterialSelector.tsx
+src/components/materialselector/MaterialSphere_backup.tsx
+src/hooks/useOpenCascadeInit.ts
+CAMERA_AUTO_FRAMING.md
+CLEANUP_NAVIGATION_CONFLICTS.md
+INTEGRATION_O3DV_NAVIGATION.md
+MIGRATION_O3DV_COMPLETE.md
