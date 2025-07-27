@@ -5,10 +5,12 @@ interface LoadingState {
   isOpenCascadeLoaded: boolean;
   isMaterialsLoaded: boolean;
   isComponentsLoaded: boolean;
+  isWoodMaterialSelectorLoaded: boolean;
   setAppLoading: (loading: boolean) => void;
   setOpenCascadeLoaded: (loaded: boolean) => void;
   setMaterialsLoaded: (loaded: boolean) => void;
   setComponentsLoaded: (loaded: boolean) => void;
+  setWoodMaterialSelectorLoaded: (loaded: boolean) => void;
   initializeApp: () => Promise<void>;
 }
 
@@ -17,11 +19,13 @@ export const useLoadingStore = create<LoadingState>((set, get) => ({
   isOpenCascadeLoaded: false,
   isMaterialsLoaded: false,
   isComponentsLoaded: false,
+  isWoodMaterialSelectorLoaded: false,
   
   setAppLoading: (loading) => set({ isAppLoading: loading }),
   setOpenCascadeLoaded: (loaded) => set({ isOpenCascadeLoaded: loaded }),
   setMaterialsLoaded: (loaded) => set({ isMaterialsLoaded: loaded }),
   setComponentsLoaded: (loaded) => set({ isComponentsLoaded: loaded }),
+  setWoodMaterialSelectorLoaded: (loaded) => set({ isWoodMaterialSelectorLoaded: loaded }),
   
   initializeApp: async () => {
     const state = get();

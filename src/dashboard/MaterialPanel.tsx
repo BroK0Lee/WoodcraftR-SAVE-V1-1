@@ -124,7 +124,7 @@ export function MaterialPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {selectedMaterial ? (
+          {selectedMaterial && selectedMaterial.id !== 'none' ? (
             <div className="space-y-3">
               {/* Matière sélectionnée */}
               <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
@@ -171,10 +171,16 @@ export function MaterialPanel() {
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Pas de sélection */}
+              {/* État "Aucune matière" */}
               <div className="text-center p-4 border-2 border-dashed border-gray-200 rounded-lg">
-                <TreePine className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-2">Aucune matière sélectionnée</p>
+                <div className="w-16 h-12 mx-auto mb-2 flex items-center justify-center">
+                  <img 
+                    src="/placeholder-material.svg" 
+                    alt="Aucune matière"
+                    className="w-full h-full opacity-60"
+                  />
+                </div>
+                <p className="text-sm text-gray-600 mb-1">Aucune matière sélectionnée</p>
                 <p className="text-xs text-gray-500">
                   Sélectionnez une matière ci-dessous ou utilisez la vue 3D principale.
                 </p>
@@ -206,7 +212,7 @@ export function MaterialPanel() {
       </Card>
 
       {/* Informations détaillées de la matière sélectionnée */}
-      {selectedMaterial && selectedInfo && (
+      {selectedMaterial && selectedMaterial.id !== 'none' && selectedInfo && (
         <>
           <Card>
             <CardHeader className="pb-3">

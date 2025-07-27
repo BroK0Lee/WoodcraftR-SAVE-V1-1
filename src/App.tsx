@@ -5,9 +5,13 @@ import { Header } from './dashboard/Header';
 import { Dashboard } from './dashboard/Dashboard';
 import { MainLoadingPage } from './components/loading/MainLoadingPage';
 import { useLoadingStore } from './store/loadingStore';
+import { useWoodMaterialSelectorInit } from './hooks/useWoodMaterialSelectorInit';
 
 function App() {
   const { isAppLoading, initializeApp, setAppLoading } = useLoadingStore();
+  
+  // Initialiser WoodMaterialSelector en parallèle
+  useWoodMaterialSelectorInit();
 
   useEffect(() => {
     // Démarrer l'initialisation au montage du composant
