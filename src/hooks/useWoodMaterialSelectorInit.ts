@@ -150,7 +150,7 @@ export function useWoodMaterialSelectorInit() {
         globalCache.controls = new TrackballControls(globalCache.camera, globalCache.renderer.domElement);
         
         // === CONFIGURATION IDENTIQUE À L'EXEMPLE THREE.JS ORIGINAL ===
-        globalCache.controls.rotateSpeed = 10.0; // Augmenté de 0.5 à 10.0 pour plus de réactivité
+        globalCache.controls.rotateSpeed = 3.0; // Réduit de 5.0 à 3.0 pour une rotation plus douce
         globalCache.controls.minDistance = 500;
         globalCache.controls.maxDistance = 6000;
         
