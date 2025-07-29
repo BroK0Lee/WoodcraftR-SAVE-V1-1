@@ -51,31 +51,33 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
     <group>
       {/* === RECTANGLES DE VALEURS TEMPS RÉEL === */}
       
-      {/* Rectangle X (coin supérieur gauche) */}
+      {/* Rectangle X - positionné près de la flèche rouge */}
       <Html
-        position={[cotationData.originX + 80, cotationData.width - 30, cotationData.zOffset]}
+        position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 35, cotationData.zOffset]}
         center
-        distanceFactor={8}
+        distanceFactor={6}
         style={{ pointerEvents: 'none' }}
       >
-        <div className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg border-2 border-red-600">
-          <div className="text-xs font-semibold text-red-100 mb-1">Position X</div>
-          <div className="text-lg font-mono font-bold">
+        <div className="bg-red-500 text-white px-6 py-3 rounded-xl shadow-xl border-3 border-red-600 min-w-[120px]">
+          <div className="text-sm font-semibold text-red-100 mb-1 text-center">Position X</div>
+          <div className="text-2xl font-mono font-bold text-center">
             {cotationData.displayX} mm
           </div>
         </div>
       </Html>
 
-      {/* Rectangle Y (coin supérieur droit) */}
+      {/* Rectangle Y - positionné près de la flèche bleue */}
       <Html
-        position={[cotationData.length - 80, cotationData.width - 30, cotationData.zOffset]}
+        position={[cotationData.yCotationX - 35, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}
         center
-        distanceFactor={8}
+        distanceFactor={6}
         style={{ pointerEvents: 'none' }}
+        transform
+        rotation={[0, 0, Math.PI / 2]}
       >
-        <div className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg border-2 border-blue-600">
-          <div className="text-xs font-semibold text-blue-100 mb-1">Position Y</div>
-          <div className="text-lg font-mono font-bold">
+        <div className="bg-blue-500 text-white px-6 py-3 rounded-xl shadow-xl border-3 border-blue-600 min-w-[120px]">
+          <div className="text-sm font-semibold text-blue-100 mb-1 text-center">Position Y</div>
+          <div className="text-2xl font-mono font-bold text-center">
             {cotationData.displayY} mm
           </div>
         </div>
