@@ -55,12 +55,12 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
       <Html
         position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 35, cotationData.zOffset]}
         center
-        distanceFactor={6}
+        distanceFactor={0.5}
         style={{ pointerEvents: 'none' }}
       >
-        <div className="bg-red-500 text-white px-6 py-3 rounded-xl shadow-xl border-3 border-red-600 min-w-[120px]">
-          <div className="text-sm font-semibold text-red-100 mb-1 text-center">Position X</div>
-          <div className="text-2xl font-mono font-bold text-center">
+        <div className="bg-red-500 text-white px-20 py-12 rounded-3xl shadow-2xl border-8 border-red-600 min-w-[500px]">
+          <div className="text-6xl font-semibold text-red-100 mb-4 text-center">Position X</div>
+          <div className="text-9xl font-mono font-bold text-center">
             {cotationData.displayX} mm
           </div>
         </div>
@@ -70,14 +70,14 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
       <Html
         position={[cotationData.yCotationX - 35, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}
         center
-        distanceFactor={6}
+        distanceFactor={0.5}
         style={{ pointerEvents: 'none' }}
         transform
         rotation={[0, 0, Math.PI / 2]}
       >
-        <div className="bg-blue-500 text-white px-6 py-3 rounded-xl shadow-xl border-3 border-blue-600 min-w-[120px]">
-          <div className="text-sm font-semibold text-blue-100 mb-1 text-center">Position Y</div>
-          <div className="text-2xl font-mono font-bold text-center">
+        <div className="bg-blue-500 text-white px-20 py-12 rounded-3xl shadow-2xl border-8 border-blue-600 min-w-[500px]">
+          <div className="text-6xl font-semibold text-blue-100 mb-4 text-center">Position Y</div>
+          <div className="text-9xl font-mono font-bold text-center">
             {cotationData.displayY} mm
           </div>
         </div>
@@ -114,20 +114,6 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
         <coneGeometry args={[3, 10, 8]} />
         <meshBasicMaterial color="#E53E3E" />
       </mesh>
-      
-      {/* Label cotation X */}
-      <Html
-        position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 12, cotationData.zOffset]}
-        center
-        distanceFactor={10}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div className="bg-white border-2 border-red-500 px-3 py-1 rounded shadow-lg">
-          <span className="text-red-600 font-mono text-sm font-bold">
-            X: {cotationData.displayX} mm
-          </span>
-        </div>
-      </Html>
 
       {/* === COTATION Y === */}
       
@@ -160,22 +146,6 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
         <coneGeometry args={[3, 10, 8]} />
         <meshBasicMaterial color="#3182CE" />
       </mesh>
-      
-      {/* Label cotation Y */}
-      <Html
-        position={[cotationData.yCotationX - 12, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}
-        center
-        distanceFactor={10}
-        style={{ pointerEvents: 'none' }}
-        transform
-        rotation={[0, 0, Math.PI / 2]}
-      >
-        <div className="bg-white border-2 border-blue-500 px-3 py-1 rounded shadow-lg">
-          <span className="text-blue-600 font-mono text-sm font-bold">
-            Y: {cotationData.displayY} mm
-          </span>
-        </div>
-      </Html>
 
       {/* === MARQUEURS === */}
       
