@@ -60,7 +60,7 @@ export function useWoodMaterialSelectorInit() {
         }
         initializationInProgress.current = true;
         // Précharger les matériaux en arrière-plan
-        materialPreloader.preloadMaterials().catch(error => {
+        materialPreloader.preloadMaterials().catch(() => {
           // Continuer l'initialisation même si le préchargement échoue
         });
         // Créer les instances 3D de base (sans montage DOM)
@@ -83,7 +83,7 @@ export function useWoodMaterialSelectorInit() {
         };
         // Démarrer la boucle d'animation globale (comme Three.js original)
         animate();
-        ');
+        
         setIsInitialized(true);
         setWoodMaterialSelectorLoaded(true);
       } catch (err) {
@@ -120,7 +120,6 @@ export function useWoodMaterialSelectorInit() {
         globalCache.controls.maxDistance = 4000; // Réduit de 6000 à 4000 pour rester dans une plage raisonnable
         // Désactiver le panning (déplacement latéral)
         globalCache.controls.noPan = true;
-        ');
       }
       return globalCache.renderer;
     } catch (err) {

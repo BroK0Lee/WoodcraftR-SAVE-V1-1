@@ -27,8 +27,7 @@ export function CuttingPanel() {
     addCut, 
     removeCut, 
     updateCut,
-    editingCutId,
-     startEditingCut,
+    startEditingCut,
     // Actions de prévisualisation
     setPreviewCut,
     previewCut,
