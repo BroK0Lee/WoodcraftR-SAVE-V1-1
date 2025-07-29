@@ -186,8 +186,6 @@ export class MaterialSphere {
       
       rotationTween.start();
     }
-
-    const activeTweens = TweenGroup.getAll().length;
     
   }
 
