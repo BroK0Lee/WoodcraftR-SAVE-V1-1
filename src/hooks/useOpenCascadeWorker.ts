@@ -27,7 +27,7 @@ export function useOpenCascadeWorker() {
       try {
         // Si déjà initialisé, marquer comme prêt
         if (globalWorkerCache.isReady && globalWorkerCache.proxy) {
-          console.log('🔧 [useOpenCascadeWorker] Worker déjà initialisé, utilisation du cache');
+          
           setIsReady(true);
           setWorkerReady(true);
           return;
@@ -35,12 +35,12 @@ export function useOpenCascadeWorker() {
 
         // Éviter les initialisations multiples simultanées
         if (initializationInProgress.current) {
-          console.log('🔧 [useOpenCascadeWorker] Initialisation déjà en cours...');
+          
           return;
         }
 
         initializationInProgress.current = true;
-        console.log('🔧 [useOpenCascadeWorker] Initialisation du worker OpenCascade...');
+        
 
         // Créer le worker une seule fois
         const worker = new Worker(
@@ -52,7 +52,7 @@ export function useOpenCascadeWorker() {
 
         // Initialiser OpenCascade dans le worker
         const ready = await proxy.init();
-        console.log('🔧 [useOpenCascadeWorker] Worker OpenCascade initialisé:', ready);
+        
 
         if (ready) {
           // Sauvegarder dans le cache global
@@ -62,7 +62,7 @@ export function useOpenCascadeWorker() {
             isReady: true
           };
 
-          console.log('✅ [useOpenCascadeWorker] Worker mis en cache avec succès');
+          
           setIsReady(true);
           setWorkerReady(true);
         } else {
@@ -70,7 +70,7 @@ export function useOpenCascadeWorker() {
         }
 
       } catch (err) {
-        console.error('❌ [useOpenCascadeWorker] Erreur lors de l\'initialisation:', err);
+        
         setError(err instanceof Error ? err.message : 'Erreur inconnue');
         // En cas d'erreur, marquer comme prêt pour ne pas bloquer l'app
         setWorkerReady(true);
@@ -83,7 +83,7 @@ export function useOpenCascadeWorker() {
 
     // Cleanup function - NE PAS terminer le worker ici car il est global
     return () => {
-      console.log('🔧 [useOpenCascadeWorker] Cleanup - worker conservé en cache');
+      
     };
   }, [setWorkerReady]);
 
@@ -95,7 +95,7 @@ export function useOpenCascadeWorker() {
   // Fonction pour terminer le worker (à appeler uniquement lors de la fermeture de l'app)
   const terminateWorker = () => {
     if (globalWorkerCache.worker) {
-      console.log('🔧 [useOpenCascadeWorker] Terminaison du worker OpenCascade');
+      
       globalWorkerCache.worker.terminate();
       globalWorkerCache = {
         worker: null,

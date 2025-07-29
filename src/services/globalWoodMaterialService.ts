@@ -52,24 +52,19 @@ export class GlobalWoodMaterialService {
    * Charge tous les matériaux depuis les assets locaux
    */
   async loadAllMaterials(): Promise<GlobalWoodMaterial[]> {
-    console.log('🌳 [GlobalWoodMaterialService] Chargement des matériaux depuis les assets locaux...');
-
     const materials: GlobalWoodMaterial[] = [];
 
     for (const wood of this.AVAILABLE_WOODS) {
       try {
         const material = await this.loadSingleMaterial(wood.id, wood.displayName);
         materials.push(material);
-        console.log(`✅ [GlobalWoodMaterialService] ${wood.displayName} chargé`);
       } catch (error) {
-        console.warn(`⚠️ [GlobalWoodMaterialService] Erreur pour ${wood.displayName}:`, error);
         // Créer un matériau de fallback
         const fallbackMaterial = this.createFallbackMaterial(wood.id, wood.displayName);
         materials.push(fallbackMaterial);
       }
     }
 
-    console.log(`🎯 [GlobalWoodMaterialService] ${materials.length} matériaux chargés au total`);
     return materials;
   }
 
@@ -127,7 +122,6 @@ export class GlobalWoodMaterialService {
       return this.parseCharacteristics(content);
       
     } catch (error) {
-      console.warn(`⚠️ [GlobalWoodMaterialService] Impossible de charger ${caractUrl}:`, error);
       return this.getDefaultCharacteristics(id);
     }
   }

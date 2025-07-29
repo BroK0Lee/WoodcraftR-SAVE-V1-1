@@ -124,15 +124,6 @@ function createRectangularCut(cut: RectangularCut, panelThickness: number): any 
   // La découpe doit commencer à Z = panelThickness + EPSILON_CUT et aller vers le bas
   const zPosition = panelThickness + EPSILON_CUT - (cutDepth + (2 * EPSILON_CUT));
   
-  console.log(`🔧 [RectangularCut] Debug positioning:`, {
-    cutDepth,
-    panelThickness,
-    EPSILON_CUT,
-    zPosition,
-    positionX: cut.positionX,
-    positionY: cut.positionY
-  });
-  
   translation.SetTranslation_1(new oc.gp_Vec_4(
     cut.positionX, 
     cut.positionY, 
@@ -169,16 +160,6 @@ function createCircularCut(cut: CircularCut, panelThickness: number): any {
   // Découpe depuis la face avant (Z=thickness) vers les Z négatifs
   // La découpe doit commencer à Z = panelThickness + EPSILON_CUT et aller vers le bas
   const zPosition = panelThickness + EPSILON_CUT - (cutDepth + (2 * EPSILON_CUT));
-  
-  console.log(`🔧 [CircularCut] Debug positioning:`, {
-    cutDepth,
-    panelThickness,
-    EPSILON_CUT,
-    zPosition,
-    positionX: cut.positionX,
-    positionY: cut.positionY,
-    radius: cut.radius
-  });
   
   translation.SetTranslation_1(new oc.gp_Vec_4(
     cut.positionX, 

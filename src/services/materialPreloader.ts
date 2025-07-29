@@ -23,7 +23,6 @@ export class MaterialPreloader {
    */
   async preloadMaterials(): Promise<void> {
     if (this.isLoaded || this.isLoading) {
-      console.log('🌳 [MaterialPreloader] Matériaux déjà chargés ou en cours de chargement');
       return;
     }
 
@@ -32,7 +31,6 @@ export class MaterialPreloader {
 
     try {
       setLoading(true);
-      console.log('🌳 [MaterialPreloader] Début du préchargement des matériaux...');
 
       const materials = await globalWoodMaterialService.loadAllMaterials();
       
@@ -42,10 +40,8 @@ export class MaterialPreloader {
       setMaterials(materials);
       
       this.isLoaded = true;
-      console.log(`✅ [MaterialPreloader] ${materials.length} matériaux préchargés avec succès`);
       
     } catch (error) {
-      console.error('❌ [MaterialPreloader] Erreur lors du préchargement:', error);
       setError(error instanceof Error ? error.message : 'Erreur de préchargement');
       throw error;
     } finally {
@@ -57,17 +53,13 @@ export class MaterialPreloader {
    * Précharge les images pour éviter les "image not found"
    */
   private async preloadImages(imageUrls: string[]): Promise<void> {
-    console.log('🖼️ [MaterialPreloader] Préchargement des images...');
-    
     const imagePromises = imageUrls.map(url => {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
-          console.log(`✅ [MaterialPreloader] Image préchargée: ${url}`);
           resolve();
         };
         img.onerror = () => {
-          console.warn(`⚠️ [MaterialPreloader] Erreur de chargement: ${url}`);
           resolve(); // Continuer même en cas d'erreur
         };
         img.src = url;
@@ -75,7 +67,6 @@ export class MaterialPreloader {
     });
 
     await Promise.all(imagePromises);
-    console.log('✅ [MaterialPreloader] Toutes les images préchargées');
   }
 
   /**

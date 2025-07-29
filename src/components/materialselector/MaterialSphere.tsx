@@ -33,7 +33,7 @@ export class MaterialSphere {
 
   // Créer la sphère de matériaux (Exact copy du style Three.js Periodic Table)
   createSphere(config: SphereConfig): void {
-    console.log('🎯 [MaterialSphere] Création de la sphère avec', config.materials.length, 'matériaux');
+    
     
     // Nettoyer les objets existants
     this.clearSphere();
@@ -134,7 +134,7 @@ export class MaterialSphere {
       this.targets.helix.push(object);
     }
 
-    console.log('✅ [MaterialSphere] Sphère créée avec', this.objects.length, 'objets');
+    
     
     // Animation vers la sphère par défaut
     this.transformToSphere();
@@ -144,25 +144,25 @@ export class MaterialSphere {
   
   // Transform vers sphère (comme Three.js original)
   transformToSphere(): void {
-    console.log('🌐 [MaterialSphere] Transform vers sphère - objets:', this.objects.length, 'targets:', this.targets.sphere.length);
+    
     this.transform(this.targets.sphere, 2000);
   }
 
   // Transform vers grille (comme Three.js original)
   transformToGrid(): void {
-    console.log('🔲 [MaterialSphere] Transform vers grille - objets:', this.objects.length, 'targets:', this.targets.grid.length);
+    
     this.transform(this.targets.grid, 2000);
   }
 
   // Transform vers hélice (comme Three.js original)
   transformToHelix(): void {
-    console.log('🌀 [MaterialSphere] Transform vers hélice - objets:', this.objects.length, 'targets:', this.targets.helix.length);
+    
     this.transform(this.targets.helix, 2000);
   }
 
   // Fonction de transformation (Exact copy du code Three.js original)
   private transform(targets: THREE.Object3D[], duration: number): void {
-    console.log(`🎬 [MaterialSphere] Transform début - ${this.objects.length} objets vers nouvelle formation`);
+    
     
     // Supprimer les anciens tweens
     TweenGroup.removeAll();
@@ -188,12 +188,12 @@ export class MaterialSphere {
     }
 
     const activeTweens = TweenGroup.getAll().length;
-    console.log(`✅ [MaterialSphere] ${activeTweens} tweens créés et démarrés`);
+    
   }
 
   // Mettre à jour les matériaux sans recréer la sphère
   updateMaterials(materials: Material[]): void {
-    console.log('🔄 [MaterialSphere] Mise à jour de la sphère avec', materials.length, 'matériaux');
+    
     
     // Si le nombre de matériaux a changé, recréer complètement
     if (materials.length !== this.objects.length) {
@@ -201,12 +201,12 @@ export class MaterialSphere {
       return;
     }
 
-    console.log('✅ [MaterialSphere] Matériaux mis à jour');
+    
   }
 
   // Nettoyer la sphère
   clearSphere(): void {
-    console.log('🧹 [MaterialSphere] Nettoyage de la sphère');
+    
 
     // Supprimer les objets de la scène
     this.objects.forEach(obj => {
@@ -222,7 +222,7 @@ export class MaterialSphere {
 
   // Détruire complètement
   destroy(): void {
-    console.log('💥 [MaterialSphere] Destruction');
+    
     this.clearSphere();
   }
 }
