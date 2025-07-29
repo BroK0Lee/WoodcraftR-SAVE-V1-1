@@ -1,5 +1,7 @@
-import { useMemo } from 'react';
-import { Html } from '@react-three/drei';
+import { useMemo, useEffect, useRef } from 'react';
+import { useThree, useFrame } from '@react-three/fiber';
+import { Group } from 'three';
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import type { Cut } from '@/models/Cut';
 
 interface Props {
@@ -12,6 +14,10 @@ interface Props {
  * Style professionnel CAO avec lignes de rappel et flèches
  */
 export default function DimensionLabels({ cut, panelDimensions }: Props) {
+  const { scene, camera, gl } = useThree();
+  const groupRef = useRef<Group>(new Group());
+  const rendererRef = useRef<CSS2DRenderer>();
+
   const cotationData = useMemo(() => {
     const { positionX, positionY } = cut;
     const { length, width, thickness } = panelDimensions;
@@ -47,6 +53,66 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
     };
   }, [cut.positionX, cut.positionY, panelDimensions]);
 
+  useEffect(() => {
+    const group = groupRef.current;
+    group.clear();
+
+    // Style EXACT d'AxesHelper
+    const labelClass = 'px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none';
+
+    const createLabel = (label: string, position: [number, number, number]) => {
+      const div = document.createElement('div');
+      div.className = labelClass;
+      div.textContent = label;
+      const obj = new CSS2DObject(div);
+      obj.position.set(position[0], position[1], position[2]);
+      group.add(obj);
+    };
+
+    // Labels de cotation avec la même approche qu'AxesHelper
+    createLabel(
+      cotationData.displayX, 
+      [(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 8, cotationData.zOffset]
+    );
+    
+    createLabel(
+      cotationData.displayY, 
+      [cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]
+    );
+
+    scene.add(group);
+    return () => {
+      scene.remove(group);
+      group.clear();
+    };
+  }, [scene, cotationData]);
+
+  useEffect(() => {
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+
+    const parent = gl.domElement.parentElement;
+    if (parent) {
+      parent.appendChild(labelRenderer.domElement);
+      rendererRef.current = labelRenderer;
+      const handleResize = () => {
+        labelRenderer.setSize(parent.clientWidth, parent.clientHeight);
+      };
+      handleResize();
+      window.addEventListener('resize', handleResize);
+      return () => {
+        parent.removeChild(labelRenderer.domElement);
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [gl]);
+
+  useFrame(() => {
+    rendererRef.current?.render(scene, camera);
+  });
+
   return (
     <group>
       {/* === COTATION X (HORIZONTALE) === */}
@@ -80,18 +146,6 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
         <coneGeometry args={[2, 6, 8]} />
         <meshBasicMaterial color="#333333" />
       </mesh>
-      
-      {/* Valeur cotation X - centrée sur la ligne */}
-      <Html
-        position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 8, cotationData.zOffset]}
-        center
-        distanceFactor={3}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div className="px-4 py-2 rounded-lg shadow-lg text-2xl font-bold bg-neutral-900/95 text-white border border-white/20 pointer-events-none select-none">
-          {cotationData.displayX}
-        </div>
-      </Html>
 
       {/* === COTATION Y (VERTICALE) === */}
       
@@ -124,20 +178,6 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
         <coneGeometry args={[2, 6, 8]} />
         <meshBasicMaterial color="#333333" />
       </mesh>
-      
-      {/* Valeur cotation Y - centrée sur la ligne, tournée */}
-      <Html
-        position={[cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}
-        center
-        distanceFactor={3}
-        style={{ pointerEvents: 'none' }}
-        transform
-        rotation={[0, 0, Math.PI / 2]}
-      >
-        <div className="px-4 py-2 rounded-lg shadow-lg text-2xl font-bold bg-neutral-900/95 text-white border border-white/20 pointer-events-none select-none">
-          {cotationData.displayY}
-        </div>
-      </Html>
 
       {/* === MARQUEURS === */}
       
