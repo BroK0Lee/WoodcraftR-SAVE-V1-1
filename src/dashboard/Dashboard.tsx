@@ -19,11 +19,28 @@ export function Dashboard() {
         <ResizablePanel defaultSize={75}>
           <div className="h-full flex flex-col">
             <div className="flex-1">
-              {activeTab === 'material' ? (
+              {/* Conteneurs isolés pour éviter conflits WebGL */}
+              <div 
+                className="w-full h-full"
+                style={{ 
+                  display: activeTab === 'material' ? 'block' : 'none',
+                  position: 'relative',
+                  zIndex: activeTab === 'material' ? 1 : -1
+                }}
+              >
                 <WoodMaterialSelector />
-              ) : (
+              </div>
+              
+              <div 
+                className="w-full h-full"
+                style={{ 
+                  display: activeTab !== 'material' ? 'block' : 'none',
+                  position: 'relative',
+                  zIndex: activeTab !== 'material' ? 1 : -1
+                }}
+              >
                 <ContentViewer />
-              )}
+              </div>
             </div>
           </div>
         </ResizablePanel>
