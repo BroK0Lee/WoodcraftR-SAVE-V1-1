@@ -34,10 +34,6 @@ function animate() {
   globalCache.animationId = requestAnimationFrame(animate);
   
   // Mettre à jour TWEEN.js (CRUCIAL pour les transformations)
-  const tweenCount = TweenGroup.getAll().length;
-  if (tweenCount > 0) {
-    console.log(`🔄 [Global Animation] ${tweenCount} tweens actifs`);
-  }
   TweenGroup.update();
   
   // Mettre à jour les controls si ils existent
