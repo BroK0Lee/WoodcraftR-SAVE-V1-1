@@ -49,6 +49,38 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
 
   return (
     <group>
+      {/* === RECTANGLES DE VALEURS TEMPS RÉEL === */}
+      
+      {/* Rectangle X (coin supérieur gauche) */}
+      <Html
+        position={[cotationData.originX + 80, cotationData.width - 30, cotationData.zOffset]}
+        center
+        distanceFactor={8}
+        style={{ pointerEvents: 'none' }}
+      >
+        <div className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg border-2 border-red-600">
+          <div className="text-xs font-semibold text-red-100 mb-1">Position X</div>
+          <div className="text-lg font-mono font-bold">
+            {cotationData.displayX} mm
+          </div>
+        </div>
+      </Html>
+
+      {/* Rectangle Y (coin supérieur droit) */}
+      <Html
+        position={[cotationData.length - 80, cotationData.width - 30, cotationData.zOffset]}
+        center
+        distanceFactor={8}
+        style={{ pointerEvents: 'none' }}
+      >
+        <div className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg border-2 border-blue-600">
+          <div className="text-xs font-semibold text-blue-100 mb-1">Position Y</div>
+          <div className="text-lg font-mono font-bold">
+            {cotationData.displayY} mm
+          </div>
+        </div>
+      </Html>
+
       {/* === COTATION X === */}
       
       {/* Ligne de rappel verticale - origine */}
