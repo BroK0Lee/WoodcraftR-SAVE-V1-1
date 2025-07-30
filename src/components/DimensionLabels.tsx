@@ -60,40 +60,30 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
     // Style EXACT d'AxesHelper
     const labelClass = 'px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none';
 
-    const createLabel = (label: string, position: [number, number, number], rotate = false) => {
+    // Fonction simple pour labels horizontaux uniquement
+    const createLabel = (label: string, position: [number, number, number]) => {
       const div = document.createElement('div');
       div.className = labelClass;
-      if (rotate) {
-        // Méthodes multiples pour forcer la rotation (-90° pour écriture dans le bon sens)
-        div.style.transform = 'rotate(-90deg)';
-        div.style.webkitTransform = 'rotate(-90deg)'; // Support WebKit
-        div.style.transformOrigin = 'center center';
-        div.style.webkitTransformOrigin = 'center center';
-        // Force le style important via cssText
-        div.style.cssText += '; transform: rotate(-90deg) !important; transform-origin: center center !important;';
-        // Ajout d'une classe spécifique pour débugger
-        div.classList.add('rotated-label');
-      }
       div.textContent = label;
       const obj = new CSS2DObject(div);
       obj.position.set(position[0], position[1], position[2]);
       group.add(obj);
     };
 
-    // Labels de cotation avec la même approche qu'AxesHelper
+    // Label X (horizontal)
     createLabel(
       cotationData.displayX, 
       [(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 8, cotationData.zOffset]
     );
     
-    // Label Y avec rotation de -90° - APPROCHE ALTERNATIVE (écriture dans le bon sens)
+    // Label Y avec rotation de 270° - APPROCHE DÉDIÉE
     const labelYDiv = document.createElement('div');
     labelYDiv.className = labelClass;
     labelYDiv.style.writingMode = 'vertical-lr'; // Mode d'écriture vertical
     labelYDiv.style.textOrientation = 'mixed';
-    labelYDiv.style.transform = 'rotate(-90deg)';
+    labelYDiv.style.transform = 'rotate(270deg)';
     labelYDiv.style.transformOrigin = 'center center';
-    labelYDiv.style.cssText += '; transform: rotate(-90deg) !important; writing-mode: vertical-lr !important;';
+    labelYDiv.style.cssText += '; transform: rotate(270deg) !important; writing-mode: vertical-lr !important;';
     labelYDiv.textContent = cotationData.displayY;
     const labelYObj = new CSS2DObject(labelYDiv);
     labelYObj.position.set(cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset);
