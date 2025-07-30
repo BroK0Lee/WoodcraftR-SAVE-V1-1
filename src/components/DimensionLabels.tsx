@@ -88,11 +88,11 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
       <Html
         position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 8, cotationData.zOffset]}
         center
-        distanceFactor={8}
+        distanceFactor={1}
         style={{ pointerEvents: 'none' }}
       >
-        <div className="px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none">
-          {cotationData.displayX}
+        <div className="px-2 py-1 rounded shadow text-sm font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none">
+          X: {cotationData.displayX}
         </div>
       </Html>
 
@@ -132,14 +132,12 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
       <Html
         position={[cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}
         center
-        distanceFactor={8}
+        distanceFactor={1}
         style={{ pointerEvents: 'none' }}
-        transform
         rotation={[0, 0, rotationAngle]}
       >
-        <div className="px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none"
-             style={{ backgroundColor: 'red', border: '2px solid yellow', fontSize: '16px' }}>
-          Y:{cotationData.displayY}↑
+        <div className="px-2 py-1 rounded shadow text-sm font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none">
+          Y: {cotationData.displayY} ↑
         </div>
       </Html>
 
