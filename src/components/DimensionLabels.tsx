@@ -1,7 +1,5 @@
-import { useMemo, useEffect, useRef } from 'react';
-import { useThree, useFrame } from '@react-three/fiber';
-import { Group } from 'three';
-import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { useMemo } from 'react';
+import { Html } from '@react-three/drei';
 import type { Cut } from '@/models/Cut';
 
 interface Props {
@@ -14,9 +12,8 @@ interface Props {
  * Style professionnel CAO avec lignes de rappel et flèches
  */
 export default function DimensionLabels({ cut, panelDimensions }: Props) {
-  const { scene, camera, gl } = useThree();
-  const groupRef = useRef<Group>(new Group());
-  const rendererRef = useRef<CSS2DRenderer>();
+  // ANGLE DE ROTATION - Modifiez ici pour tester
+  const rotationAngle = Math.PI / 2; // 0, Math.PI/2, Math.PI, 3*Math.PI/2
 
   const cotationData = useMemo(() => {
     const { positionX, positionY } = cut;
@@ -53,75 +50,6 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
     };
   }, [cut.positionX, cut.positionY, panelDimensions]);
 
-  useEffect(() => {
-    const group = groupRef.current;
-    group.clear();
-
-    // Style EXACT d'AxesHelper
-    const labelClass = 'px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none';
-
-    // Fonction simple pour labels horizontaux uniquement
-    const createLabel = (label: string, position: [number, number, number]) => {
-      const div = document.createElement('div');
-      div.className = labelClass;
-      div.textContent = label;
-      const obj = new CSS2DObject(div);
-      obj.position.set(position[0], position[1], position[2]);
-      group.add(obj);
-    };
-
-    // Label X (horizontal)
-    createLabel(
-      cotationData.displayX, 
-      [(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 8, cotationData.zOffset]
-    );
-    
-    // Label Y avec rotation de 270° - APPROCHE DÉDIÉE
-    const labelYDiv = document.createElement('div');
-    labelYDiv.className = labelClass;
-    labelYDiv.style.writingMode = 'vertical-lr'; // Mode d'écriture vertical
-    labelYDiv.style.textOrientation = 'mixed';
-    labelYDiv.style.transform = 'rotate(270deg)';
-    labelYDiv.style.transformOrigin = 'center center';
-    labelYDiv.style.cssText += '; transform: rotate(270deg) !important; writing-mode: vertical-lr !important;';
-    labelYDiv.textContent = cotationData.displayY;
-    const labelYObj = new CSS2DObject(labelYDiv);
-    labelYObj.position.set(cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset);
-    group.add(labelYObj);
-
-    scene.add(group);
-    return () => {
-      scene.remove(group);
-      group.clear();
-    };
-  }, [scene, cotationData]);
-
-  useEffect(() => {
-    const labelRenderer = new CSS2DRenderer();
-    labelRenderer.domElement.style.position = 'absolute';
-    labelRenderer.domElement.style.top = '0';
-    labelRenderer.domElement.style.pointerEvents = 'none';
-
-    const parent = gl.domElement.parentElement;
-    if (parent) {
-      parent.appendChild(labelRenderer.domElement);
-      rendererRef.current = labelRenderer;
-      const handleResize = () => {
-        labelRenderer.setSize(parent.clientWidth, parent.clientHeight);
-      };
-      handleResize();
-      window.addEventListener('resize', handleResize);
-      return () => {
-        parent.removeChild(labelRenderer.domElement);
-        window.removeEventListener('resize', handleResize);
-      };
-    }
-  }, [gl]);
-
-  useFrame(() => {
-    rendererRef.current?.render(scene, camera);
-  });
-
   return (
     <group>
       {/* === COTATION X (HORIZONTALE) === */}
@@ -156,6 +84,18 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
         <meshBasicMaterial color="#333333" />
       </mesh>
 
+      {/* Label X (horizontal) - Html @react-three/drei */}
+      <Html
+        position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 8, cotationData.zOffset]}
+        center
+        distanceFactor={8}
+        style={{ pointerEvents: 'none' }}
+      >
+        <div className="px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none">
+          {cotationData.displayX}
+        </div>
+      </Html>
+
       {/* === COTATION Y (VERTICALE) === */}
       
       {/* Ligne de rappel horizontale - origine */}
@@ -187,6 +127,21 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
         <coneGeometry args={[2, 6, 8]} />
         <meshBasicMaterial color="#333333" />
       </mesh>
+
+      {/* Label Y avec rotation - Html @react-three/drei */}
+      <Html
+        position={[cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}
+        center
+        distanceFactor={8}
+        style={{ pointerEvents: 'none' }}
+        transform
+        rotation={[0, 0, rotationAngle]}
+      >
+        <div className="px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none"
+             style={{ backgroundColor: 'red', border: '2px solid yellow', fontSize: '16px' }}>
+          Y:{cotationData.displayY}↑
+        </div>
+      </Html>
 
       {/* === MARQUEURS === */}
       
