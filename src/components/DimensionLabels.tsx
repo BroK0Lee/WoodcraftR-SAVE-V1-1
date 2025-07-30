@@ -60,9 +60,13 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
     // Style EXACT d'AxesHelper
     const labelClass = 'px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none';
 
-    const createLabel = (label: string, position: [number, number, number]) => {
+    const createLabel = (label: string, position: [number, number, number], rotate = false) => {
       const div = document.createElement('div');
       div.className = labelClass;
+      if (rotate) {
+        div.style.transform = 'rotate(90deg)';
+        div.style.transformOrigin = 'center';
+      }
       div.textContent = label;
       const obj = new CSS2DObject(div);
       obj.position.set(position[0], position[1], position[2]);
@@ -75,9 +79,11 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
       [(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 8, cotationData.zOffset]
     );
     
+    // Label Y avec rotation de 90°
     createLabel(
       cotationData.displayY, 
-      [cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]
+      [cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset],
+      true
     );
 
     scene.add(group);
