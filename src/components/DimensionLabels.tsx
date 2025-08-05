@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { Html } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
+import * as THREE from 'three';
 import type { Cut } from '@/models/Cut';
 
 interface Props {
@@ -14,6 +16,26 @@ interface Props {
 export default function DimensionLabels({ cut, panelDimensions }: Props) {
   // ANGLE DE ROTATION - Modifiez ici pour tester
   const rotationAngle = Math.PI / 2; // 0, Math.PI/2, Math.PI, 3*Math.PI/2
+
+  // --- SCALING DYNAMIQUE ---
+  const { camera } = useThree();
+  // Position des labels X et Y
+  const labelXPos: [number, number, number] = useMemo(() => [
+    (cut.positionX + 0) / 2,
+    0 - 25 - 8,
+    panelDimensions.thickness + 0.1
+  ], [cut.positionX, panelDimensions.thickness]);
+  const labelYPos: [number, number, number] = useMemo(() => [
+    0 - 25 - 8,
+    (cut.positionY + 0) / 2,
+    panelDimensions.thickness + 0.1
+  ], [cut.positionY, panelDimensions.thickness]);
+  // Calcul de la distance caméra-label (moyenne des deux labels)
+  const distX = camera.position.distanceTo(new THREE.Vector3(labelXPos[0], labelXPos[1], labelXPos[2]));
+  const distY = camera.position.distanceTo(new THREE.Vector3(labelYPos[0], labelYPos[1], labelYPos[2]));
+  // Scaling dynamique (valeurs à ajuster selon la scène)
+  const scaleX = Math.max(0.7, Math.min(2.5, distX / 60));
+  const scaleY = Math.max(0.7, Math.min(2.5, distY / 60));
 
   const cotationData = useMemo(() => {
     const { positionX, positionY } = cut;
@@ -86,12 +108,24 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
 
       {/* Label X (horizontal) - Html @react-three/drei */}
       <Html
-        position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 8, cotationData.zOffset]}
+        position={labelXPos}
         center
         distanceFactor={1}
-        style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: 'none', transform: `scale(${scaleX})` }}
       >
-        <div className="px-2 py-1 rounded shadow text-sm font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none">
+        <div style={{ 
+          padding: '8px 16px', 
+          borderRadius: '4px', 
+          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          fontSize: '14px', 
+          fontWeight: 'bold', 
+          backgroundColor: 'rgba(20, 20, 20, 0.9)', 
+          color: 'white', 
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          pointerEvents: 'none',
+          userSelect: 'none',
+          whiteSpace: 'nowrap'
+        }}>
           X: {cotationData.displayX}
         </div>
       </Html>
@@ -130,13 +164,25 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
 
       {/* Label Y avec rotation - Html @react-three/drei */}
       <Html
-        position={[cotationData.yCotationX - 8, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}
+        position={labelYPos}
         center
         distanceFactor={1}
-        style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: 'none', transform: `scale(${scaleY})` }}
         rotation={[0, 0, rotationAngle]}
       >
-        <div className="px-2 py-1 rounded shadow text-sm font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none">
+        <div style={{ 
+          padding: '8px 16px', 
+          borderRadius: '4px', 
+          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          fontSize: '14px', 
+          fontWeight: 'bold', 
+          backgroundColor: 'rgba(20, 20, 20, 0.9)', 
+          color: 'white', 
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          pointerEvents: 'none',
+          userSelect: 'none',
+          whiteSpace: 'nowrap'
+        }}>
           Y: {cotationData.displayY} ↑
         </div>
       </Html>
