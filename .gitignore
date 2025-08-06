@@ -65,3 +65,16 @@ Desktop.ini
 
 # Fichiers vides universels (astuce)
 # Pour ignorer tous les fichiers de 0 octet, il faut un script, mais on peut limiter les extensions courantes ici
+test-webgl-hook.js
+debug-context-lost-fixed.js
+debug-context-lost.js
+debug-webgl-advanced.js
+debug-webgl-cleanup.js
+DIAGNOSTIC_CONTEXT_LOST.md
+FIX_CONTEXT_LOST.md
+src/components/MaterialDiagnosticPanel.tsx
+src/components/materialselector/WoodMaterialService.ts
+src/hooks/useWebGLContextCleanup.ts
+test-isolation.js
+test-unique-key.js
+test-webgl-fix.js
