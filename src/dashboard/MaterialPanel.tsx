@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { useGlobalMaterialStore } from '@/store/globalMaterialStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { 
   TreePine,
   Info,
   Star,
   Hammer,
-  Shield
+  Shield,
+  RotateCcw,
+  X
 } from 'lucide-react';
+import { MaterialCarousel3DTest } from '@/components/materialselector/MaterialCarousel3DTest';
 
 export function MaterialPanel() {
   const { 
@@ -17,6 +21,7 @@ export function MaterialPanel() {
   } = useGlobalMaterialStore();
 
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
+  const [showCarousel3D, setShowCarousel3D] = useState(false);
 
   const handleMaterialSelect = (materialId: string) => {
     setSelectedMaterialId(materialId);
@@ -26,6 +31,26 @@ export function MaterialPanel() {
 
   return (
     <div className="p-4 space-y-4 h-full overflow-y-auto">
+      {/* Bouton de test pour le Carousel 3D */}
+      <Card className="border-2 border-dashed border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50">
+        <CardContent className="pt-4">
+          <div className="text-center">
+            <RotateCcw className="w-8 h-8 mx-auto mb-2 text-amber-600" />
+            <h3 className="font-medium text-amber-900 mb-2">🎠 Nouveau Carousel 3D</h3>
+            <p className="text-sm text-amber-700 mb-4">
+              Testez le nouveau système de sélection avec GSAP Draggable
+            </p>
+            <Button 
+              onClick={() => setShowCarousel3D(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Ouvrir le Carousel 3D
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Sélection de la matière */}
       <Card>
         <CardHeader className="pb-3">
@@ -202,6 +227,35 @@ export function MaterialPanel() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Modal Carousel 3D */}
+      {showCarousel3D && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <RotateCcw className="w-5 h-5 text-amber-600" />
+                Carousel 3D - Test Component
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCarousel3D(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4">
+              <MaterialCarousel3DTest 
+                onMaterialSelect={(material) => {
+                  console.log('Matériau sélectionné depuis le carousel:', material);
+                  setSelectedMaterialId(material.id);
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

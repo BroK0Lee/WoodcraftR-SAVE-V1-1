@@ -10,5 +10,10 @@ export { MaterialSphere } from './MaterialSphere';
 export { MaterialInteractionManager } from './MaterialInteractionManager';
 export { useMaterialSelector } from './useMaterialSelector';
 
+// Nouveaux exports pour le Carousel 3D
+export { MaterialCarousel3D } from './MaterialCarousel3D';
+export { useCarouselInteractions } from './useCarouselInteractions';
+export * from './carouselUtils';
+
 // Types
 export type { Material } from './MaterialSphere';
