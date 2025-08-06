@@ -47,6 +47,7 @@ export class MaterialSphere {
       // Créer l'élément DOM pour la carte matériau
       const element = document.createElement('div');
       element.className = 'element';
+      element.id = `material-${material.id}`; // ID CRITIQUE pour MaterialInteractionManager
       element.style.width = '180px'; // Agrandi de 140px à 180px pour une meilleure visibilité
       element.style.height = '220px'; // Agrandi de 170px à 220px pour une meilleure visibilité
       element.style.backgroundColor = 'rgba(255,255,255,0.95)';
@@ -100,8 +101,9 @@ export class MaterialSphere {
       object.position.y = radius * Math.sin(theta) * Math.sin(phi);
       object.position.z = radius * Math.cos(phi);
 
-      vector.copy(object.position).multiplyScalar(2);
-      object.lookAt(vector);
+      // SUPPRESSION du lookAt pour éviter les conflits d'orientation avec GSAP
+      // vector.copy(object.position).multiplyScalar(2);
+      // object.lookAt(vector);
 
       this.targets.sphere.push(object);
     }

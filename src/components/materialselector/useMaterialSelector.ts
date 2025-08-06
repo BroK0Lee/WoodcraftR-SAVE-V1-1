@@ -77,12 +77,41 @@ export function useMaterialSelector(config: UseMaterialSelectorConfig) {
       });
 
       // Configurer les interactions avec les cartes matériaux
-      // Attendre que les éléments DOM soient créés
-      setTimeout(() => {
-        if (interactionManagerRef.current) {
+      // Système amélioré de détection des éléments DOM
+      const setupInteractions = async () => {
+        if (!interactionManagerRef.current) return;
+
+        // Attente progressive avec vérification des éléments
+        let attempts = 0;
+        const maxAttempts = 30; // 3 secondes maximum
+        
+        while (attempts < maxAttempts) {
+          // Vérifier si tous les éléments sont présents dans le DOM
+          const allElementsPresent = materials.every(material => {
+            const element = document.getElementById(`material-${material.id}`);
+            return element !== null;
+          });
+
+          if (allElementsPresent) {
+            console.log(`✅ [useMaterialSelector] Tous les éléments DOM détectés après ${attempts * 100}ms`);
+            interactionManagerRef.current.setupMaterialInteractions(materials);
+            break;
+          }
+
+          // Attendre 100ms avant la prochaine vérification
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+
+        if (attempts >= maxAttempts) {
+          console.warn('⚠️ [useMaterialSelector] Timeout: certains éléments DOM non détectés');
+          // Tenter quand même de configurer les interactions
           interactionManagerRef.current.setupMaterialInteractions(materials);
         }
-      }, 100);
+      };
+
+      // Lancer la configuration des interactions
+      setupInteractions();
 
       // Démarrer l'animation vers la sphère
       if (sphereRef.current) {
