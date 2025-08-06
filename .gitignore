@@ -35,3 +35,33 @@ CAMERA_AUTO_FRAMING.md
 CLEANUP_NAVIGATION_CONFLICTS.md
 INTEGRATION_O3DV_NAVIGATION.md
 MIGRATION_O3DV_COMPLETE.md
+
+# Fichiers vides
+**/*.empty
+
+# Fichiers temporaires et backup
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.~
+
+# Dossiers de build et cache
+.cache/
+.tmp/
+.vite/
+.vite-temp/
+
+# Fichiers/dossiers vides
+**/.empty
+
+# Fichiers système
+Thumbs.db
+Desktop.ini
+
+# Fichiers générés par l'éditeur
+*.code-workspace
+
+# Fichiers vides universels (astuce)
+# Pour ignorer tous les fichiers de 0 octet, il faut un script, mais on peut limiter les extensions courantes ici
