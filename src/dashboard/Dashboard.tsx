@@ -1,7 +1,7 @@
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sidebar } from './Sidebar';
 import ContentViewer from "@/components/ContentViewer";
-import { WoodMaterialSelector } from "@/components/materialselector";
+import { MaterialCarousel3DTest } from "@/components/materialselector";
 import { useDashboardStore } from '@/store/dashboardStore';
 
 export function Dashboard() {
@@ -28,7 +28,7 @@ export function Dashboard() {
                   zIndex: activeTab === 'material' ? 1 : -1
                 }}
               >
-                <WoodMaterialSelector />
+                <MaterialCarousel3DTest />
               </div>
               
               <div 
