@@ -29,25 +29,32 @@ export function MaterialCarousel3DTest({ onMaterialSelect }: MaterialCarousel3DT
 
   // Initialiser le carousel au montage
   useEffect(() => {
+    console.log('🎠 [MaterialCarousel3DTest] Initialisation...', { 
+      containerRef: containerRef.current,
+      materialsCount: materials.length,
+      isInitialized: carousel.isInitialized 
+    });
+    
     if (containerRef.current && !carousel.isInitialized) {
+      console.log('🚀 [MaterialCarousel3DTest] Création du carousel...');
       carousel.initializeCarousel(containerRef.current);
     }
 
     return () => {
+      console.log('🧹 [MaterialCarousel3DTest] Cleanup...');
       carousel.cleanup();
     };
   }, [carousel]);
 
   return (
     <div className="w-full h-full">
-      {/* Container principal du carousel - Pleine taille */}
+      {/* Container principal du carousel - Adaptatif aux thèmes */}
       <div 
         ref={containerRef}
-        className="carousel-3d-container w-full h-full"
-        style={{
-          position: 'relative',
-          overflow: 'hidden'
-        }}
+        className="carousel-3d-container w-full h-full relative overflow-hidden 
+                   bg-gray-50 dark:bg-gray-950 
+                   border border-gray-200 dark:border-gray-800
+                   transition-colors duration-200"
       />
     </div>
   );

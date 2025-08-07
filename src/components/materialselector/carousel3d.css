@@ -5,10 +5,21 @@
 /* WRAPPER NÉCESSAIRE pour React et encapsulation */
 .carousel-parent {
   overflow: hidden;
-  background: #000;
+  background: var(--carousel-bg, #0a0a0a); /* Couleur adaptative avec fallback */
   position: relative;
   width: 100%;
   height: 100%;
+}
+
+/* Adaptation pour les thèmes light/dark via CSS variables */
+.light .carousel-parent {
+  --carousel-bg: #f8f9fa;
+  --carousel-border: #e5e7eb;
+}
+
+.dark .carousel-parent {
+  --carousel-bg: #0a0a0a;
+  --carousel-border: #333;
 }
 
 /* STYLES comme CodePen mais encapsulés pour éviter conflits globaux */
