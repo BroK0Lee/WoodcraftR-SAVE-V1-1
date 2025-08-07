@@ -12,7 +12,9 @@ export { useMaterialSelector } from './useMaterialSelector';
 
 // Nouveaux exports pour le Carousel 3D
 export { MaterialCarousel3D } from './MaterialCarousel3D';
+export { MaterialCarousel3DTest } from './MaterialCarousel3DTest';
 export { useCarouselInteractions } from './useCarouselInteractions';
+export { getAllWoodMaterials, getWoodMaterialById, woodMaterials } from './woodMaterials';
 export * from './carouselUtils';
 
 // Types

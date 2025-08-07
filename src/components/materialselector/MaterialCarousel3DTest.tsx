@@ -1,46 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Material } from './MaterialSphere';
 import { useCarouselInteractions } from './useCarouselInteractions';
-
-// Données de test pour le carousel
-const testMaterials: Material[] = [
-  {
-    id: 'oak-classic',
-    name: 'Chêne Classique',
-    image: '/placeholder-material.svg',
-    price: 45
-  },
-  {
-    id: 'pine-natural',
-    name: 'Pin Naturel',
-    image: '/placeholder-material.svg',
-    price: 32
-  },
-  {
-    id: 'mahogany-premium',
-    name: 'Acajou Premium',
-    image: '/placeholder-material.svg',
-    price: 78
-  },
-  {
-    id: 'bamboo-eco',
-    name: 'Bambou Éco',
-    image: '/placeholder-material.svg',
-    price: 55
-  },
-  {
-    id: 'walnut-deluxe',
-    name: 'Noyer Deluxe',
-    image: '/placeholder-material.svg',
-    price: 89
-  },
-  {
-    id: 'cherry-wood',
-    name: 'Bois de Cerisier',
-    image: '/placeholder-material.svg',
-    price: 67
-  }
-];
+import { getAllWoodMaterials } from './woodMaterials';
 
 interface MaterialCarousel3DTestProps {
   onMaterialSelect?: (material: Material) => void;
@@ -50,18 +11,22 @@ interface MaterialCarousel3DTestProps {
 export function MaterialCarousel3DTest({ onMaterialSelect }: MaterialCarousel3DTestProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
-  const [isAutoRotate, setIsAutoRotate] = useState(false);
+  
+  // Charger les matériaux de bois avec vraies textures
+  const materials = getAllWoodMaterials();
 
-  // Configuration du carousel avec le hook
+  // Configuration du carousel avec le hook (mode scroll uniquement)
   const carousel = useCarouselInteractions({
-    materials: testMaterials,
+    materials: materials,
     onMaterialSelect: (material) => {
       setSelectedMaterial(material);
       onMaterialSelect?.(material);
       console.log('🎯 Material sélectionné:', material.name);
     },
     radius: 400,
-    autoRotate: isAutoRotate
+    autoRotate: false,
+    useScrollControl: true,  // Mode scroll fixé
+    snapAfterScroll: true
   });
 
   // Initialiser le carousel au montage
@@ -75,28 +40,9 @@ export function MaterialCarousel3DTest({ onMaterialSelect }: MaterialCarousel3DT
     };
   }, [carousel]);
 
-  // Gestionnaires pour les boutons de test
+  // Gestionnaire pour la navigation rapide vers un matériau
   const handleRotateToMaterial = (materialId: string) => {
     carousel.rotateToMaterial(materialId);
-  };
-
-  const toggleAutoRotate = () => {
-    const newAutoRotate = !isAutoRotate;
-    setIsAutoRotate(newAutoRotate);
-    
-    if (newAutoRotate) {
-      carousel.startAutoRotate();
-    } else {
-      carousel.stopAutoRotate();
-    }
-  };
-
-  const getCurrentMaterial = () => {
-    const current = carousel.getCurrentMaterial();
-    if (current) {
-      console.log('📍 Matériau actuellement centré:', current.name);
-      setSelectedMaterial(current);
-    }
   };
 
   return (
@@ -127,65 +73,36 @@ export function MaterialCarousel3DTest({ onMaterialSelect }: MaterialCarousel3DT
         )}
 
         {/* Boutons de navigation rapide */}
-        <div style={{ marginBottom: '15px' }}>
-          <strong>Navigation rapide:</strong>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-            {testMaterials.map((material) => (
-              <button
-                key={material.id}
-                onClick={() => handleRotateToMaterial(material.id)}
-                style={{
-                  padding: '6px 12px',
-                  background: selectedMaterial?.id === material.id ? '#667eea' : '#fff',
-                  color: selectedMaterial?.id === material.id ? '#fff' : '#333',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}
-              >
-                {material.name}
-              </button>
-            ))}
+        {materials.length > 0 && (
+          <div style={{ marginBottom: '15px' }}>
+            <strong>Navigation rapide:</strong>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+              {materials.map((material: Material) => (
+                <button
+                  key={material.id}
+                  onClick={() => handleRotateToMaterial(material.id)}
+                  style={{
+                    padding: '6px 12px',
+                    background: selectedMaterial?.id === material.id ? '#667eea' : '#fff',
+                    color: selectedMaterial?.id === material.id ? '#fff' : '#333',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
+                >
+                  {material.name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Contrôles généraux */}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            onClick={toggleAutoRotate}
-            style={{
-              padding: '8px 16px',
-              background: isAutoRotate ? '#dc3545' : '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            {isAutoRotate ? '⏹️ Arrêter rotation' : '▶️ Démarrer rotation'}
-          </button>
-
-          <button
-            onClick={getCurrentMaterial}
-            style={{
-              padding: '8px 16px',
-              background: '#17a2b8',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            📍 Matériau centré
-          </button>
-        </div>
-
-        {/* Instructions */}
+        {/* Instructions simplifiées */}
         <div style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
           <strong>Instructions:</strong>
           <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
-            <li>🖱️ Cliquez et glissez horizontalement pour faire tourner</li>
+            <li>🖱️ **Mode Scroll**: Utilisez la molette de souris pour faire tourner le carousel</li>
             <li>🎯 Cliquez sur une carte pour la sélectionner</li>
             <li>⚡ Les animations utilisent GSAP avec inertie</li>
             <li>📱 Responsive design adaptatif</li>

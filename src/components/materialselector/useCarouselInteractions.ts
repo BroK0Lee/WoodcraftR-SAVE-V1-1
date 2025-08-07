@@ -8,11 +8,20 @@ interface UseCarouselConfig {
   onMaterialSelect: (material: Material) => void;
   radius?: number;
   autoRotate?: boolean;
+  useScrollControl?: boolean;  // Option pour utiliser le scroll au lieu du drag
+  snapAfterScroll?: boolean;   // Option pour snap automatique après scroll
 }
 
 // Hook pour gérer les interactions du carousel 3D
 export function useCarouselInteractions(config: UseCarouselConfig) {
-  const { materials, onMaterialSelect, radius = 400, autoRotate = false } = config;
+  const { 
+    materials, 
+    onMaterialSelect, 
+    radius = 400, 
+    autoRotate = false,
+    useScrollControl = false,
+    snapAfterScroll = true
+  } = config;
   
   // Références
   const carouselRef = useRef<MaterialCarousel3D | null>(null);
@@ -33,7 +42,9 @@ export function useCarouselInteractions(config: UseCarouselConfig) {
       carouselRef.current = new MaterialCarousel3D(container, {
         radius,
         materials,
-        onMaterialSelect
+        onMaterialSelect,
+        useScrollControl,
+        snapAfterScroll
       });
 
       // Créer le carousel

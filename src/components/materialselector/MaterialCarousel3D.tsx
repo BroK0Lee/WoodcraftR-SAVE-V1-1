@@ -11,6 +11,8 @@ interface CarouselConfig {
   radius: number;
   materials: Material[];
   onMaterialSelect: (material: Material) => void;
+  useScrollControl?: boolean;  // Option pour utiliser le scroll au lieu du drag
+  snapAfterScroll?: boolean;   // Option pour snap automatique après scroll
 }
 
 // Classe pour gérer le carousel 3D (Inspiré du CodePen GSAP)
@@ -22,6 +24,7 @@ export class MaterialCarousel3D {
   private config: CarouselConfig;
   private draggableInstance: Draggable[] | null = null;
   private currentRotation: number = 0;
+  private wheelHandler?: (e: WheelEvent) => void; // Handler pour les événements scroll
 
   constructor(container: HTMLElement, config: CarouselConfig) {
     this.container = container;
@@ -112,9 +115,9 @@ export class MaterialCarousel3D {
     return card;
   }
 
-  // Configuration GSAP initiale (EXACTEMENT comme CodePen original)
+  // Configuration GSAP initiale (version scroll OU drag selon option)
   private setupGSAPAnimation(_angleStep: number, _radius: number): void {
-    // Variables pour le drag (EXACTEMENT comme CodePen)
+    // Variables pour les interactions
     let xPos = 0;
 
     // Timeline d'initialisation (EXACTEMENT comme CodePen original)
@@ -137,7 +140,58 @@ export class MaterialCarousel3D {
         ease: 'expo'
       });
 
-    // Configuration des interactions Draggable (EXACTEMENT comme CodePen original)
+    // Choisir le type d'interaction selon la configuration
+    if (this.config.useScrollControl) {
+      this.setupScrollControl();
+    } else {
+      this.setupDragControl(xPos);
+    }
+
+    console.log('🎭 [MaterialCarousel3D] GSAP configuré avec contrôle:', 
+                this.config.useScrollControl ? 'SCROLL' : 'DRAG');
+  }
+
+  // Configuration du contrôle par SCROLL (molette de souris)
+  private setupScrollControl(): void {
+    let scrollTimeout: NodeJS.Timeout;
+    
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault(); // Empêcher le scroll de page
+      
+      // Calculer la rotation basée sur deltaY (molette verticale)
+      const scrollSensitivity = 0.5; // Ajustez la sensibilité
+      const rotationDelta = e.deltaY * scrollSensitivity;
+      
+      // Appliquer la rotation
+      gsap.to(this.ring, {
+        rotationY: '+=' + rotationDelta,
+        duration: 0.3,
+        ease: 'power2.out',
+        onUpdate: () => {
+          gsap.set('.carousel-parent .img', { 
+            backgroundPosition: (i: number) => this.getBgPos(i) 
+          });
+        }
+      });
+
+      // Debounce pour snap automatique après arrêt du scroll
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        if (this.config.snapAfterScroll) {
+          this.snapToNearestCard();
+        }
+      }, 300);
+    };
+
+    // Ajouter l'event listener sur le container principal
+    this.container.addEventListener('wheel', handleWheel, { passive: false });
+    
+    // Stocker la référence pour le cleanup
+    this.wheelHandler = handleWheel;
+  }
+
+  // Configuration du contrôle par DRAG (original CodePen)
+  private setupDragControl(xPos: number): void {
     this.draggableInstance = Draggable.create(this.dragger, {
       
       onDragStart: (e: any) => {
@@ -165,8 +219,6 @@ export class MaterialCarousel3D {
         gsap.set(this.dragger, { x: 0, y: 0 }); // reset drag layer
       }
     });
-
-    console.log('🎭 [MaterialCarousel3D] GSAP configuré EXACTEMENT comme CodePen original');
   }
 
   // Fonction getBgPos EXACTEMENT comme CodePen original
@@ -232,9 +284,15 @@ export class MaterialCarousel3D {
       this.draggableInstance = null;
     }
 
+    // Nettoyer le wheel handler
+    if (this.wheelHandler) {
+      this.container.removeEventListener('wheel', this.wheelHandler);
+      this.wheelHandler = undefined;
+    }
+
     // Nettoyer GSAP avec les sélecteurs encapsulés
     gsap.killTweensOf(this.ring);
-    gsap.killTweensOf('.carousel-parent .carousel-card');
+    gsap.killTweensOf('.carousel-parent .img');
 
     // Nettoyer DOM
     this.container.innerHTML = '';
