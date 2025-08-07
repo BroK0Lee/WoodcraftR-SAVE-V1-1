@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Material } from './MaterialSphere';
 import { useCarouselInteractions } from './useCarouselInteractions';
-import { getAllWoodMaterials } from './woodMaterials';
+import { getAllWoodMaterials } from './woodMaterials-public'; // 🔄 Nouveau fichier optimisé
 
 interface MaterialCarousel3DTestProps {
   onMaterialSelect?: (material: Material) => void;

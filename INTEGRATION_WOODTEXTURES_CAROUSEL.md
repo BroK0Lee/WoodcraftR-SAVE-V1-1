@@ -37,7 +37,7 @@ Le carousel utilise maintenant **7 vraies textures de bois** :
 ### 🔧 Utilisation dans le Code
 
 ```typescript
-import { getAllWoodMaterials, getWoodMaterialById } from './woodMaterials';
+import { getAllWoodMaterials, getWoodMaterialById } from './woodMaterials-public'; // 🔄 NOUVEAU FICHIER OPTIMISÉ
 
 // Obtenir tous les matériaux
 const materials = getAllWoodMaterials();
@@ -59,8 +59,8 @@ const chene = getWoodMaterialById('chene');
 Si vous voulez utiliser le `GlobalWoodMaterialService` plus tard :
 
 ```typescript
-// Actuel (simple, pour carousel)
-import { getAllWoodMaterials } from './woodMaterials';
+// Actuel (optimisé pour /public, support PBR complet)
+import { getAllWoodMaterials } from './woodMaterials-public';
 
 // Future (complet, avec caractéristiques)
 import { GlobalWoodMaterialService } from '../../services/globalWoodMaterialService';

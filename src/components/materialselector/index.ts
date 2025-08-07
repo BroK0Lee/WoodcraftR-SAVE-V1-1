@@ -14,7 +14,11 @@ export { useMaterialSelector } from './useMaterialSelector';
 export { MaterialCarousel3D } from './MaterialCarousel3D';
 export { MaterialCarousel3DTest } from './MaterialCarousel3DTest';
 export { useCarouselInteractions } from './useCarouselInteractions';
-export { getAllWoodMaterials, getWoodMaterialById, woodMaterials } from './woodMaterials';
+
+// Export des données matériaux (version optimisée /public)
+export { getAllWoodMaterials, getWoodMaterialById, createThreeMaterial } from './woodMaterials-public';
+export type { WoodMaterial } from './woodMaterials-public';
+
 export * from './carouselUtils';
 
 // Types
