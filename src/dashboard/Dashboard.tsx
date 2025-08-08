@@ -1,11 +1,21 @@
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sidebar } from './Sidebar';
 import ContentViewer from "@/components/ContentViewer";
-import { MaterialCarousel3DTest } from "@/components/materialselector";
 import { useDashboardStore } from '@/store/dashboardStore';
+import { useMaterialCarousel } from '@/components/materialselector/useMaterialCarousel';
+import { getAllWoodMaterials } from '@/components/materialselector/woodMaterials-public';
 
 export function Dashboard() {
   const { activeTab } = useDashboardStore();
+
+  // Nouveau: hook selectorless
+  const materials = getAllWoodMaterials();
+  const carousel = useMaterialCarousel({
+    materials,
+    onMaterialSelect: (m) => console.log('🎯 [Dashboard] Matériau sélectionné:', m.name),
+    useScrollControl: true,
+    snapAfterScroll: true
+  });
 
   return (
     <div className="h-[calc(100vh-73px)] flex flex-col">
@@ -28,7 +38,8 @@ export function Dashboard() {
                   zIndex: activeTab === 'material' ? 1 : -1
                 }}
               >
-                <MaterialCarousel3DTest />
+                {/* Hôte du carousel selectorless */}
+                <div ref={carousel.hostRef} className="w-full h-full relative overflow-hidden" />
               </div>
               
               <div 
