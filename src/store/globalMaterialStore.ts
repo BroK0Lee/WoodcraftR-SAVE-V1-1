@@ -66,12 +66,15 @@ interface GlobalMaterialState {
   
   // Données des matériaux
   materials: GlobalWoodMaterial[];
+  // Sélection courante globale
+  selectedMaterialId: string | null;
   
   // Actions
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setMaterials: (materials: GlobalWoodMaterial[]) => void;
   getMaterialById: (id: string) => GlobalWoodMaterial | undefined;
+  setSelectedMaterialId: (id: string | null) => void;
   clearCache: () => void;
 }
 
@@ -83,6 +86,7 @@ export const useGlobalMaterialStore = create<GlobalMaterialState>()(
       isLoaded: false,
       error: null,
       materials: [],
+  selectedMaterialId: null,
       
       // Actions
       setLoading: (loading: boolean) => 
@@ -101,13 +105,17 @@ export const useGlobalMaterialStore = create<GlobalMaterialState>()(
       
       getMaterialById: (id: string) => 
         get().materials.find(material => material.id === id),
+
+      setSelectedMaterialId: (id: string | null) =>
+        set({ selectedMaterialId: id }, false, 'setSelectedMaterialId'),
       
       clearCache: () => 
         set({ 
           materials: [], 
           isLoaded: false, 
           isLoading: false, 
-          error: null 
+          error: null,
+          selectedMaterialId: null
         }, false, 'clearCache'),
     }),
     {

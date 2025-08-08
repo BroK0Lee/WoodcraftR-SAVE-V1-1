@@ -1,262 +1,122 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGlobalMaterialStore } from '@/store/globalMaterialStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  TreePine,
-  Info,
-  Star,
-  Hammer,
-  Shield,
-  RotateCcw,
-  X
-} from 'lucide-react';
-import { MaterialCarousel3DTest } from '@/components/materialselector/MaterialCarousel3DTest';
+import { TreePine } from 'lucide-react';
 
 export function MaterialPanel() {
-  const { 
-    materials, 
-    getMaterialById
-  } = useGlobalMaterialStore();
+  const { selectedMaterialId, setSelectedMaterialId } = useGlobalMaterialStore();
+  // État: sélection courante (par défaut: aucune)
+  const [localSelection, setLocalSelection] = useState<string | ''>('');
+  // Données issues du manifest JSON public
+  const [options, setOptions] = useState<Array<{ id: string; displayName: string }>>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
-  const [showCarousel3D, setShowCarousel3D] = useState(false);
+  // Charger la liste depuis public/textures/wood/materials.json
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetch('/textures/wood/materials.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!mounted) return;
+        const opts = (json?.materials ?? []).map((m: { id: string; displayName: string }) => ({
+          id: m.id,
+          displayName: m.displayName,
+        }));
+        setOptions(opts);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Erreur de chargement des matières');
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const handleMaterialSelect = (materialId: string) => {
-    setSelectedMaterialId(materialId);
-  };
-
-  const selectedMaterial = selectedMaterialId ? getMaterialById(selectedMaterialId) : null;
+  // Synchroniser la sélection locale avec le store global
+  useEffect(() => {
+    setLocalSelection(selectedMaterialId ?? '');
+  }, [selectedMaterialId]);
 
   return (
     <div className="p-4 space-y-4 h-full overflow-y-auto">
-      {/* Bouton de test pour le Carousel 3D */}
-      <Card className="border-2 border-dashed border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50">
-        <CardContent className="pt-4">
-          <div className="text-center">
-            <RotateCcw className="w-8 h-8 mx-auto mb-2 text-amber-600" />
-            <h3 className="font-medium text-amber-900 mb-2">🎠 Nouveau Carousel 3D</h3>
-            <p className="text-sm text-amber-700 mb-4">
-              Testez le nouveau système de sélection avec GSAP Draggable
-            </p>
-            <Button 
-              onClick={() => setShowCarousel3D(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Ouvrir le Carousel 3D
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Sélection de la matière */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <TreePine className="w-4 h-4" />
-            Sélection de Matière
+            Matière selectionnée
           </CardTitle>
           <CardDescription>
-            Choisissez le type de bois pour votre projet
+            Choisissez la matière via la liste déroulante ci-dessous
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {/* Affichage des matériaux disponibles */}
-          {materials.length === 0 ? (
+        <CardContent className="space-y-4">
+          {isLoading && (
             <div className="text-center text-gray-500 py-4">
               <TreePine className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p>Chargement des matériaux...</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {/* Matériaux en version compacte */}
-              {materials.slice(0, 8).map((material) => (
-                <div
-                  key={material.id}
-                  className={`
-                    relative group cursor-pointer rounded-lg border-2 p-3 transition-all duration-200
-                    ${selectedMaterialId === material.id 
-                      ? 'border-amber-300 bg-amber-50' 
-                      : 'border-gray-200 hover:border-amber-200 bg-white hover:bg-amber-50/50'
-                    }
-                  `}
-                  onClick={() => handleMaterialSelect(material.id)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                      <img 
-                        src={material.image}
-                        alt={material.displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm text-gray-900 truncate">
-                        {material.displayName}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {material.characteristics.hardness.classification}
-                      </div>
-                      <div className="text-xs text-amber-600">
-                        {material.price}€/m²
-                      </div>
-                    </div>
-                  </div>
-                  {selectedMaterialId === material.id && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
-                      <Star className="w-3 h-3 text-white fill-current" />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Bouton "Voir plus" - Ouvre le sélecteur 3D */}
-              <div
-                className="
-                  relative group cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-3 
-                  transition-all duration-200 hover:border-amber-300 hover:bg-amber-50/30
-                  flex items-center justify-center
-                "
-                onClick={() => handleMaterialSelect('selector')}
+          )}
+          {error && (
+            <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+              Erreur: {error}
+            </div>
+          )}
+          {!isLoading && !error && (
+            <div className="space-y-2">
+              <label htmlFor="material-select" className="text-sm font-medium text-gray-700">
+                Liste des matières
+              </label>
+              <select
+                id="material-select"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                value={localSelection}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setLocalSelection(val);
+                  setSelectedMaterialId(val || null);
+                }}
               >
-                <div className="text-center">
-                  <TreePine className="w-6 h-6 mx-auto mb-1 text-gray-400 group-hover:text-amber-500" />
-                  <div className="text-xs font-medium text-gray-600 group-hover:text-amber-700">
-                    Voir tous
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {materials.length} matériaux
+                <option value="">Aucune matière sélectionnée</option>
+                {options.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.displayName}
+                  </option>
+                ))}
+              </select>
+
+              {/* Aperçu de la matière sélectionnée */}
+              {selectedMaterialId ? (
+                <div className="mt-3">
+                  <div className="text-xs text-gray-600 mb-1">Aperçu</div>
+                  <div className="rounded-md overflow-hidden border border-gray-200 bg-white">
+                    <img
+                      src={`/textures/wood/${selectedMaterialId}/basecolor.jpg`}
+                      alt={`Aperçu ${options.find(o => o.id === selectedMaterialId)?.displayName || selectedMaterialId}`}
+                      className="w-full h-28 object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.opacity = '0.3';
+                      }}
+                    />
                   </div>
                 </div>
+              ) : (
+                <div className="mt-3 text-xs text-gray-500">Aucune matière sélectionnée</div>
+              )}
+
+              <div className="text-xs text-gray-500">
+                État: {selectedMaterialId ? `"${options.find(o => o.id === selectedMaterialId)?.displayName ?? selectedMaterialId}" sélectionnée` : 'Aucune matière sélectionnée'}
               </div>
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Détails du matériau sélectionné */}
-      {selectedMaterial && selectedMaterialId !== 'selector' && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Info className="w-4 h-4" />
-                Détails - {selectedMaterial.displayName}
-              </CardTitle>
-              <Badge variant="outline" className="text-amber-700 border-amber-300">
-                {selectedMaterial.price}€/m²
-              </Badge>
-            </div>
-            <CardDescription className="text-sm">
-              {selectedMaterial.description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Caractéristiques principales */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
-                  <Shield className="w-3 h-3" />
-                  Densité
-                </div>
-                <div className="text-xs text-gray-800">
-                  {selectedMaterial.characteristics.density.typical || `${selectedMaterial.characteristics.density.value} ${selectedMaterial.characteristics.density.unit}`}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
-                  <Hammer className="w-3 h-3" />
-                  Dureté
-                </div>
-                <div className="text-xs text-gray-800">
-                  {selectedMaterial.characteristics.hardness.classification}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
-                  <Star className="w-3 h-3" />
-                  Couleur
-                </div>
-                <div className="text-xs text-gray-800">
-                  {selectedMaterial.characteristics.appearance.color}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
-                  <TreePine className="w-3 h-3" />
-                  Grain
-                </div>
-                <div className="text-xs text-gray-800">
-                  {selectedMaterial.characteristics.appearance.grain}
-                </div>
-              </div>
-            </div>
-
-            {/* Applications */}
-            {selectedMaterial.characteristics.applications.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-600">Applications</div>
-                <div className="flex flex-wrap gap-1">
-                  {selectedMaterial.characteristics.applications.slice(0, 4).map((app, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs px-2 py-0.5">
-                      {app}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Message si sélecteur 3D */}
-      {selectedMaterialId === 'selector' && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-4">
-              <TreePine className="w-12 h-12 mx-auto mb-3 text-amber-500" />
-              <h3 className="font-medium text-gray-900 mb-2">Sélecteur 3D</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Rendez-vous dans l'onglet "Matière" pour utiliser le sélecteur 3D interactif avec tous les matériaux disponibles.
-              </p>
-              <Badge variant="outline" className="text-amber-700 border-amber-300">
-                {materials.length} matériaux disponibles
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Modal Carousel 3D */}
-      {showCarousel3D && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <RotateCcw className="w-5 h-5 text-amber-600" />
-                Carousel 3D - Test Component
-              </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCarousel3D(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="p-4">
-              <MaterialCarousel3DTest 
-                onMaterialSelect={(material) => {
-                  console.log('Matériau sélectionné depuis le carousel:', material);
-                  setSelectedMaterialId(material.id);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

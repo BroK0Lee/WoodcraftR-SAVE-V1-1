@@ -1,9 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useGlobalMaterialStore } from '@/store/globalMaterialStore';
 import { gsap } from 'gsap';
 import { Play, Pause, X, MapPin, Calendar, Star } from 'lucide-react';
 
 interface CarouselItem {
-  id: number;
+  id: string;
+  displayName?: string;
   title: string;
   description: string;
   image: string;
@@ -15,80 +17,28 @@ interface CarouselItem {
   tags: string[];
 }
 
-const carouselData: CarouselItem[] = [
-  {
-    id: 1,
-    title: "Ocean Waves",
-    description: "Discover the mesmerizing beauty of ocean waves crashing against pristine shores",
-    image: "https://images.pexels.com/photos/1032650/pexels-photo-1032650.jpeg?auto=compress&cs=tinysrgb&w=800",
-    color: "#0EA5E9",
-    fullDescription: "Immerse yourself in the rhythmic dance of ocean waves as they crash against pristine shores. This breathtaking scene captures the raw power and serene beauty of nature's most mesmerizing spectacle. The endless blue horizon meets crystalline waters, creating a symphony of sound and motion that soothes the soul and awakens the spirit of adventure.",
-    location: "Maldives",
-    date: "2024",
-    rating: 4.9,
-    tags: ["Ocean", "Waves", "Nature", "Peaceful"]
-  },
-  {
-    id: 2,
-    title: "Mountain Peak",
-    description: "Experience the majestic view from the world's highest mountain peaks",
-    image: "https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg?auto=compress&cs=tinysrgb&w=800",
-    color: "#10B981",
-    fullDescription: "Stand atop the world's most magnificent mountain peaks and witness views that few have ever experienced. The crisp mountain air fills your lungs as you gaze upon endless ranges stretching to the horizon. Snow-capped summits pierce through clouds, creating a landscape so dramatic and beautiful it takes your breath away.",
-    location: "Swiss Alps",
-    date: "2024",
-    rating: 4.8,
-    tags: ["Mountains", "Adventure", "Snow", "Hiking"]
-  },
-  {
-    id: 3,
-    title: "Desert Sunset",
-    description: "Witness the breathtaking colors of sunset over endless desert dunes",
-    image: "https://images.pexels.com/photos/1128797/pexels-photo-1128797.jpeg?auto=compress&cs=tinysrgb&w=800",
-    color: "#F59E0B",
-    fullDescription: "Experience the magic of a desert sunset as golden hour transforms endless sand dunes into a canvas of warm, glowing colors. The sky erupts in brilliant oranges, deep purples, and soft pinks, while the desert landscape shifts from harsh daylight to a serene, mystical wonderland that speaks to the soul.",
-    location: "Sahara Desert",
-    date: "2024",
-    rating: 4.7,
-    tags: ["Desert", "Sunset", "Golden Hour", "Serene"]
-  },
-  {
-    id: 4,
-    title: "Forest Path",
-    description: "Walk through enchanted forest paths where nature tells its ancient stories",
-    image: "https://images.pexels.com/photos/1496373/pexels-photo-1496373.jpeg?auto=compress&cs=tinysrgb&w=800",
-    color: "#059669",
-    fullDescription: "Journey through ancient forest paths where towering trees create natural cathedrals of green. Sunlight filters through the canopy, casting dancing shadows on moss-covered ground. Every step reveals new wonders - from delicate wildflowers to the gentle sounds of woodland creatures living in perfect harmony with their environment.",
-    location: "Black Forest, Germany",
-    date: "2024",
-    rating: 4.6,
-    tags: ["Forest", "Nature", "Peaceful", "Wildlife"]
-  },
-  {
-    id: 5,
-    title: "City Lights",
-    description: "Marvel at the electric energy of city lights illuminating the night sky",
-    image: "https://images.pexels.com/photos/466685/pexels-photo-466685.jpeg?auto=compress&cs=tinysrgb&w=800",
-    color: "#8B5CF6",
-    fullDescription: "Feel the pulse of urban life as millions of lights create a dazzling tapestry across the night sky. From towering skyscrapers to bustling streets below, the city comes alive after dark with an energy that's both exhilarating and inspiring. This is where dreams are made and stories unfold under the glow of neon and starlight.",
-    location: "Tokyo, Japan",
-    date: "2024",
-    rating: 4.8,
-    tags: ["City", "Lights", "Urban", "Night"]
-  },
-  {
-    id: 6,
-    title: "Aurora Borealis",
-    description: "Experience the mystical dance of northern lights across the arctic sky",
-    image: "https://images.pexels.com/photos/1933239/pexels-photo-1933239.jpeg?auto=compress&cs=tinysrgb&w=800",
-    color: "#EC4899",
-    fullDescription: "Witness one of nature's most spectacular phenomena as the Aurora Borealis paints the arctic sky in ethereal greens, blues, and purples. This celestial dance occurs when solar particles collide with Earth's atmosphere, creating a light show so magnificent it has inspired legends and wonder for thousands of years.",
-    location: "Iceland",
-    date: "2024",
-    rating: 5.0,
-    tags: ["Aurora", "Northern Lights", "Arctic", "Magical"]
-  }
-];
+// Types pour le manifest JSON
+interface MaterialCarouselMeta {
+  title: string;
+  description: string;
+  image: string;
+  color: string;
+  fullDescription: string;
+  location: string;
+  date: string;
+  rating: number;
+  tags: string[];
+}
+
+interface MaterialEntry {
+  id: string;
+  displayName: string;
+  carousel: MaterialCarouselMeta;
+}
+
+interface MaterialsManifest {
+  materials: MaterialEntry[];
+}
 
 const Carousel3D: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,16 +46,53 @@ const Carousel3D: React.FC = () => {
   const modalRef = useRef<HTMLDivElement>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLDivElement[]>([]);
+  const [items, setItems] = useState<CarouselItem[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CarouselItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const { setSelectedMaterialId } = useGlobalMaterialStore();
 
   const radius = 300;
-  const totalItems = carouselData.length;
-  const angleStep = 360 / totalItems;
+  const totalItems = items.length;
+  const angleStep = totalItems > 0 ? 360 / totalItems : 0;
+
+  // Charger les données depuis le manifest JSON (public/textures/wood/materials.json)
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const res = await fetch('/textures/wood/materials.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const manifest: MaterialsManifest = await res.json();
+        if (!mounted) return;
+        const mapped: CarouselItem[] = manifest.materials.map((m) => ({
+          id: m.id,
+          displayName: m.displayName,
+          title: m.carousel.title,
+          description: m.carousel.description,
+          image: m.carousel.image,
+          color: m.carousel.color,
+          fullDescription: m.carousel.fullDescription,
+          location: m.carousel.location,
+          date: m.carousel.date,
+          rating: m.carousel.rating,
+          tags: m.carousel.tags,
+        }));
+        setItems(mapped);
+        setCurrentIndex(0);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : 'Erreur de chargement');
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const openCard = (item: CarouselItem, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -195,33 +182,33 @@ const Carousel3D: React.FC = () => {
     }
   };
   useEffect(() => {
-    if (!carouselRef.current) return;
+    if (!carouselRef.current || totalItems === 0) return;
 
-    // Initialize carousel positions
+    // Initialize carousel positions (à chaque changement du nombre d'items)
     itemsRef.current.forEach((item, index) => {
       if (!item) return;
-      
+
       const angle = angleStep * index;
       const x = Math.sin((angle * Math.PI) / 180) * radius;
       const z = Math.cos((angle * Math.PI) / 180) * radius;
-      
+
       gsap.set(item, {
         rotationY: angle,
-        transformOrigin: "center center",
-        x: x,
-        z: z,
+        transformOrigin: 'center center',
+        x,
+        z,
       });
     });
 
     // Set initial rotation
     gsap.set(carouselRef.current, {
-      transformStyle: "preserve-3d",
+      transformStyle: 'preserve-3d',
       rotationY: -currentIndex * angleStep,
     });
-  }, []);
+  }, [totalItems, angleStep]);
 
   useEffect(() => {
-    if (!carouselRef.current) return;
+  if (!carouselRef.current || totalItems === 0) return;
 
     // Animate to current position
     gsap.to(carouselRef.current, {
@@ -247,7 +234,7 @@ const Carousel3D: React.FC = () => {
   }, [currentIndex, angleStep, totalItems]);
 
   useEffect(() => {
-    if (!isAutoPlay || isHovered) return;
+  if (!isAutoPlay || isHovered || totalItems === 0) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % totalItems);
@@ -267,12 +254,12 @@ const Carousel3D: React.FC = () => {
   };
 
   return (
-    <div className="relative h-full w-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+    <div className="relative h-full w-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
       {/* Background Elements (scoped to panel, no pointer events) */}
-  <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-white/5 to-transparent rounded-full" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-neutral-300/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-neutral-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-white/5 to-transparent rounded-full" />
       </div>
 
       {/* Main Container */}
@@ -282,20 +269,25 @@ const Carousel3D: React.FC = () => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
+        {loadError && (
+          <div className="mb-4 w-full max-w-3xl rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
+            Erreur de chargement des matériaux: {loadError}
+          </div>
+        )}
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-4">
-            3D Carousel
+          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-neutral-900 via-neutral-700 to-neutral-500 bg-clip-text text-transparent mb-4">
+            Sélectionnez votre matière
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Découvrez une expérience immersive avec notre carousel 3D interactif
+            Utilisez la molette pour naviguer
           </p>
         </div>
 
         {/* Carousel Container */}
-    <div className="relative w-full max-w-6xl h-96 md:h-[500px]">
+        <div className="relative w-full max-w-6xl h-96 md:h-[500px]">
           <div 
-      className="absolute inset-0 flex items-center justify-center"
+            className="absolute inset-0 flex items-center justify-center"
             style={{ perspective: '1200px' }}
           >
             <div
@@ -303,7 +295,7 @@ const Carousel3D: React.FC = () => {
               className="relative w-80 h-80 md:w-96 md:h-96"
               style={{ transformStyle: 'preserve-3d' }}
             >
-              {carouselData.map((item, index) => (
+              {items.map((item, index) => (
                 <div
                   key={item.id}
                   ref={(el) => addToRefs(el, index)}
@@ -342,7 +334,7 @@ const Carousel3D: React.FC = () => {
                       {index === currentIndex && (
                         <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
-                            Cliquez pour ouvrir
+                            Plus de détails
                           </span>
                         </div>
                       )}
@@ -377,7 +369,7 @@ const Carousel3D: React.FC = () => {
 
         {/* Indicators */}
         <div className="flex space-x-3 mt-6">
-          {carouselData.map((_, index) => (
+          {items.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
@@ -393,16 +385,20 @@ const Carousel3D: React.FC = () => {
         {/* Current Slide Info */}
         <div className="mt-8 text-center">
           <div className="inline-flex items-center space-x-4 px-6 py-3 bg-white/5 backdrop-blur-sm rounded-full border border-white/10">
-            <div 
-              className="w-4 h-4 rounded-full"
-              style={{ backgroundColor: carouselData[currentIndex].color }}
-            />
-            <span className="text-white font-medium">
-              {currentIndex + 1} / {totalItems}
-            </span>
-            <span className="text-gray-300 text-sm">
-              {carouselData[currentIndex].title}
-            </span>
+            {totalItems > 0 && (
+              <>
+                <div 
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: items[currentIndex].color }}
+                />
+                <span className="text-white font-medium">
+                  {currentIndex + 1} / {totalItems}
+                </span>
+                <span className="text-gray-300 text-sm">
+                  {items[currentIndex].title}
+                </span>
+              </>
+            )}
             <span className="text-gray-400 text-xs hidden sm:inline">
               Utilisez la molette pour naviguer
             </span>
@@ -411,7 +407,7 @@ const Carousel3D: React.FC = () => {
       </div>
 
       {/* Modal */}
-      {isModalOpen && selectedCard && (
+  {isModalOpen && selectedCard && (
         <div
           ref={modalRef}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
@@ -497,11 +493,13 @@ const Carousel3D: React.FC = () => {
                     boxShadow: `0 10px 30px ${selectedCard.color}40`
                   }}
                   onClick={() => {
-                    // Action personnalisée ici
-                    console.log('Explore clicked for:', selectedCard.title);
+                    // Définir la sélection globale et fermer la modale
+                    setSelectedMaterialId(selectedCard.id);
+                    console.log('Choisir cette matière:', selectedCard.displayName || selectedCard.title);
+                    closeCard();
                   }}
                 >
-                  Explorer maintenant
+                  Choisir cette matière
                 </button>
               </div>
             </div>
