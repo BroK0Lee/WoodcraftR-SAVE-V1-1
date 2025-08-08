@@ -367,43 +367,7 @@ const Carousel3D: React.FC = () => {
           </button>
         </div>
 
-        {/* Indicators */}
-        <div className="flex space-x-3 mt-6">
-          {items.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 hover:scale-125 ${
-                index === currentIndex
-                  ? 'bg-white shadow-lg shadow-white/50'
-                  : 'bg-white/40 hover:bg-white/60'
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* Current Slide Info */}
-        <div className="mt-8 text-center">
-          <div className="inline-flex items-center space-x-4 px-6 py-3 bg-white/5 backdrop-blur-sm rounded-full border border-white/10">
-            {totalItems > 0 && (
-              <>
-                <div 
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: items[currentIndex].color }}
-                />
-                <span className="text-white font-medium">
-                  {currentIndex + 1} / {totalItems}
-                </span>
-                <span className="text-gray-300 text-sm">
-                  {items[currentIndex].title}
-                </span>
-              </>
-            )}
-            <span className="text-gray-400 text-xs hidden sm:inline">
-              Utilisez la molette pour naviguer
-            </span>
-          </div>
-        </div>
+  {/* Indicators & bottom info removed per request */}
       </div>
 
       {/* Modal */}
