@@ -2,20 +2,11 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { Sidebar } from './Sidebar';
 import ContentViewer from "@/components/ContentViewer";
 import { useDashboardStore } from '@/store/dashboardStore';
-import { useMaterialCarousel } from '@/components/materialselector/useMaterialCarousel';
-import { getAllWoodMaterials } from '@/components/materialselector/woodMaterials-public';
+import Carousel3D from '@/components/materialselector/Carousel3D';
 
 export function Dashboard() {
   const { activeTab } = useDashboardStore();
-
-  // Nouveau: hook selectorless
-  const materials = getAllWoodMaterials();
-  const carousel = useMaterialCarousel({
-    materials,
-    onMaterialSelect: (m) => console.log('🎯 [Dashboard] Matériau sélectionné:', m.name),
-    useScrollControl: true,
-    snapAfterScroll: true
-  });
+  // Affiche le Carousel 3D uniquement dans l'onglet "Matière"
 
   return (
     <div className="h-[calc(100vh-73px)] flex flex-col">
@@ -29,29 +20,11 @@ export function Dashboard() {
         <ResizablePanel defaultSize={75}>
           <div className="h-full flex flex-col">
             <div className="flex-1">
-              {/* Conteneurs isolés pour éviter conflits WebGL */}
-              <div 
-                className="w-full h-full"
-                style={{ 
-                  display: activeTab === 'material' ? 'block' : 'none',
-                  position: 'relative',
-                  zIndex: activeTab === 'material' ? 1 : -1
-                }}
-              >
-                {/* Hôte du carousel selectorless */}
-                <div ref={carousel.hostRef} className="w-full h-full relative overflow-hidden" />
-              </div>
-              
-              <div 
-                className="w-full h-full"
-                style={{ 
-                  display: activeTab !== 'material' ? 'block' : 'none',
-                  position: 'relative',
-                  zIndex: activeTab !== 'material' ? 1 : -1
-                }}
-              >
+              {activeTab === 'material' ? (
+                <Carousel3D />
+              ) : (
                 <ContentViewer />
-              </div>
+              )}
             </div>
           </div>
         </ResizablePanel>
