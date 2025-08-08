@@ -18,13 +18,16 @@ interface CarouselConfig {
 // Classe pour gérer le carousel 3D (Inspiré du CodePen GSAP)
 export class MaterialCarousel3D {
   private container: HTMLElement;
-  private ring!: HTMLElement; // ! pour indiquer qu'il sera initialisé dans createDOMStructure
-  private dragger!: HTMLElement; // ! pour indiquer qu'il sera initialisé dans createDOMStructure
+  private ring!: HTMLElement;
+  private dragger!: HTMLElement;
+  private containerDiv!: HTMLElement;
+  private vignette!: HTMLElement;
+  private cards: HTMLElement[] = [];
   private materials: Material[] = [];
   private config: CarouselConfig;
   private draggableInstance: Draggable[] | null = null;
   private currentRotation: number = 0;
-  private wheelHandler?: (e: WheelEvent) => void; // Handler pour les événements scroll
+  private wheelHandler?: (e: WheelEvent) => void;
 
   constructor(container: HTMLElement, config: CarouselConfig) {
     this.container = container;
@@ -37,76 +40,132 @@ export class MaterialCarousel3D {
     console.log('🎠 [MaterialCarousel3D] Carousel initialisé avec', this.materials.length, 'matériaux');
   }
 
-  // Créer la structure DOM du carousel (avec wrapper pour React mais structure CodePen)
+  // Créer la structure DOM du carousel (selectorless)
   private createDOMStructure(): void {
-    // Nettoyer le container parent et REMETTRE la classe wrapper pour React
-    this.container.innerHTML = '';
-    this.container.className = 'carousel-parent'; // NÉCESSAIRE pour React et encapsulation
+    console.log('🏗️ [MaterialCarousel3D] Création de la structure DOM...');
     
-    // 1. Container principal (.container dans CodePen) - DIRECT dans le wrapper
-    const containerDiv = document.createElement('div');
-    containerDiv.className = 'container';
+    // Nettoyer le container parent et enlever toute dépendance de classe forcée
+    this.container.innerHTML = '';
 
-    // 2. Ring principal (#ring dans CodePen) - VA DANS LE CONTAINER
+    // Styles de base pour le container fourni par le parent
+    Object.assign(this.container.style, {
+      position: 'relative',
+      overflow: 'hidden',
+      width: '100%',
+      height: '100%'
+    } as Partial<CSSStyleDeclaration>);
+    
+    // Debug: Vérifier les dimensions du container
+    const rect = this.container.getBoundingClientRect();
+    console.log('📏 [MaterialCarousel3D] Dimensions container:', {
+      width: rect.width,
+      height: rect.height,
+      visible: rect.width > 0 && rect.height > 0
+    });
+    
+    // 1. Container principal (perspective + couche 100%)
+    this.containerDiv = document.createElement('div');
+    Object.assign(this.containerDiv.style, {
+      position: 'absolute',
+      inset: '0',
+      perspective: '2000px',
+      width: '100%',
+      height: '100%'
+    } as Partial<CSSStyleDeclaration>);
+
+    // 2. Ring principal - remplit le conteneur
     this.ring = document.createElement('div');
-    this.ring.id = 'ring';
+    Object.assign(this.ring.style, {
+      position: 'absolute',
+      width: '100%',
+      height: '100%'
+    } as Partial<CSSStyleDeclaration>);
     
     // Ajouter le ring dans le container
-    containerDiv.appendChild(this.ring);
+    this.containerDiv.appendChild(this.ring);
 
-    // 3. Vignette (.vignette dans CodePen) - OUTSIDE du container
-    const vignette = document.createElement('div');
-    vignette.className = 'vignette';
+    // 3. Vignette (optionnelle, esthétique)
+    this.vignette = document.createElement('div');
+    Object.assign(this.vignette.style, {
+      position: 'absolute',
+      width: '1400px',
+      height: '100%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      pointerEvents: 'none',
+      background: 'linear-gradient(to left, rgba(0,0,0,1) 12%, rgba(0,0,0,0) 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,1) 88%)'
+    } as Partial<CSSStyleDeclaration>);
 
-    // 4. Dragger (#dragger dans CodePen) - OUTSIDE du container
+    // 4. Dragger - couche d'interaction
     this.dragger = document.createElement('div');
-    this.dragger.id = 'dragger';
+    Object.assign(this.dragger.style, {
+      position: 'absolute',
+      inset: '0',
+      width: '100%',
+      height: '100%'
+    } as Partial<CSSStyleDeclaration>);
 
-    // Assemblage dans le container parent (exactement comme CodePen)
-    this.container.appendChild(containerDiv);  // Container avec ring à l'intérieur
-    this.container.appendChild(vignette);      // Vignette à l'extérieur
-    this.container.appendChild(this.dragger);  // Dragger à l'extérieur
+    // Assemblage dans le container parent
+    this.container.appendChild(this.containerDiv);  // Container avec ring à l'intérieur
+    this.container.appendChild(this.vignette);      // Vignette au-dessus
+    this.container.appendChild(this.dragger);       // Dragger au-dessus
 
-    console.log('🏗️ [MaterialCarousel3D] Structure DOM créée EXACTEMENT comme CodePen');
+    console.log('🏗️ [MaterialCarousel3D] Structure DOM créée (selectorless)');
   }
 
   // Créer le carousel avec les matériaux
   public createCarousel(): void {
     console.log('🎨 [MaterialCarousel3D] Création du carousel avec', this.materials.length, 'matériaux');
 
-    // Nettoyer le ring
+    if (!this.ring) {
+      console.error('❌ [MaterialCarousel3D] Ring non disponible pour createCarousel');
+      return;
+    }
+
+    // Nettoyer le ring et les cartes
     this.ring.innerHTML = '';
+    this.cards = [];
 
     // Calculer l'angle entre chaque carte
     const angleStep = 360 / this.materials.length;
     const radius = this.config.radius;
 
-    // Créer les cartes matériaux
+    console.log('🔧 [MaterialCarousel3D] Configuration:', {
+      angleStep,
+      radius,
+      materialsCount: this.materials.length
+    });
+
+    // Créer les cartes matériaux et stocker leurs refs
     this.materials.forEach((material, index) => {
       const card = this.createMaterialCard(material, index);
       this.ring.appendChild(card);
+      this.cards.push(card);
+      console.log(`🃏 [MaterialCarousel3D] Carte créée: ${material.name} (${index})`);
     });
 
-    // Configuration GSAP initiale (comme CodePen)
-    this.setupGSAPAnimation(angleStep, radius);
+    console.log('📦 [MaterialCarousel3D] Ring contient maintenant:', this.ring.children.length, 'éléments');
 
-    // Configurer les interactions
-    // Les interactions Draggable sont maintenant configurées dans setupGSAPAnimation
+    // Configuration GSAP initiale
+    this.setupGSAPAnimation(angleStep, radius);
 
     console.log('✅ [MaterialCarousel3D] Carousel créé avec succès');
   }
 
-  // Créer une carte matériau individuelle (EXACTEMENT comme CodePen avec .img)
+  // Créer une carte matériau individuelle
   private createMaterialCard(material: Material, _index: number): HTMLElement {
     const card = document.createElement('div');
-    card.className = 'img'; // EXACTEMENT comme CodePen original
+    // Styles de base de la carte (pas de classes globales requises)
+    Object.assign(card.style, {
+      position: 'absolute',
+      width: '100%',
+      height: '100%'
+    } as Partial<CSSStyleDeclaration>);
+
     card.id = `carousel-material-${material.id}`;
     card.setAttribute('data-material-id', material.id);
 
-    // Pas de contenu HTML - l'image sera appliquée via CSS background dans GSAP
-    // Exactement comme le CodePen original
-
-    // Ajouter les événements de clic (compatible avec MaterialInteractionManager)
+    // Interaction clic
     card.addEventListener('click', () => {
       console.log('🎯 [MaterialCarousel3D] Clic sur matériau:', material.name);
       this.config.onMaterialSelect(material);
@@ -120,25 +179,31 @@ export class MaterialCarousel3D {
     // Variables pour les interactions
     let xPos = 0;
 
-    // Timeline d'initialisation (EXACTEMENT comme CodePen original)
+    // Timeline d'initialisation
     gsap.timeline()
-      .set(this.dragger, { opacity: 0 }) //make the drag layer invisible
-      .set(this.ring, { rotationY: 180 }) //set initial rotationY so the parallax jump happens off screen
-      .set('.carousel-parent .img', { // apply transform rotations to each image
-        rotateY: (i: number) => i * -36, // EXACTEMENT comme CodePen : -36 degrés
-        transformOrigin: '50% 50% 500px', // EXACTEMENT comme CodePen : 500px
-        z: -500, // EXACTEMENT comme CodePen : -500px
-        backgroundImage: (i: number) => `url(${this.materials[i]?.image || ''})`, // Nos images au lieu de Picsum
-        backgroundPosition: (i: number) => this.getBgPos(i), // EXACTEMENT comme CodePen
+      .set(this.dragger, { opacity: 0 }) // rendre la couche drag invisible
+      .set(this.ring, { rotationY: 180 }) // rotation initiale pour parallax off screen
+      .set(this.cards, { // appliquer les transforms à chaque image
+        rotateY: (i: number) => i * -36,
+        transformOrigin: '50% 50% 500px',
+        z: -500,
+        backgroundImage: (i: number) => {
+          const material = this.materials[i];
+          const imageUrl = (material as any)?.maps?.basecolor || (material as any)?.image || '';
+          console.log(`🖼️ [MaterialCarousel3D] Application texture ${i}:`, imageUrl);
+          return `url(${imageUrl})`;
+        },
+        backgroundSize: 'cover',
+        backgroundPosition: (i: number) => this.getBgPos(i),
         backfaceVisibility: 'hidden'
-      })
-      .from('.carousel-parent .img', {
+      } as any)
+      .from(this.cards, {
         duration: 1.5,
         y: 200,
         opacity: 0,
         stagger: 0.1,
         ease: 'expo'
-      });
+      } as any);
 
     // Choisir le type d'interaction selon la configuration
     if (this.config.useScrollControl) {
@@ -168,9 +233,9 @@ export class MaterialCarousel3D {
         duration: 0.3,
         ease: 'power2.out',
         onUpdate: () => {
-          gsap.set('.carousel-parent .img', { 
+          gsap.set(this.cards, { 
             backgroundPosition: (i: number) => this.getBgPos(i) 
-          });
+          } as any);
         }
       });
 
@@ -193,7 +258,6 @@ export class MaterialCarousel3D {
   // Configuration du contrôle par DRAG (original CodePen)
   private setupDragControl(xPos: number): void {
     this.draggableInstance = Draggable.create(this.dragger, {
-      
       onDragStart: (e: any) => {
         if (e.touches) e.clientX = e.touches[0].clientX;
         xPos = Math.round(e.clientX);
@@ -205,9 +269,9 @@ export class MaterialCarousel3D {
         gsap.to(this.ring, {
           rotationY: '-=' + ((Math.round(e.clientX) - xPos) % 360),
           onUpdate: () => {
-            gsap.set('.carousel-parent .img', { 
+            gsap.set(this.cards, { 
               backgroundPosition: (i: number) => this.getBgPos(i) 
-            });
+            } as any);
           }
         });
 
@@ -215,7 +279,6 @@ export class MaterialCarousel3D {
       },
 
       onDragEnd: () => {
-        // gsap.to(ring, { rotationY: Math.round(gsap.getProperty(ring,'rotationY')/36)*36 }) // move to nearest photo...at the expense of the inertia effect
         gsap.set(this.dragger, { x: 0, y: 0 }); // reset drag layer
       }
     });
@@ -223,7 +286,6 @@ export class MaterialCarousel3D {
 
   // Fonction getBgPos EXACTEMENT comme CodePen original
   private getBgPos(i: number): string {
-    // returns the background-position string to create parallax movement in each image
     const rotationY = gsap.getProperty(this.ring, 'rotationY') as number;
     const bgPos = -gsap.utils.wrap(0, 360, rotationY - 180 - i * 36) / 360 * 400;
     return bgPos + 'px 0px';
@@ -274,6 +336,38 @@ export class MaterialCarousel3D {
     return this.materials[index] || null;
   }
 
+  // Redimensionner le carousel en fonction du container
+  public resize(): void {
+    console.log('📐 [MaterialCarousel3D] Redimensionnement du carousel...');
+    
+    if (!this.container || !this.ring) {
+      console.warn('⚠️ [MaterialCarousel3D] Container ou ring non disponible pour le resize');
+      return;
+    }
+
+    // Obtenir les nouvelles dimensions du container
+    const containerRect = this.container.getBoundingClientRect();
+    const newWidth = containerRect.width;
+    const newHeight = containerRect.height;
+    
+    console.log(`📏 [MaterialCarousel3D] Nouvelles dimensions: ${newWidth}x${newHeight}`);
+    
+    // Calculer le nouveau rayon basé sur la taille du container
+    const minDimension = Math.min(newWidth, newHeight);
+    const newRadius = Math.max(200, minDimension * 0.3);
+    
+    // Mettre à jour le rayon si il a changé significativement
+    if (Math.abs(newRadius - this.config.radius) > 20) {
+      console.log(`🔄 [MaterialCarousel3D] Ajustement rayon: ${this.config.radius} -> ${newRadius}`);
+      this.config.radius = newRadius;
+      
+      // Recréer le carousel avec le nouveau rayon
+      this.createCarousel();
+    } else {
+      console.log('✅ [MaterialCarousel3D] Rayon inchangé, pas de recréation nécessaire');
+    }
+  }
+
   // Nettoyer les ressources
   public destroy(): void {
     console.log('🧹 [MaterialCarousel3D] Nettoyage du carousel');
@@ -290,12 +384,13 @@ export class MaterialCarousel3D {
       this.wheelHandler = undefined;
     }
 
-    // Nettoyer GSAP avec les sélecteurs encapsulés
+    // Nettoyer GSAP
     gsap.killTweensOf(this.ring);
-    gsap.killTweensOf('.carousel-parent .img');
+    gsap.killTweensOf(this.cards);
 
     // Nettoyer DOM
     this.container.innerHTML = '';
+    this.cards = [];
   }
 
   // Méthodes utilitaires
