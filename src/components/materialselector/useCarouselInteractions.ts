@@ -27,6 +27,36 @@ export function useCarouselInteractions(config: UseCarouselConfig) {
   const carouselRef = useRef<MaterialCarousel3D | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
   const autoRotateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+  // Configurer ResizeObserver pour détecter les changements de taille du container
+  const setupResizeObserver = useCallback((container: HTMLElement) => {
+    // Nettoyer l'ancien observer
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+    }
+
+    // Créer un nouveau ResizeObserver
+    resizeObserverRef.current = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        console.log('📐 [useCarouselInteractions] Changement de taille détecté:', {
+          width: entry.contentRect.width,
+          height: entry.contentRect.height
+        });
+        
+        // Déclencher le redimensionnement du carousel avec un délai pour éviter les appels répétés
+        setTimeout(() => {
+          if (carouselRef.current) {
+            carouselRef.current.resize();
+          }
+        }, 100);
+      }
+    });
+
+    // Observer le container
+    resizeObserverRef.current.observe(container);
+    console.log('👁️ [useCarouselInteractions] ResizeObserver configuré');
+  }, []);
 
   // Initialiser le carousel
   const initializeCarousel = useCallback((container: HTMLElement): boolean => {
@@ -56,6 +86,10 @@ export function useCarouselInteractions(config: UseCarouselConfig) {
       }
 
       containerRef.current = container;
+      
+      // Configurer ResizeObserver pour détecter les changements de taille
+      setupResizeObserver(container);
+      
       console.log('✅ [useCarouselInteractions] Carousel initialisé avec succès');
       return true;
 
@@ -122,6 +156,13 @@ export function useCarouselInteractions(config: UseCarouselConfig) {
     // Arrêter la rotation automatique
     stopAutoRotate();
 
+    // Nettoyer ResizeObserver
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+      resizeObserverRef.current = null;
+      console.log('👁️ [useCarouselInteractions] ResizeObserver nettoyé');
+    }
+
     // Détruire le carousel
     if (carouselRef.current) {
       carouselRef.current.destroy();
@@ -134,9 +175,10 @@ export function useCarouselInteractions(config: UseCarouselConfig) {
   // Redimensionner le carousel
   const resize = useCallback(() => {
     if (carouselRef.current && containerRef.current) {
-      // Le carousel CSS s'adapte automatiquement via les media queries
-      // Mais on peut déclencher une re-création si nécessaire
-      console.log('📐 [useCarouselInteractions] Redimensionnement détecté');
+      console.log('📐 [useCarouselInteractions] Déclenchement du redimensionnement');
+      carouselRef.current.resize();
+    } else {
+      console.warn('⚠️ [useCarouselInteractions] Carousel ou container non disponible pour le resize');
     }
   }, []);
 

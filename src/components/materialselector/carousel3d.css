@@ -42,14 +42,14 @@
   position: absolute;
 }
 
-/* Container principal - EXACTEMENT comme CodePen mais encapsulé */
+/* Container principal - ADAPTATIF au parent (au lieu de dimensions fixes) */
 .carousel-parent .container {
   perspective: 2000px;
-  width: 300px;
-  height: 300px;  
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  width: 100%;      /* 100% au lieu de 300px fixe */
+  height: 100%;     /* 100% au lieu de 300px fixe */
+  left: 0;          /* 0 au lieu de 50% */
+  top: 0;           /* 0 au lieu de 50% */
+  /* Suppression des transforms qui centraient avec des dimensions fixes */
 }
 
 /* Vignette pour l'effet de profondeur - EXACTEMENT comme CodePen */

@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 .env
 
+# Package manager lockfiles
+pnpm-lock.yaml
+
 # Obsolete files - prevent recreation
 src/components/MaterialCard.tsx
 src/components/MaterialModal.tsx
