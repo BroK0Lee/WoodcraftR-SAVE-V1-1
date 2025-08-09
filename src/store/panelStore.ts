@@ -3,6 +3,7 @@ import {
   PANEL_LIMITS,
   DEFAULT_DIMENSIONS,
   type PanelDimensions,
+  CIRCLE_LIMITS,
 } from '@/models/Panel';
 import {
   type Cut,
@@ -28,6 +29,11 @@ export interface PanelStore {
   // === FORME DU PANNEAU ===
   shape: 'rectangle' | 'circle';
   setShape: (shape: 'rectangle' | 'circle') => void;
+
+  // === CHAMPS UI LIÉS À LA FORME ===
+  // Pour "circle", on manipule un diamètre côté UI. Le store garde dimensions.thickness, et length/width sont ignorés.
+  circleDiameter: number; // mm
+  setCircleDiameter: (diameter: number) => void;
   
   // === GÉOMÉTRIE ET ARÊTES ===
   geometry: PanelGeometryDTO | null;
@@ -80,6 +86,7 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
   // === ÉTAT INITIAL ===
   dimensions: DEFAULT_DIMENSIONS,
   shape: 'rectangle',
+  circleDiameter: 300, // valeur UI par défaut pour circulaire
   cuts: [],
   editingCutId: null,
   previewCut: null,
@@ -120,6 +127,12 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
 
   // === ACTIONS FORME ===
   setShape: (shape: 'rectangle' | 'circle') => set({ shape }),
+
+  // === ACTIONS SPÉCIFIQUES CERCLE ===
+  setCircleDiameter: (diameter: number) =>
+    set(() => ({
+      circleDiameter: clamp(diameter, CIRCLE_LIMITS.diameter.min, CIRCLE_LIMITS.diameter.max),
+    })),
   
   // === ACTIONS GÉOMÉTRIE ===
   setGeometry: (geometry: PanelGeometryDTO | null) => set({ geometry }),
