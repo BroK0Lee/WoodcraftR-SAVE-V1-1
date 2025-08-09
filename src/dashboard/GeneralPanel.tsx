@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   RotateCcw
 } from 'lucide-react';
@@ -14,10 +15,12 @@ import {
 export function GeneralPanel() {
   const {
     dimensions,
+  shape,
     setLength,
     setWidth,
     setThickness,
     resetDimensions,
+  setShape,
   } = usePanelStore();
 
   // Valeurs locales pour permettre la saisie libre avant validation
@@ -90,6 +93,36 @@ export function GeneralPanel() {
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Forme</CardTitle>
+          <CardDescription>Choisissez la forme du panneau</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RadioGroup
+            value={shape}
+            onValueChange={(val) => {
+              if (val === 'rectangle' || val === 'circle') setShape(val);
+            }}
+            className="grid grid-cols-2 gap-3"
+          >
+            <label className="flex items-center gap-3 rounded-md border border-border bg-card p-3 hover:bg-accent cursor-pointer">
+              <RadioGroupItem value="rectangle" id="shape-rectangle" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Carré / Rectangle</span>
+                <span className="text-xs text-muted-foreground">Forme plane avec angles</span>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 rounded-md border border-border bg-card p-3 hover:bg-accent cursor-pointer">
+              <RadioGroupItem value="circle" id="shape-circle" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Circulaire</span>
+                <span className="text-xs text-muted-foreground">Disque / cercle</span>
+              </div>
+            </label>
+          </RadioGroup>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center justify-between">

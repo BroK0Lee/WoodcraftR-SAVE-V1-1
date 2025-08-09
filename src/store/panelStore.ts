@@ -24,6 +24,10 @@ export interface PanelStore {
   setThickness: (thickness: number) => void;
   setDimensions: (dims: PanelDimensions) => void;
   resetDimensions: () => void;
+
+  // === FORME DU PANNEAU ===
+  shape: 'rectangle' | 'circle';
+  setShape: (shape: 'rectangle' | 'circle') => void;
   
   // === GÉOMÉTRIE ET ARÊTES ===
   geometry: PanelGeometryDTO | null;
@@ -75,6 +79,7 @@ export interface PanelStore {
 export const usePanelStore = create<PanelStore>((set, get) => ({
   // === ÉTAT INITIAL ===
   dimensions: DEFAULT_DIMENSIONS,
+  shape: 'rectangle',
   cuts: [],
   editingCutId: null,
   previewCut: null,
@@ -112,6 +117,9 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
         ),
       },
     })),
+
+  // === ACTIONS FORME ===
+  setShape: (shape: 'rectangle' | 'circle') => set({ shape }),
   
   // === ACTIONS GÉOMÉTRIE ===
   setGeometry: (geometry: PanelGeometryDTO | null) => set({ geometry }),
