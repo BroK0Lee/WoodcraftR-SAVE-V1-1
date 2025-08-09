@@ -90,3 +90,7 @@ src/components/materialselector/MaterialSphere.tsx
 src/components/materialselector/WoodMaterialSelector.tsx
 src/components/materialselector/useMaterialSelector.ts
 src/components/materialselector/woodMaterials-public.ts
+
+# Ignore per-wood markdown files in textures (now replaced by materials.json)
+public/textures/wood/**/README.md
+public/textures/wood/**/*.md
