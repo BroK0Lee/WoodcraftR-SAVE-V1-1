@@ -10,9 +10,12 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { listMaterials } from '@/services/materialsManifest';
+import { Switch } from '@/components/ui/switch';
 
 export function MaterialPanel() {
   const { selectedMaterialId, setSelectedMaterialId } = useGlobalMaterialStore();
+  const useAO = useGlobalMaterialStore((s) => s.useAO);
+  const setUseAO = useGlobalMaterialStore((s) => s.setUseAO);
   // État: sélection courante (par défaut: aucune)
   const [localSelection, setLocalSelection] = useState<string | ''>('');
   const NONE_VALUE = '__none__';
@@ -120,6 +123,17 @@ export function MaterialPanel() {
 
               <div className="text-xs text-muted-foreground">
                 État: {selectedMaterialId ? `"${options.find(o => o.id === selectedMaterialId)?.displayName ?? selectedMaterialId}" sélectionnée` : 'Aucune matière sélectionnée'}
+              </div>
+
+              {/* Debug / Options d'affichage */}
+              <div className="mt-4 rounded-md border border-border bg-card/60 p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-foreground">Occlusion ambiante (AO)</div>
+                    <div className="text-xs text-muted-foreground">Active/désactive l'aoMap pour debug</div>
+                  </div>
+                  <Switch checked={useAO} onCheckedChange={setUseAO} aria-label="Activer l'AO" />
+                </div>
               </div>
             </div>
           )}

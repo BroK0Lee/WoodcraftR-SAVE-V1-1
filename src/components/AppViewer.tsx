@@ -18,6 +18,7 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   const positions = geometry.positions;
   const indices = geometry.indices;
   const selectedMaterialId = useGlobalMaterialStore((s) => s.selectedMaterialId);
+  const useAO = useGlobalMaterialStore((s) => s.useAO);
   
   // Calcul simple des dimensions sans répéter les opérations
   let minX = Infinity, maxX = -Infinity;
@@ -70,8 +71,12 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
     hasMaterial ? `${baseUrl}/normal.jpg` : white1x1,
     hasMaterial ? `${baseUrl}/roughness.jpg` : white1x1,
   ]);
+  // AO texture (optional based on flag)
+  const [aoTex] = useLoader(TextureLoader, [
+    useAO && hasMaterial ? `${baseUrl}/ao.jpg` : white1x1,
+  ]);
   // Improve texture sampling
-  [colorTex, normalTex, roughTex].forEach((t) => {
+  [colorTex, normalTex, roughTex, aoTex].forEach((t) => {
     t.wrapS = t.wrapT = RepeatWrapping;
     t.anisotropy = 4;
   });
@@ -98,6 +103,14 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
           count={uvs.length / 2}
           itemSize={2}
         />
+        {useAO && (
+          <bufferAttribute
+            attach="attributes-uv2"
+            array={uvs}
+            count={uvs.length / 2}
+            itemSize={2}
+          />
+        )}
       </bufferGeometry>
       {/* Physically based material with optional maps */}
   <meshStandardMaterial
@@ -105,10 +118,12 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
         color={baseColor}
         map={hasMaterial ? colorTex : undefined}
         normalMap={hasMaterial ? normalTex : undefined}
-        roughnessMap={hasMaterial ? roughTex : undefined}
+  roughnessMap={hasMaterial ? roughTex : undefined}
+  aoMap={useAO && hasMaterial ? aoTex : undefined}
         metalness={0}
         roughness={1}
-        normalScale={hasMaterial ? new Vector2(1, 1) : new Vector2(0, 0)}
+  normalScale={hasMaterial ? new Vector2(1, 1) : new Vector2(0, 0)}
+  aoMapIntensity={useAO && hasMaterial ? 1 : 0}
       />
     </mesh>
   );
