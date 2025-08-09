@@ -245,7 +245,7 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
   // === VALIDATION ===
   validateCutPosition: (cut: Cut): CutValidationResult => {
     const state = get();
-    const { dimensions } = state;
+    const { dimensions, shape, circleDiameter } = state;
     const errors: string[] = [];
     const warnings: string[] = [];
     
@@ -259,18 +259,43 @@ export const usePanelStore = create<PanelStore>((set, get) => ({
     
     // Vérification selon le type de découpe
     if (cut.type === 'rectangle') {
-      if (cut.positionX + cut.length > dimensions.length) {
-        errors.push('La découpe dépasse la longueur du panneau');
-      }
-      if (cut.positionY + cut.width > dimensions.width) {
-        errors.push('La découpe dépasse la largeur du panneau');
+      if (shape === 'circle' && circleDiameter > 0) {
+        const rPanel = circleDiameter / 2;
+        const cx = rPanel;
+        const cy = rPanel;
+        const corners: Array<[number, number]> = [
+          [cut.positionX, cut.positionY],
+          [cut.positionX + cut.length, cut.positionY],
+          [cut.positionX, cut.positionY + cut.width],
+          [cut.positionX + cut.length, cut.positionY + cut.width],
+        ];
+        const anyOutside = corners.some(([x, y]) => Math.hypot(x - cx, y - cy) > rPanel);
+        if (anyOutside) {
+          errors.push('La découpe rectangulaire dépasse le bord du panneau circulaire');
+        }
+      } else {
+        if (cut.positionX + cut.length > dimensions.length) {
+          errors.push('La découpe dépasse la longueur du panneau');
+        }
+        if (cut.positionY + cut.width > dimensions.width) {
+          errors.push('La découpe dépasse la largeur du panneau');
+        }
       }
     } else if (cut.type === 'circle') {
-      if (cut.positionX - cut.radius < 0 || cut.positionX + cut.radius > dimensions.length) {
-        errors.push('Le cercle dépasse la longueur du panneau');
-      }
-      if (cut.positionY - cut.radius < 0 || cut.positionY + cut.radius > dimensions.width) {
-        errors.push('Le cercle dépasse la largeur du panneau');
+      // Pour panneau circulaire, contraindre à l'intérieur du disque
+      if (shape === 'circle' && circleDiameter > 0) {
+        const rPanel = circleDiameter / 2;
+        const distCenter = Math.hypot(cut.positionX - rPanel, cut.positionY - rPanel);
+        if (distCenter + cut.radius > rPanel) {
+          errors.push('Le cercle dépasse le bord du panneau circulaire');
+        }
+      } else {
+        if (cut.positionX - cut.radius < 0 || cut.positionX + cut.radius > dimensions.length) {
+          errors.push('Le cercle dépasse la longueur du panneau');
+        }
+        if (cut.positionY - cut.radius < 0 || cut.positionY + cut.radius > dimensions.width) {
+          errors.push('Le cercle dépasse la largeur du panneau');
+        }
       }
     }
     
