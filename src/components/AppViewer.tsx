@@ -7,7 +7,7 @@ import DimensionLabels from "./DimensionLabels";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 import { useGlobalMaterialStore } from "@/store/globalMaterialStore";
-import { TextureLoader, RepeatWrapping, DoubleSide } from "three";
+import { TextureLoader, RepeatWrapping, DoubleSide, Vector2 } from "three";
 
 type Props = {
   // Plus besoin de props - on lit tout depuis le store
@@ -61,15 +61,22 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
     return uvArr;
   }, [positions, minX, maxX, minY, maxY]);
 
-  // Load texture based on selected material. Fallback to a tiny 1x1 PNG data URL (white pixel) if none.
-  const textureUrl = selectedMaterialId
-    ? `/textures/wood/${selectedMaterialId}/basecolor.jpg`
-    : 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=';
-  const texture = useLoader(TextureLoader, textureUrl);
+  // Build texture URLs. Always keep hook order stable by providing neutral 1x1 placeholders when no selection.
+  const white1x1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=';
+  const hasMaterial = !!selectedMaterialId;
+  const baseUrl = hasMaterial ? `/textures/wood/${selectedMaterialId}` : undefined;
+  const [colorTex, normalTex, roughTex, aoTex] = useLoader(TextureLoader, [
+    hasMaterial ? `${baseUrl}/basecolor.jpg` : white1x1,
+    hasMaterial ? `${baseUrl}/normal.jpg` : white1x1,
+    hasMaterial ? `${baseUrl}/roughness.jpg` : white1x1,
+    hasMaterial ? `${baseUrl}/ao.jpg` : white1x1,
+  ]);
   // Improve texture sampling
-  texture.wrapS = texture.wrapT = RepeatWrapping;
-  texture.anisotropy = 4;
-  const baseColor = selectedMaterialId ? '#ffffff' : '#9ca3af'; // neutral gray when no material selected
+  [colorTex, normalTex, roughTex, aoTex].forEach((t) => {
+    t.wrapS = t.wrapT = RepeatWrapping;
+    t.anisotropy = 4;
+  });
+  const baseColor = hasMaterial ? '#ffffff' : '#9ca3af'; // neutral gray when no material selected
   
   return (
     <mesh position={[0, 0, 0]} castShadow receiveShadow>
@@ -92,8 +99,27 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
           count={uvs.length / 2}
           itemSize={2}
         />
+        {/* Duplicate UVs for AO map as uv2 */}
+        <bufferAttribute
+          attach="attributes-uv2"
+          array={uvs}
+          count={uvs.length / 2}
+          itemSize={2}
+        />
       </bufferGeometry>
-  <meshBasicMaterial side={DoubleSide} map={selectedMaterialId ? texture : undefined} color={baseColor} />
+      {/* Physically based material with optional maps */}
+      <meshStandardMaterial
+        side={DoubleSide}
+        color={baseColor}
+        map={hasMaterial ? colorTex : undefined}
+        normalMap={hasMaterial ? normalTex : undefined}
+        roughnessMap={hasMaterial ? roughTex : undefined}
+        aoMap={hasMaterial ? aoTex : undefined}
+        metalness={0}
+        roughness={1}
+        normalScale={hasMaterial ? new Vector2(1, 1) : new Vector2(0, 0)}
+        aoMapIntensity={hasMaterial ? 1 : 0}
+      />
     </mesh>
   );
 }

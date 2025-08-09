@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useGlobalMaterialStore } from '@/store/globalMaterialStore';
 import { gsap } from 'gsap';
 import { Play, Pause, X, MapPin, Calendar, Star } from 'lucide-react';
+import { getMaterialsManifest } from '@/services/materialsManifest';
 
 interface CarouselItem {
   id: string;
@@ -17,28 +18,7 @@ interface CarouselItem {
   tags: string[];
 }
 
-// Types pour le manifest JSON
-interface MaterialCarouselMeta {
-  title: string;
-  description: string;
-  image: string;
-  color: string;
-  fullDescription: string;
-  location: string;
-  date: string;
-  rating: number;
-  tags: string[];
-}
-
-interface MaterialEntry {
-  id: string;
-  displayName: string;
-  carousel: MaterialCarouselMeta;
-}
-
-interface MaterialsManifest {
-  materials: MaterialEntry[];
-}
+// Types are provided by services/materialsManifest
 
 const Carousel3D: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,14 +40,12 @@ const Carousel3D: React.FC = () => {
   const totalItems = items.length;
   const angleStep = totalItems > 0 ? 360 / totalItems : 0;
 
-  // Charger les données depuis le manifest JSON (public/textures/wood/materials.json)
+  // Charger les données depuis le manifest JSON (centralisé)
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       try {
-        const res = await fetch('/textures/wood/materials.json');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const manifest: MaterialsManifest = await res.json();
+        const manifest = await getMaterialsManifest();
         if (!mounted) return;
         const mapped: CarouselItem[] = manifest.materials.map((m) => ({
           id: m.id,

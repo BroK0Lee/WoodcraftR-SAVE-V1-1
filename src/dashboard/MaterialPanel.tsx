@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { listMaterials } from '@/services/materialsManifest';
 
 export function MaterialPanel() {
   const { selectedMaterialId, setSelectedMaterialId } = useGlobalMaterialStore();
@@ -25,14 +26,8 @@ export function MaterialPanel() {
     let mounted = true;
     const load = async () => {
       try {
-        const res = await fetch('/textures/wood/materials.json');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
+        const opts = await listMaterials();
         if (!mounted) return;
-        const opts = (json?.materials ?? []).map((m: { id: string; displayName: string }) => ({
-          id: m.id,
-          displayName: m.displayName,
-        }));
         setOptions(opts);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Erreur de chargement des matières');
