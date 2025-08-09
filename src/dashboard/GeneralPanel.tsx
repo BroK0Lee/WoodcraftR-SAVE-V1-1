@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePanelStore } from "@/store/panelStore";
-import { PANEL_LIMITS } from "@/models/Panel";
+import { PANEL_LIMITS, CIRCLE_LIMITS } from "@/models/Panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -22,16 +22,20 @@ export function GeneralPanel() {
     setThickness,
     resetDimensions,
   setShape,
+  circleDiameter,
+  setCircleDiameter,
   } = usePanelStore();
 
   // Valeurs locales pour permettre la saisie libre avant validation
   const [lengthInput, setLengthInput] = useState(dimensions.length.toString());
   const [widthInput, setWidthInput] = useState(dimensions.width.toString());
   const [thicknessInput, setThicknessInput] = useState(dimensions.thickness.toString());
+  const [diameterInput, setDiameterInput] = useState(circleDiameter.toString());
 
   useEffect(() => setLengthInput(String(dimensions.length)), [dimensions.length]);
   useEffect(() => setWidthInput(String(dimensions.width)), [dimensions.width]);
   useEffect(() => setThicknessInput(String(dimensions.thickness)), [dimensions.thickness]);
+  useEffect(() => setDiameterInput(String(circleDiameter)), [circleDiameter]);
 
   // Fonction pour appliquer les contraintes min/max localement (sans appeler le store)
   const applyConstraints = (key: string, value: number): number => {
@@ -44,6 +48,9 @@ export function GeneralPanel() {
     if (key === "thickness") {
       return Math.min(Math.max(value, PANEL_LIMITS.thickness.min), PANEL_LIMITS.thickness.max);
     }
+    if (key === "diameter") {
+      return Math.min(Math.max(value, CIRCLE_LIMITS.diameter.min), CIRCLE_LIMITS.diameter.max);
+    }
     return value;
   };
 
@@ -52,13 +59,17 @@ export function GeneralPanel() {
     if (key === "length") setLength(value);
     if (key === "width") setWidth(value);
     if (key === "thickness") setThickness(value);
+    if (key === "diameter") setCircleDiameter(value);
   };
 
   // Fonction pour gérer la validation (onBlur ET onEnter)
   const handleValidation = (key: string, inputValue: string) => {
     const newValue = Number(inputValue);
-    const currentStoreValue = key === "length" ? dimensions.length : 
-                             key === "width" ? dimensions.width : dimensions.thickness;
+    const currentStoreValue =
+      key === "length" ? dimensions.length :
+      key === "width" ? dimensions.width :
+      key === "thickness" ? dimensions.thickness :
+      circleDiameter;
     
     // Appliquer les contraintes min/max
     const constrainedValue = applyConstraints(key, newValue);
@@ -66,7 +77,8 @@ export function GeneralPanel() {
     // Mettre à jour l'affichage de l'input avec la valeur contrainte
     if (key === "length") setLengthInput(String(constrainedValue));
     if (key === "width") setWidthInput(String(constrainedValue));
-    if (key === "thickness") setThicknessInput(String(constrainedValue));
+  if (key === "thickness") setThicknessInput(String(constrainedValue));
+  if (key === "diameter") setDiameterInput(String(constrainedValue));
     
     // Si la valeur contrainte est différente du store, on met à jour le 3D
     if (constrainedValue !== currentStoreValue) {
@@ -139,68 +151,115 @@ export function GeneralPanel() {
             </Button>
           </CardTitle>
           <CardDescription>
-            Modifier la largeur, la hauteur et l’épaisseur du panneau
+            {shape === 'rectangle'
+              ? 'Modifier la longueur, la largeur et l’épaisseur'
+              : 'Modifier le diamètre et l’épaisseur'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            {/* Longueur */}
-            <div className="flex flex-col gap-1 w-full">
-              <Label htmlFor="length" className="text-xs">Longueur (mm)</Label>
-              <Input
-                id="length"
-                type="number"
-                value={lengthInput}
-                onChange={(e) => setLengthInput(e.target.value)}
-                onBlur={() => handleFieldBlur('length', lengthInput)}
-                onKeyDown={(e) => handleKeyDown(e, 'length', lengthInput)}
-                className="h-9 flex-1"
-                min={PANEL_LIMITS.length.min}
-                max={PANEL_LIMITS.length.max}
-              />
-              <Badge variant="secondary" className="self-start text-xs mt-0.5">
-               min: {PANEL_LIMITS.length.min} mm – max: {PANEL_LIMITS.length.max} mm
-              </Badge>
-            </div>
-            {/* Largeur */}
-            <div className="flex flex-col gap-1 w-full">
-              <Label htmlFor="width" className="text-xs">Largeur (mm)</Label>
-              <Input
-                id="width"
-                type="number"
-                value={widthInput}
-                onChange={(e) => setWidthInput(e.target.value)}
-                onBlur={() => handleFieldBlur('width', widthInput)}
-                onKeyDown={(e) => handleKeyDown(e, 'width', widthInput)}
-                className="h-9 flex-1"
-                min={PANEL_LIMITS.width.min}
-                max={PANEL_LIMITS.width.max}
-              />
-              <Badge variant="secondary" className="self-start text-xs mt-0.5">
-               min: {PANEL_LIMITS.width.min} mm – max: {PANEL_LIMITS.width.max} mm
-              </Badge>
-            </div>
-          </div>
+          {shape === 'rectangle' ? (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Longueur */}
+                <div className="flex flex-col gap-1 w-full">
+                  <Label htmlFor="length" className="text-xs">Longueur (mm)</Label>
+                  <Input
+                    id="length"
+                    type="number"
+                    value={lengthInput}
+                    onChange={(e) => setLengthInput(e.target.value)}
+                    onBlur={() => handleFieldBlur('length', lengthInput)}
+                    onKeyDown={(e) => handleKeyDown(e, 'length', lengthInput)}
+                    className="h-9 flex-1"
+                    min={PANEL_LIMITS.length.min}
+                    max={PANEL_LIMITS.length.max}
+                  />
+                  <Badge variant="secondary" className="self-start text-xs mt-0.5">
+                  min: {PANEL_LIMITS.length.min} mm – max: {PANEL_LIMITS.length.max} mm
+                  </Badge>
+                </div>
+                {/* Largeur */}
+                <div className="flex flex-col gap-1 w-full">
+                  <Label htmlFor="width" className="text-xs">Largeur (mm)</Label>
+                  <Input
+                    id="width"
+                    type="number"
+                    value={widthInput}
+                    onChange={(e) => setWidthInput(e.target.value)}
+                    onBlur={() => handleFieldBlur('width', widthInput)}
+                    onKeyDown={(e) => handleKeyDown(e, 'width', widthInput)}
+                    className="h-9 flex-1"
+                    min={PANEL_LIMITS.width.min}
+                    max={PANEL_LIMITS.width.max}
+                  />
+                  <Badge variant="secondary" className="self-start text-xs mt-0.5">
+                  min: {PANEL_LIMITS.width.min} mm – max: {PANEL_LIMITS.width.max} mm
+                  </Badge>
+                </div>
+              </div>
 
-          {/* Épaisseur */}
-          <div className="flex flex-col gap-1 w-full">
-            <Label htmlFor="thickness" className="text-xs">Épaisseur (mm)</Label>
-            <Input
-              id="thickness"
-              type="number"
-              value={thicknessInput}
-              onChange={(e) => setThicknessInput(e.target.value)}
-              onBlur={() => handleFieldBlur('thickness', thicknessInput)}
-              onKeyDown={(e) => handleKeyDown(e, 'thickness', thicknessInput)}
-              className="h-9 flex-1"
-              min={PANEL_LIMITS.thickness.min}
-              max={PANEL_LIMITS.thickness.max}
-              step="0.1"
-            />
-            <Badge variant="secondary" className="self-start text-xs mt-0.5">
-             min: {PANEL_LIMITS.thickness.min} mm – max: {PANEL_LIMITS.thickness.max} mm
-            </Badge>
-          </div>
+              {/* Épaisseur */}
+              <div className="flex flex-col gap-1 w-full">
+                <Label htmlFor="thickness" className="text-xs">Épaisseur (mm)</Label>
+                <Input
+                  id="thickness"
+                  type="number"
+                  value={thicknessInput}
+                  onChange={(e) => setThicknessInput(e.target.value)}
+                  onBlur={() => handleFieldBlur('thickness', thicknessInput)}
+                  onKeyDown={(e) => handleKeyDown(e, 'thickness', thicknessInput)}
+                  className="h-9 flex-1"
+                  min={PANEL_LIMITS.thickness.min}
+                  max={PANEL_LIMITS.thickness.max}
+                  step="0.1"
+                />
+                <Badge variant="secondary" className="self-start text-xs mt-0.5">
+                min: {PANEL_LIMITS.thickness.min} mm – max: {PANEL_LIMITS.thickness.max} mm
+                </Badge>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Diamètre */}
+              <div className="flex flex-col gap-1 w-full">
+                <Label htmlFor="diameter" className="text-xs">Diamètre (mm)</Label>
+                <Input
+                  id="diameter"
+                  type="number"
+                  value={diameterInput}
+                  onChange={(e) => setDiameterInput(e.target.value)}
+                  onBlur={() => handleFieldBlur('diameter', diameterInput)}
+                  onKeyDown={(e) => handleKeyDown(e, 'diameter', diameterInput)}
+                  className="h-9 flex-1"
+                  min={CIRCLE_LIMITS.diameter.min}
+                  max={CIRCLE_LIMITS.diameter.max}
+                />
+                <Badge variant="secondary" className="self-start text-xs mt-0.5">
+                  min: {CIRCLE_LIMITS.diameter.min} mm – max: {CIRCLE_LIMITS.diameter.max} mm
+                </Badge>
+              </div>
+
+              {/* Épaisseur */}
+              <div className="flex flex-col gap-1 w-full">
+                <Label htmlFor="thickness-c" className="text-xs">Épaisseur (mm)</Label>
+                <Input
+                  id="thickness-c"
+                  type="number"
+                  value={thicknessInput}
+                  onChange={(e) => setThicknessInput(e.target.value)}
+                  onBlur={() => handleFieldBlur('thickness', thicknessInput)}
+                  onKeyDown={(e) => handleKeyDown(e, 'thickness', thicknessInput)}
+                  className="h-9 flex-1"
+                  min={PANEL_LIMITS.thickness.min}
+                  max={PANEL_LIMITS.thickness.max}
+                  step="0.1"
+                />
+                <Badge variant="secondary" className="self-start text-xs mt-0.5">
+                  min: {PANEL_LIMITS.thickness.min} mm – max: {PANEL_LIMITS.thickness.max} mm
+                </Badge>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

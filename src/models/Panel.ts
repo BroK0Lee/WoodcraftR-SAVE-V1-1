@@ -11,6 +11,12 @@ export const PANEL_LIMITS = {
   thickness: { min: 1, max: 20 },
 } as const;
 
+// Limites spécifiques pour la forme circulaire (diamètre en mm)
+export const CIRCLE_LIMITS = {
+  diameter: { min: 10, max: 1250 },
+  thickness: { min: 1, max: 20 },
+} as const;
+
 // Dimensions par défaut du panneau lors de l'initialisation
 export const DEFAULT_DIMENSIONS: PanelDimensions = {
   length: 1500,
