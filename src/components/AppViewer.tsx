@@ -65,14 +65,13 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   const white1x1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=';
   const hasMaterial = !!selectedMaterialId;
   const baseUrl = hasMaterial ? `/textures/wood/${selectedMaterialId}` : undefined;
-  const [colorTex, normalTex, roughTex, aoTex] = useLoader(TextureLoader, [
+  const [colorTex, normalTex, roughTex] = useLoader(TextureLoader, [
     hasMaterial ? `${baseUrl}/basecolor.jpg` : white1x1,
     hasMaterial ? `${baseUrl}/normal.jpg` : white1x1,
     hasMaterial ? `${baseUrl}/roughness.jpg` : white1x1,
-    hasMaterial ? `${baseUrl}/ao.jpg` : white1x1,
   ]);
   // Improve texture sampling
-  [colorTex, normalTex, roughTex, aoTex].forEach((t) => {
+  [colorTex, normalTex, roughTex].forEach((t) => {
     t.wrapS = t.wrapT = RepeatWrapping;
     t.anisotropy = 4;
   });
@@ -99,26 +98,17 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
           count={uvs.length / 2}
           itemSize={2}
         />
-        {/* Duplicate UVs for AO map as uv2 */}
-        <bufferAttribute
-          attach="attributes-uv2"
-          array={uvs}
-          count={uvs.length / 2}
-          itemSize={2}
-        />
       </bufferGeometry>
       {/* Physically based material with optional maps */}
-      <meshStandardMaterial
+  <meshStandardMaterial
         side={DoubleSide}
         color={baseColor}
         map={hasMaterial ? colorTex : undefined}
         normalMap={hasMaterial ? normalTex : undefined}
         roughnessMap={hasMaterial ? roughTex : undefined}
-        aoMap={hasMaterial ? aoTex : undefined}
         metalness={0}
         roughness={1}
         normalScale={hasMaterial ? new Vector2(1, 1) : new Vector2(0, 0)}
-        aoMapIntensity={hasMaterial ? 1 : 0}
       />
     </mesh>
   );
