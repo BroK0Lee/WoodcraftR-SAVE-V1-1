@@ -68,6 +68,8 @@ interface GlobalMaterialState {
   materials: GlobalWoodMaterial[];
   // Sélection courante globale
   selectedMaterialId: string | null;
+  // Feature flags / options d'affichage
+  useAO: boolean;
   
   // Actions
   setLoading: (loading: boolean) => void;
@@ -75,6 +77,7 @@ interface GlobalMaterialState {
   setMaterials: (materials: GlobalWoodMaterial[]) => void;
   getMaterialById: (id: string) => GlobalWoodMaterial | undefined;
   setSelectedMaterialId: (id: string | null) => void;
+  setUseAO: (value: boolean) => void;
   clearCache: () => void;
 }
 
@@ -87,6 +90,7 @@ export const useGlobalMaterialStore = create<GlobalMaterialState>()(
       error: null,
       materials: [],
   selectedMaterialId: null,
+  useAO: false,
       
       // Actions
       setLoading: (loading: boolean) => 
@@ -108,6 +112,9 @@ export const useGlobalMaterialStore = create<GlobalMaterialState>()(
 
       setSelectedMaterialId: (id: string | null) =>
         set({ selectedMaterialId: id }, false, 'setSelectedMaterialId'),
+
+      setUseAO: (value: boolean) =>
+        set({ useAO: value }, false, 'setUseAO'),
       
       clearCache: () => 
         set({ 
@@ -115,7 +122,8 @@ export const useGlobalMaterialStore = create<GlobalMaterialState>()(
           isLoaded: false, 
           isLoading: false, 
           error: null,
-          selectedMaterialId: null
+          selectedMaterialId: null,
+          useAO: false
         }, false, 'clearCache'),
     }),
     {

@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Square, Circle } from 'lucide-react';
 import { 
   RotateCcw
 } from 'lucide-react';
@@ -14,10 +16,12 @@ import {
 export function GeneralPanel() {
   const {
     dimensions,
+  shape,
     setLength,
     setWidth,
     setThickness,
     resetDimensions,
+  setShape,
   } = usePanelStore();
 
   // Valeurs locales pour permettre la saisie libre avant validation
@@ -90,6 +94,37 @@ export function GeneralPanel() {
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Forme</CardTitle>
+          <CardDescription>Choisissez la forme du panneau</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ToggleGroup
+            type="single"
+            value={shape}
+            onValueChange={(val) => {
+              if (val === 'rectangle' || val === 'circle') setShape(val);
+            }}
+            className="grid grid-cols-2 gap-2"
+          >
+            <ToggleGroupItem
+              value="rectangle"
+              className="flex flex-col items-center gap-2 h-16 data-[state=on]:bg-orange-100 data-[state=on]:text-orange-800 data-[state=on]:border-orange-300 dark:data-[state=on]:bg-orange-900/30 dark:data-[state=on]:text-orange-400"
+            >
+              <Square className="h-5 w-5" />
+              <span className="text-xs">Carré / Rectangle</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="circle"
+              className="flex flex-col items-center gap-2 h-16 data-[state=on]:bg-orange-100 data-[state=on]:text-orange-800 data-[state=on]:border-orange-300 dark:data-[state=on]:bg-orange-900/30 dark:data-[state=on]:text-orange-400"
+            >
+              <Circle className="h-5 w-5" />
+              <span className="text-xs">Circulaire</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center justify-between">
