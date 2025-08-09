@@ -49,6 +49,10 @@ export interface PanelWithCutsConfig {
   dimensions: PanelDimensions;
   /** Liste des découpes à appliquer */
   cuts: Cut[];
+  /** Forme du panneau (défaut: rectangle) */
+  shape?: 'rectangle' | 'circle';
+  /** Diamètre du panneau si forme circulaire (en mm) */
+  circleDiameter?: number;
 }
 
 // Interface de l'API exposée par le worker OCC

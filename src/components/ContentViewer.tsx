@@ -22,6 +22,8 @@ export default function ContentViewer() {
   const setGeometry = usePanelStore((state) => state.setGeometry);
   const setEdges = usePanelStore((state) => state.setEdges);
   const setCalculating = usePanelStore((state) => state.setCalculating);
+  const shape = usePanelStore((state) => state.shape);
+  const circleDiameter = usePanelStore((state) => state.circleDiameter);
   
   // Nouvelles données pour les découpes
   const cuts = usePanelStore((state) => state.cuts);
@@ -68,7 +70,9 @@ export default function ContentViewer() {
 
         const { geometry: geom, edges: newEdges, cuttingInfo } = await proxy.createPanelWithCuts({
           dimensions: currentDimensions,
-          cuts: allCuts
+          cuts: allCuts,
+          shape,
+          circleDiameter: shape === 'circle' ? circleDiameter : undefined,
         });
 
         if (!isCancelled) {
@@ -136,7 +140,7 @@ export default function ContentViewer() {
     return () => {
       // Pas de cleanup nécessaire pour les calculs immédiats
     };
-  }, [dimensions, cuts, editingCutId, ocReady, previewCut, isPreviewMode, retryCount]);
+  }, [dimensions, cuts, editingCutId, ocReady, previewCut, isPreviewMode, retryCount, shape, circleDiameter]);
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">

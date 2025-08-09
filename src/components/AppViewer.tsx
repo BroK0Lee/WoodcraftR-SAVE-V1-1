@@ -19,6 +19,8 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   const indices = geometry.indices;
   const selectedMaterialId = useGlobalMaterialStore((s) => s.selectedMaterialId);
   const useAO = useGlobalMaterialStore((s) => s.useAO);
+  const shape = usePanelStore((s) => s.shape);
+  const circleDiameter = usePanelStore((s) => s.circleDiameter);
   
   // Calcul simple des dimensions sans répéter les opérations
   let minX = Infinity, maxX = -Infinity;
@@ -48,19 +50,33 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   
   console.log('🎯 [PanelMesh] Rendu mesh:', calculatedDimensions);
 
-  // Compute simple planar UVs (project on X/Y). We normalize by extents to repeat 1x across panel size.
+  // Compute simple planar UVs (project on X/Y).
+  // For circular panels, preserve an exact Ø/2 offset by anchoring UVs to [0..Ø] using the known diameter,
+  // rather than relying on triangulation extents which can drift by a few epsilons.
   const uvs = useMemo(() => {
     const uvArr = new Float32Array((positions.length / 3) * 2);
-    const width = maxX - minX || 1;
-    const height = maxY - minY || 1;
-    for (let i = 0, j = 0; i < positions.length; i += 3, j += 2) {
-      const x = positions[i];
-      const y = positions[i + 1];
-      uvArr[j] = (x - minX) / width; // U along X
-      uvArr[j + 1] = (y - minY) / height; // V along Y
+    if (shape === 'circle' && circleDiameter > 0) {
+      const diam = circleDiameter;
+      const invDiam = 1 / diam;
+      // Geometry for circular panel is translated to [0..Ø] x [0..Ø], center at (Ø/2, Ø/2)
+      for (let i = 0, j = 0; i < positions.length; i += 3, j += 2) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        uvArr[j] = x * invDiam;         // U along X from 0 .. 1
+        uvArr[j + 1] = y * invDiam;     // V along Y from 0 .. 1
+      }
+    } else {
+      const width = maxX - minX || 1;
+      const height = maxY - minY || 1;
+      for (let i = 0, j = 0; i < positions.length; i += 3, j += 2) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        uvArr[j] = (x - minX) / width; // U along X
+        uvArr[j + 1] = (y - minY) / height; // V along Y
+      }
     }
     return uvArr;
-  }, [positions, minX, maxX, minY, maxY]);
+  }, [positions, minX, maxX, minY, maxY, shape, circleDiameter]);
 
   // Build texture URLs. Always keep hook order stable by providing neutral 1x1 placeholders when no selection.
   const white1x1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=';

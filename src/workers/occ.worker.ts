@@ -251,7 +251,7 @@ async function applyAllCuts(
 /**
  * Crée un panneau avec toutes les découpes appliquées
  */
-async function createPanelWithCuts({ dimensions, cuts }: PanelWithCutsConfig): Promise<{
+async function createPanelWithCuts({ dimensions, cuts, shape = 'rectangle', circleDiameter }: PanelWithCutsConfig): Promise<{
   geometry: import("@/helpers/shapeToGeometry").PanelGeometryDTO;
   edges: EdgeDTO[];
   url: string;
@@ -259,12 +259,29 @@ async function createPanelWithCuts({ dimensions, cuts }: PanelWithCutsConfig): P
 }> {
   if (!oc) throw new Error("OpenCascade not ready");
   
-  // Créer le panneau de base
-  const basePanel = new oc.BRepPrimAPI_MakeBox_2(
-    dimensions.length, 
-    dimensions.width, 
-    dimensions.thickness
-  ).Shape();
+  // Créer le panneau de base selon la forme
+  let basePanel: any;
+  if (shape === 'circle') {
+    const diameter = circleDiameter ?? Math.min(dimensions.length, dimensions.width);
+    const radius = Math.max(0.1, diameter / 2);
+    // Cylindre debout le long de Z ; on veut un disque horizontal: OK (Z = thickness)
+  const rawCylinder = new oc.BRepPrimAPI_MakeCylinder_2(
+      radius,
+      dimensions.thickness,
+      2 * Math.PI
+    ).Shape();
+  // Aligner le repère XY sur [0..diam]x[0..diam] comme pour la boîte
+  const trsf = new oc.gp_Trsf_1();
+  trsf.SetTranslation_1(new oc.gp_Vec_4(radius, radius, 0));
+  const transform = new oc.BRepBuilderAPI_Transform_2(rawCylinder, trsf, false);
+  basePanel = transform.Shape();
+  } else {
+    basePanel = new oc.BRepPrimAPI_MakeBox_2(
+      dimensions.length, 
+      dimensions.width, 
+      dimensions.thickness
+    ).Shape();
+  }
   
   // Appliquer toutes les découpes
   const { resultShape, cuttingInfo } = await applyAllCuts(basePanel, cuts, dimensions.thickness);
