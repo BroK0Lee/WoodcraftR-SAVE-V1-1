@@ -149,6 +149,8 @@ export default function PanelViewer(_props: Props) {
   const geometry = usePanelStore((state) => state.geometry);
   const edges = usePanelStore((state) => state.edges);
   const isCalculating = usePanelStore((state) => state.isCalculating);
+  const shape = usePanelStore((state) => state.shape);
+  const circleDiameter = usePanelStore((state) => state.circleDiameter);
   
   // États pour les cotations
   const dimensions = usePanelStore((state) => state.dimensions);
@@ -162,6 +164,12 @@ export default function PanelViewer(_props: Props) {
     previewCut: previewCut ? { id: previewCut.id, type: previewCut.type } : null,
     showDimensionLabels: !!previewCut
   });
+
+  // Compute world offset so that for circle the panel is centered at world origin (0,0),
+  // while keeping panel-local coordinates starting at (0,0) for cuts/labels.
+  const panelOffset: [number, number, number] = (shape === 'circle' && circleDiameter > 0)
+    ? [(circleDiameter / 2), (circleDiameter / 2), 0]
+    : [0, 0, 0];
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -179,33 +187,35 @@ export default function PanelViewer(_props: Props) {
         <directionalLight position={[10, 10, 10]} intensity={0.8} castShadow />
         <Environment preset="city" />
 
-        {isPanelVisible && geometry && !isCalculating && (
-          <Suspense fallback={null}>
-            <PanelMesh geometry={geometry} />
-          </Suspense>
-        )}
+        <group position={panelOffset}>
+          {isPanelVisible && geometry && !isCalculating && (
+            <Suspense fallback={null}>
+              <PanelMesh geometry={geometry} />
+            </Suspense>
+          )}
 
-        {edges.length > 0 && isPanelVisible && !isCalculating && (
-          <EdgesLayer />
-        )}
+          {edges.length > 0 && isPanelVisible && !isCalculating && (
+            <EdgesLayer />
+          )}
 
-        {/* Cotations lors de l'édition/prévisualisation d'une découpe */}
-        {isPanelVisible && (
-          <>
-            {/* Cotations pour découpe en cours d'édition */}
-            {editingCutId && (() => {
-              const editingCut = cuts.find(cut => cut.id === editingCutId);
-              return editingCut ? (
-                <DimensionLabels cut={editingCut} panelDimensions={dimensions} />
-              ) : null;
-            })()}
-            
-            {/* Cotations pour découpe en prévisualisation */}
-            {previewCut && (
-              <DimensionLabels cut={previewCut} panelDimensions={dimensions} />
-            )}
-          </>
-        )}
+          {/* Cotations lors de l'édition/prévisualisation d'une découpe */}
+          {isPanelVisible && (
+            <>
+              {/* Cotations pour découpe en cours d'édition */}
+              {editingCutId && (() => {
+                const editingCut = cuts.find(cut => cut.id === editingCutId);
+                return editingCut ? (
+                  <DimensionLabels cut={editingCut} panelDimensions={dimensions} />
+                ) : null;
+              })()}
+              
+              {/* Cotations pour découpe en prévisualisation */}
+              {previewCut && (
+                <DimensionLabels cut={previewCut} panelDimensions={dimensions} />
+              )}
+            </>
+          )}
+        </group>
 
         <AxesHelper />
 
