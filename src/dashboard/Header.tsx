@@ -13,12 +13,12 @@ import {
 
 export function Header() {
   return (
-    <header className="border-b bg-card/50 backdrop-blur-sm">
+  <header className="border-b border-border bg-card/60 backdrop-blur-sm shadow-sm supports-[backdrop-filter]:bg-card/70">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="p-2 bg-gradient-to-r from-amber-600 to-orange-700 rounded-lg">
+        <div className="p-2 bg-gradient-to-r from-amber-600 to-orange-700 rounded-lg ring-1 ring-white/10 dark:ring-white/10">
                 <Hammer className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -32,30 +32,30 @@ export function Header() {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="transition-colors hover:bg-accent hover:text-accent-foreground">
               <Upload className="h-4 w-4 mr-2" />
               Importer
             </Button>
             
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="transition-colors hover:bg-accent hover:text-accent-foreground">
               <Save className="h-4 w-4 mr-2" />
               Sauvegarder
             </Button>
             
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="transition-colors hover:bg-accent hover:text-accent-foreground">
               <Download className="h-4 w-4 mr-2" />
               Exporter
             </Button>
 
             <Separator orientation="vertical" className="h-6" />
             
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="transition-colors hover:bg-accent hover:text-accent-foreground">
               <Settings className="h-4 w-4" />
             </Button>
 
             <ThemeToggle />
             
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="transition-colors hover:bg-accent hover:text-accent-foreground">
               <HelpCircle className="h-4 w-4" />
             </Button>
           </div>

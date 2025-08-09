@@ -9,7 +9,7 @@ export function Dashboard() {
   // Affiche le Carousel 3D uniquement dans l'onglet "Matière"
 
   return (
-    <div className="h-[calc(100vh-73px)] flex flex-col">
+    <div className="h-[calc(100vh-73px)] flex flex-col bg-background">
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
           <Sidebar />

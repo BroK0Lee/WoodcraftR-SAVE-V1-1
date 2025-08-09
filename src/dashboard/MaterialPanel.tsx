@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import { useGlobalMaterialStore } from '@/store/globalMaterialStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TreePine } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
 export function MaterialPanel() {
   const { selectedMaterialId, setSelectedMaterialId } = useGlobalMaterialStore();
@@ -70,32 +77,32 @@ export function MaterialPanel() {
           )}
           {!isLoading && !error && (
             <div className="space-y-2">
-              <label htmlFor="material-select" className="text-sm font-medium text-gray-700">
-                Liste des matières
-              </label>
-              <select
-                id="material-select"
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-                value={localSelection}
-                onChange={(e) => {
-                  const val = e.target.value;
+              <div className="text-sm font-medium text-foreground">Liste des matières</div>
+              <Select
+                value={localSelection || undefined}
+                onValueChange={(val) => {
                   setLocalSelection(val);
                   setSelectedMaterialId(val || null);
                 }}
               >
-                <option value="">Aucune matière sélectionnée</option>
-                {options.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.displayName}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger size="default" className="w-full" aria-label="Choisir une matière">
+                  <SelectValue placeholder="Aucune matière sélectionnée" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Aucune matière sélectionnée</SelectItem>
+                  {options.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id}>
+                      {opt.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               {/* Aperçu de la matière sélectionnée */}
               {selectedMaterialId ? (
                 <div className="mt-3">
                   <div className="text-xs text-gray-600 mb-1">Aperçu</div>
-                  <div className="rounded-md overflow-hidden border border-gray-200 bg-white">
+                  <div className="rounded-md overflow-hidden border border-border bg-card hover:shadow-sm transition-shadow">
                     <img
                       src={`/textures/wood/${selectedMaterialId}/basecolor.jpg`}
                       alt={`Aperçu ${options.find(o => o.id === selectedMaterialId)?.displayName || selectedMaterialId}`}
@@ -107,10 +114,10 @@ export function MaterialPanel() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-3 text-xs text-gray-500">Aucune matière sélectionnée</div>
+                <div className="mt-3 text-xs text-muted-foreground">Aucune matière sélectionnée</div>
               )}
 
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-muted-foreground">
                 État: {selectedMaterialId ? `"${options.find(o => o.id === selectedMaterialId)?.displayName ?? selectedMaterialId}" sélectionnée` : 'Aucune matière sélectionnée'}
               </div>
             </div>
