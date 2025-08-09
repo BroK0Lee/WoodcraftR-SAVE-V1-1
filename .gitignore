@@ -81,3 +81,12 @@ src/hooks/useWebGLContextCleanup.ts
 test-isolation.js
 test-unique-key.js
 test-webgl-fix.js
+
+# Obsolete/untracked material selector legacy files
+src/components/materialselector/MaterialCarousel3D.tsx
+src/components/materialselector/MaterialInteractionManager.tsx
+src/components/materialselector/MaterialSelector3D.tsx
+src/components/materialselector/MaterialSphere.tsx
+src/components/materialselector/WoodMaterialSelector.tsx
+src/components/materialselector/useMaterialSelector.ts
+src/components/materialselector/woodMaterials-public.ts
