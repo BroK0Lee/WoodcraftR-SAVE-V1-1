@@ -27,8 +27,7 @@ export function CuttingPanel() {
     addCut, 
     removeCut, 
     updateCut,
-    editingCutId,
-     startEditingCut,
+    startEditingCut,
     // Actions de prévisualisation
     setPreviewCut,
     previewCut,
@@ -42,12 +41,6 @@ export function CuttingPanel() {
   const [selectedTool, setSelectedTool] = useState<Cut['type']>('rectangle');
   const [showParameterForm, setShowParameterForm] = useState(false);
   const [editingCut, setEditingCut] = useState<Cut | null>(null); // Découpe en cours d'édition
-
-  // === DEBUG LOGS ===
-  console.log('🔧 CuttingPanel Debug:');
-  console.log('  - cuts count:', cuts.length);
-  console.log('  - cuts:', cuts);
-  console.log('  - editingCutId:', editingCutId);
   console.log('  - selectedTool:', selectedTool);
 
   // === TOOLS CONFIGURATION ===
@@ -249,7 +242,6 @@ export function CuttingPanel() {
             onClick={() => {
               // Créer une découpe rectangulaire de test
               const testCut = createDefaultCut('rectangle', cuts.length);
-              console.log('🧪 Test découpe worker - Ajout de:', testCut);
               addCut(testCut);
             }}
             variant="secondary" 
@@ -264,7 +256,6 @@ export function CuttingPanel() {
             onClick={() => {
               // Créer une découpe circulaire de test
               const testCut = createDefaultCut('circle', cuts.length);
-              console.log('🧪 Test découpe worker - Ajout de:', testCut);
               addCut(testCut);
             }}
             variant="secondary" 

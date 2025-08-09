@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 .env
 
+# Package manager lockfiles
+pnpm-lock.yaml
+
 # Obsolete files - prevent recreation
 src/components/MaterialCard.tsx
 src/components/MaterialModal.tsx
@@ -35,3 +38,59 @@ CAMERA_AUTO_FRAMING.md
 CLEANUP_NAVIGATION_CONFLICTS.md
 INTEGRATION_O3DV_NAVIGATION.md
 MIGRATION_O3DV_COMPLETE.md
+
+# Fichiers vides
+**/*.empty
+
+# Fichiers temporaires et backup
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.~
+
+# Dossiers de build et cache
+.cache/
+.tmp/
+.vite/
+.vite-temp/
+
+# Fichiers/dossiers vides
+**/.empty
+
+# Fichiers système
+Thumbs.db
+Desktop.ini
+
+# Fichiers générés par l'éditeur
+*.code-workspace
+
+# Fichiers vides universels (astuce)
+# Pour ignorer tous les fichiers de 0 octet, il faut un script, mais on peut limiter les extensions courantes ici
+test-webgl-hook.js
+debug-context-lost-fixed.js
+debug-context-lost.js
+debug-webgl-advanced.js
+debug-webgl-cleanup.js
+DIAGNOSTIC_CONTEXT_LOST.md
+FIX_CONTEXT_LOST.md
+src/components/MaterialDiagnosticPanel.tsx
+src/components/materialselector/WoodMaterialService.ts
+src/hooks/useWebGLContextCleanup.ts
+test-isolation.js
+test-unique-key.js
+test-webgl-fix.js
+
+# Obsolete/untracked material selector legacy files
+src/components/materialselector/MaterialCarousel3D.tsx
+src/components/materialselector/MaterialInteractionManager.tsx
+src/components/materialselector/MaterialSelector3D.tsx
+src/components/materialselector/MaterialSphere.tsx
+src/components/materialselector/WoodMaterialSelector.tsx
+src/components/materialselector/useMaterialSelector.ts
+src/components/materialselector/woodMaterials-public.ts
+
+# Ignore per-wood markdown files in textures (now replaced by materials.json)
+public/textures/wood/**/README.md
+public/textures/wood/**/*.md

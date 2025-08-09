@@ -18,8 +18,8 @@ export function Sidebar() {
   const { activeTab, setActiveTab } = useDashboardStore();
 
   return (
-    <div className="h-full bg-card/30 border-r">
-      <div className="p-4 border-b">
+    <div className="h-full bg-card border-r border-border shadow-xs">
+      <div className="p-4 border-b border-border">
         <h2 className="text-lg font-semibold text-foreground">Configuration</h2>
         <p className="text-sm text-muted-foreground">Personnalisez votre panneau</p>
       </div>
@@ -27,26 +27,26 @@ export function Sidebar() {
       <ScrollArea className="h-[calc(100%-80px)]">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
           <TabsList className="grid w-full grid-cols-3 gap-1 m-4">
-            <TabsTrigger value="material" className="flex items-center gap-1 text-xs">
+            <TabsTrigger value="material" className="flex items-center gap-1 text-xs transition-colors hover:bg-accent hover:text-accent-foreground">
               <TreePine className="h-3 w-3" />
               Matière
             </TabsTrigger>
-            <TabsTrigger value="general" className="flex items-center gap-1 text-xs">
+            <TabsTrigger value="general" className="flex items-center gap-1 text-xs transition-colors hover:bg-accent hover:text-accent-foreground">
               <Ruler className="h-3 w-3" />
               Général
             </TabsTrigger>
-            <TabsTrigger value="cutting" className="flex items-center gap-1 text-xs">
+            <TabsTrigger value="cutting" className="flex items-center gap-1 text-xs transition-colors hover:bg-accent hover:text-accent-foreground">
               <Scissors className="h-3 w-3" />
               Découpes
             </TabsTrigger>
           </TabsList>
 
           <TabsList className="grid w-full grid-cols-2 gap-1 m-4 mt-2">
-            <TabsTrigger value="engraving" className="flex items-center gap-2 text-xs">
+            <TabsTrigger value="engraving" className="flex items-center gap-2 text-xs transition-colors hover:bg-accent hover:text-accent-foreground">
               <Zap className="h-4 w-4" />
               Gravure
             </TabsTrigger>
-            <TabsTrigger value="finishing" className="flex items-center gap-2 text-xs">
+            <TabsTrigger value="finishing" className="flex items-center gap-2 text-xs transition-colors hover:bg-accent hover:text-accent-foreground">
               <Settings className="h-4 w-4" />
               Finition
             </TabsTrigger>

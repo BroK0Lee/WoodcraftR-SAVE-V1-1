@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { Html } from '@react-three/drei';
+import { useEffect, useRef, useMemo } from 'react';
+import { Group } from 'three';
+import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import type { Cut } from '@/models/Cut';
 
 interface Props {
@@ -12,26 +13,16 @@ interface Props {
  * Style professionnel CAO avec lignes de rappel et flèches
  */
 export default function DimensionLabels({ cut, panelDimensions }: Props) {
+  // Calcul des données de cotation
   const cotationData = useMemo(() => {
     const { positionX, positionY } = cut;
     const { length, width, thickness } = panelDimensions;
-    
-    // Offset pour les cotations
-    const offset = 50;
-    
-    // Position de l'origine (0,0)
+    const offset = 25;
     const originX = 0;
     const originY = 0;
-    
-    // Offset Z pour éviter le Z-fighting
     const zOffset = thickness + 0.1;
-    
-    // Position Y pour cotation X
     const xCotationY = originY - offset;
-    
-    // Position X pour cotation Y
     const yCotationX = originX - offset;
-    
     return {
       positionX,
       positionY,
@@ -42,144 +33,116 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
       length,
       width,
       zOffset,
-      displayX: positionX.toFixed(1),
-      displayY: positionY.toFixed(1)
+      displayX: positionX.toFixed(2),
+      displayY: positionY.toFixed(2)
     };
   }, [cut.positionX, cut.positionY, panelDimensions]);
 
+  // Référence pour le groupe Three.js
+  const groupRef = useRef<Group>(null);
+
+  // Ajout des labels CSS2D comme dans AxesHelper
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!group) return;
+    // Nettoyer les anciens labels CSS2D
+    group.children = group.children.filter(obj => !(obj instanceof CSS2DObject));
+    // Style cohérent avec AxesHelper
+    const labelClass = 'px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none';
+    // Label X
+    const labelXDiv = document.createElement('div');
+    labelXDiv.className = labelClass;
+    labelXDiv.textContent = `X: ${cotationData.displayX}`;
+    const labelXObj = new CSS2DObject(labelXDiv);
+    labelXObj.position.set(
+      (cotationData.originX + cotationData.positionX) / 2,
+      cotationData.xCotationY - 8,
+      cotationData.zOffset
+    );
+    group.add(labelXObj);
+    // Label Y standard, identique à X
+    const labelYDiv = document.createElement('div');
+    labelYDiv.className = labelClass;
+    labelYDiv.style.display = 'flex';
+    labelYDiv.style.justifyContent = 'center';
+    labelYDiv.style.alignItems = 'center';
+    labelYDiv.style.whiteSpace = 'nowrap';
+    labelYDiv.textContent = `Y: ${cotationData.displayY}`;
+    const labelYObj = new CSS2DObject(labelYDiv);
+    labelYObj.position.set(
+      cotationData.yCotationX - 8,
+      (cotationData.originY + cotationData.positionY) / 2,
+      cotationData.zOffset
+    );
+    group.add(labelYObj);
+    // Pas besoin de cleanup manuel, group.clear() suffit
+  }, [cotationData]);
+
   return (
-    <group>
-      {/* === COTATION X === */}
-      
+    <group ref={groupRef}>
+      {/* === LIGNES ET FLÈCHES 3D === */}
       {/* Ligne de rappel verticale - origine */}
       <mesh position={[cotationData.originX, (cotationData.originY + cotationData.xCotationY) / 2, cotationData.zOffset]}>
-        <boxGeometry args={[1, Math.abs(cotationData.originY - cotationData.xCotationY), 0.3]} />
-        <meshBasicMaterial color="#888888" />
+        <boxGeometry args={[0.5, Math.abs(cotationData.originY - cotationData.xCotationY), 0.1]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
       {/* Ligne de rappel verticale - position découpe */}
       <mesh position={[cotationData.positionX, (cotationData.positionY + cotationData.xCotationY) / 2, cotationData.zOffset]}>
-        <boxGeometry args={[1, Math.abs(cotationData.positionY - cotationData.xCotationY), 0.3]} />
-        <meshBasicMaterial color="#888888" />
+        <boxGeometry args={[0.5, Math.abs(cotationData.positionY - cotationData.xCotationY), 0.1]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
-      {/* Ligne de cotation X principale */}
+      {/* Ligne de cotation X principale (plus épaisse) */}
       <mesh position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY, cotationData.zOffset]}>
-        <boxGeometry args={[Math.abs(cotationData.positionX - cotationData.originX), 2, 0.5]} />
-        <meshBasicMaterial color="#E53E3E" />
+        <boxGeometry args={[Math.abs(cotationData.positionX - cotationData.originX), 1.5, 0.2]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
       {/* Flèche gauche X */}
       <mesh position={[cotationData.originX, cotationData.xCotationY, cotationData.zOffset]} rotation={[0, 0, Math.PI / 2]}>
-        <coneGeometry args={[3, 10, 8]} />
-        <meshBasicMaterial color="#E53E3E" />
+        <coneGeometry args={[2, 6, 8]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
       {/* Flèche droite X */}
       <mesh position={[cotationData.positionX, cotationData.xCotationY, cotationData.zOffset]} rotation={[0, 0, -Math.PI / 2]}>
-        <coneGeometry args={[3, 10, 8]} />
-        <meshBasicMaterial color="#E53E3E" />
+        <coneGeometry args={[2, 6, 8]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
-      {/* Label cotation X */}
-      <Html
-        position={[(cotationData.originX + cotationData.positionX) / 2, cotationData.xCotationY - 12, cotationData.zOffset]}
-        center
-        distanceFactor={10}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div className="bg-white border-2 border-red-500 px-3 py-1 rounded shadow-lg">
-          <span className="text-red-600 font-mono text-sm font-bold">
-            X: {cotationData.displayX} mm
-          </span>
-        </div>
-      </Html>
-
-      {/* === COTATION Y === */}
-      
+      {/* === COTATION Y (VERTICALE) === */}
       {/* Ligne de rappel horizontale - origine */}
       <mesh position={[(cotationData.originX + cotationData.yCotationX) / 2, cotationData.originY, cotationData.zOffset]}>
-        <boxGeometry args={[Math.abs(cotationData.originX - cotationData.yCotationX), 1, 0.3]} />
-        <meshBasicMaterial color="#888888" />
+        <boxGeometry args={[Math.abs(cotationData.originX - cotationData.yCotationX), 0.5, 0.1]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
       {/* Ligne de rappel horizontale - position découpe */}
       <mesh position={[(cotationData.positionX + cotationData.yCotationX) / 2, cotationData.positionY, cotationData.zOffset]}>
-        <boxGeometry args={[Math.abs(cotationData.positionX - cotationData.yCotationX), 1, 0.3]} />
-        <meshBasicMaterial color="#888888" />
+        <boxGeometry args={[Math.abs(cotationData.positionX - cotationData.yCotationX), 0.5, 0.1]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
-      {/* Ligne de cotation Y principale */}
+      {/* Ligne de cotation Y principale (plus épaisse) */}
       <mesh position={[cotationData.yCotationX, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}>
-        <boxGeometry args={[2, Math.abs(cotationData.positionY - cotationData.originY), 0.5]} />
-        <meshBasicMaterial color="#3182CE" />
+        <boxGeometry args={[1.5, Math.abs(cotationData.positionY - cotationData.originY), 0.2]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
       {/* Flèche bas Y */}
       <mesh position={[cotationData.yCotationX, cotationData.originY, cotationData.zOffset]} rotation={[0, 0, 0]}>
-        <coneGeometry args={[3, 10, 8]} />
-        <meshBasicMaterial color="#3182CE" />
+        <coneGeometry args={[2, 6, 8]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
       {/* Flèche haut Y */}
       <mesh position={[cotationData.yCotationX, cotationData.positionY, cotationData.zOffset]} rotation={[0, 0, Math.PI]}>
-        <coneGeometry args={[3, 10, 8]} />
-        <meshBasicMaterial color="#3182CE" />
+        <coneGeometry args={[2, 6, 8]} />
+        <meshBasicMaterial color="#333333" />
       </mesh>
-      
-      {/* Label cotation Y */}
-      <Html
-        position={[cotationData.yCotationX - 12, (cotationData.originY + cotationData.positionY) / 2, cotationData.zOffset]}
-        center
-        distanceFactor={10}
-        style={{ pointerEvents: 'none' }}
-        transform
-        rotation={[0, 0, Math.PI / 2]}
-      >
-        <div className="bg-white border-2 border-blue-500 px-3 py-1 rounded shadow-lg">
-          <span className="text-blue-600 font-mono text-sm font-bold">
-            Y: {cotationData.displayY} mm
-          </span>
-        </div>
-      </Html>
-
       {/* === MARQUEURS === */}
-      
       {/* Origine du panneau (0,0) */}
       <mesh position={[cotationData.originX, cotationData.originY, cotationData.zOffset]}>
-        <sphereGeometry args={[1, 16, 16]} />
-        <meshBasicMaterial color="#000000" />
+        <sphereGeometry args={[0.8, 16, 16]} />
+        <meshBasicMaterial color="#666666" />
       </mesh>
-      
-      {/* Label origine */}
-      <Html
-        position={[cotationData.originX + 15, cotationData.originY - 15, cotationData.zOffset]}
-        center
-        distanceFactor={8}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div className="bg-gray-800 text-white px-2 py-1 rounded text-xs font-mono shadow-lg">
-          Origine (0,0)
-        </div>
-      </Html>
-
       {/* Position de la découpe */}
       <mesh position={[cotationData.positionX, cotationData.positionY, cotationData.zOffset]}>
-        <sphereGeometry args={[1, 16, 16]} />
-        <meshBasicMaterial color="#000000" />
+        <sphereGeometry args={[0.8, 16, 16]} />
+        <meshBasicMaterial color="#666666" />
       </mesh>
-      
-      {/* Label position découpe */}
-      <Html
-        position={[cotationData.positionX, cotationData.positionY + 20, cotationData.zOffset]}
-        center
-        distanceFactor={8}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div className="bg-orange-600 text-white px-2 py-1 rounded text-xs font-mono shadow-lg">
-          Découpe ({cotationData.displayX}, {cotationData.displayY})
-        </div>
-      </Html>
     </group>
   );
 }

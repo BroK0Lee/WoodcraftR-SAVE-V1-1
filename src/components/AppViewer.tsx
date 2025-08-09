@@ -1,11 +1,13 @@
-import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { Canvas, useLoader } from "@react-three/fiber";
+import { Suspense, useMemo } from "react";
 import { OrbitControls, Environment } from "@react-three/drei";
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
 import DimensionLabels from "./DimensionLabels";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
+import { useGlobalMaterialStore } from "@/store/globalMaterialStore";
+import { TextureLoader, RepeatWrapping, DoubleSide, Vector2 } from "three";
 
 type Props = {
   // Plus besoin de props - on lit tout depuis le store
@@ -15,6 +17,7 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   // Calculs optimisés des dimensions une seule fois
   const positions = geometry.positions;
   const indices = geometry.indices;
+  const selectedMaterialId = useGlobalMaterialStore((s) => s.selectedMaterialId);
   
   // Calcul simple des dimensions sans répéter les opérations
   let minX = Infinity, maxX = -Infinity;
@@ -43,6 +46,37 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   };
   
   console.log('🎯 [PanelMesh] Rendu mesh:', calculatedDimensions);
+
+  // Compute simple planar UVs (project on X/Y). We normalize by extents to repeat 1x across panel size.
+  const uvs = useMemo(() => {
+    const uvArr = new Float32Array((positions.length / 3) * 2);
+    const width = maxX - minX || 1;
+    const height = maxY - minY || 1;
+    for (let i = 0, j = 0; i < positions.length; i += 3, j += 2) {
+      const x = positions[i];
+      const y = positions[i + 1];
+      uvArr[j] = (x - minX) / width; // U along X
+      uvArr[j + 1] = (y - minY) / height; // V along Y
+    }
+    return uvArr;
+  }, [positions, minX, maxX, minY, maxY]);
+
+  // Build texture URLs. Always keep hook order stable by providing neutral 1x1 placeholders when no selection.
+  const white1x1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=';
+  const hasMaterial = !!selectedMaterialId;
+  const baseUrl = hasMaterial ? `/textures/wood/${selectedMaterialId}` : undefined;
+  const [colorTex, normalTex, roughTex, aoTex] = useLoader(TextureLoader, [
+    hasMaterial ? `${baseUrl}/basecolor.jpg` : white1x1,
+    hasMaterial ? `${baseUrl}/normal.jpg` : white1x1,
+    hasMaterial ? `${baseUrl}/roughness.jpg` : white1x1,
+    hasMaterial ? `${baseUrl}/ao.jpg` : white1x1,
+  ]);
+  // Improve texture sampling
+  [colorTex, normalTex, roughTex, aoTex].forEach((t) => {
+    t.wrapS = t.wrapT = RepeatWrapping;
+    t.anisotropy = 4;
+  });
+  const baseColor = hasMaterial ? '#ffffff' : '#9ca3af'; // neutral gray when no material selected
   
   return (
     <mesh position={[0, 0, 0]} castShadow receiveShadow>
@@ -59,7 +93,33 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
           count={geometry.indices.length}
           itemSize={1}
         />
+        <bufferAttribute
+          attach="attributes-uv"
+          array={uvs}
+          count={uvs.length / 2}
+          itemSize={2}
+        />
+        {/* Duplicate UVs for AO map as uv2 */}
+        <bufferAttribute
+          attach="attributes-uv2"
+          array={uvs}
+          count={uvs.length / 2}
+          itemSize={2}
+        />
       </bufferGeometry>
+      {/* Physically based material with optional maps */}
+      <meshStandardMaterial
+        side={DoubleSide}
+        color={baseColor}
+        map={hasMaterial ? colorTex : undefined}
+        normalMap={hasMaterial ? normalTex : undefined}
+        roughnessMap={hasMaterial ? roughTex : undefined}
+        aoMap={hasMaterial ? aoTex : undefined}
+        metalness={0}
+        roughness={1}
+        normalScale={hasMaterial ? new Vector2(1, 1) : new Vector2(0, 0)}
+        aoMapIntensity={hasMaterial ? 1 : 0}
+      />
     </mesh>
   );
 }

@@ -1,14 +1,15 @@
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sidebar } from './Sidebar';
 import ContentViewer from "@/components/ContentViewer";
-import { WoodMaterialSelector } from "@/components/materialselector";
 import { useDashboardStore } from '@/store/dashboardStore';
+import Carousel3D from '@/components/materialselector/Carousel3D';
 
 export function Dashboard() {
   const { activeTab } = useDashboardStore();
+  // Affiche le Carousel 3D uniquement dans l'onglet "Matière"
 
   return (
-    <div className="h-[calc(100vh-73px)] flex flex-col">
+    <div className="h-[calc(100vh-73px)] flex flex-col bg-background">
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
           <Sidebar />
@@ -20,7 +21,7 @@ export function Dashboard() {
           <div className="h-full flex flex-col">
             <div className="flex-1">
               {activeTab === 'material' ? (
-                <WoodMaterialSelector />
+                <Carousel3D />
               ) : (
                 <ContentViewer />
               )}
