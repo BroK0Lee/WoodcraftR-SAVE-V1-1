@@ -7,7 +7,7 @@ import DimensionLabels from "./DimensionLabels";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 import { useGlobalMaterialStore } from "@/store/globalMaterialStore";
-import { TextureLoader, RepeatWrapping } from "three";
+import { TextureLoader, RepeatWrapping, DoubleSide } from "three";
 
 type Props = {
   // Plus besoin de props - on lit tout depuis le store
@@ -61,14 +61,15 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
     return uvArr;
   }, [positions, minX, maxX, minY, maxY]);
 
-  // Load texture based on selected material. Fallback to a tiny 1x1 PNG data URL if none.
+  // Load texture based on selected material. Fallback to a tiny 1x1 PNG data URL (white pixel) if none.
   const textureUrl = selectedMaterialId
     ? `/textures/wood/${selectedMaterialId}/basecolor.jpg`
-    : 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=';
+    : 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=';
   const texture = useLoader(TextureLoader, textureUrl);
   // Improve texture sampling
   texture.wrapS = texture.wrapT = RepeatWrapping;
   texture.anisotropy = 4;
+  const baseColor = selectedMaterialId ? '#ffffff' : '#9ca3af'; // neutral gray when no material selected
   
   return (
     <mesh position={[0, 0, 0]} castShadow receiveShadow>
@@ -92,7 +93,7 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
           itemSize={2}
         />
       </bufferGeometry>
-  <meshBasicMaterial map={texture} color="#ffffff" />
+  <meshBasicMaterial side={DoubleSide} map={selectedMaterialId ? texture : undefined} color={baseColor} />
     </mesh>
   );
 }
