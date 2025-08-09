@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Square, Circle } from 'lucide-react';
 import { 
   RotateCcw
 } from 'lucide-react';
@@ -99,28 +100,29 @@ export function GeneralPanel() {
           <CardDescription>Choisissez la forme du panneau</CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup
+          <ToggleGroup
+            type="single"
             value={shape}
             onValueChange={(val) => {
               if (val === 'rectangle' || val === 'circle') setShape(val);
             }}
-            className="grid grid-cols-2 gap-3"
+            className="grid grid-cols-2 gap-2"
           >
-            <label className="flex items-center gap-3 rounded-md border border-border bg-card p-3 hover:bg-accent cursor-pointer">
-              <RadioGroupItem value="rectangle" id="shape-rectangle" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Carré / Rectangle</span>
-                <span className="text-xs text-muted-foreground">Forme plane avec angles</span>
-              </div>
-            </label>
-            <label className="flex items-center gap-3 rounded-md border border-border bg-card p-3 hover:bg-accent cursor-pointer">
-              <RadioGroupItem value="circle" id="shape-circle" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Circulaire</span>
-                <span className="text-xs text-muted-foreground">Disque / cercle</span>
-              </div>
-            </label>
-          </RadioGroup>
+            <ToggleGroupItem
+              value="rectangle"
+              className="flex flex-col items-center gap-2 h-16 data-[state=on]:bg-orange-100 data-[state=on]:text-orange-800 data-[state=on]:border-orange-300 dark:data-[state=on]:bg-orange-900/30 dark:data-[state=on]:text-orange-400"
+            >
+              <Square className="h-5 w-5" />
+              <span className="text-xs">Carré / Rectangle</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="circle"
+              className="flex flex-col items-center gap-2 h-16 data-[state=on]:bg-orange-100 data-[state=on]:text-orange-800 data-[state=on]:border-orange-300 dark:data-[state=on]:bg-orange-900/30 dark:data-[state=on]:text-orange-400"
+            >
+              <Circle className="h-5 w-5" />
+              <span className="text-xs">Circulaire</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </CardContent>
       </Card>
       <Card>
