@@ -14,6 +14,7 @@ export function MaterialPanel() {
   const { selectedMaterialId, setSelectedMaterialId } = useGlobalMaterialStore();
   // État: sélection courante (par défaut: aucune)
   const [localSelection, setLocalSelection] = useState<string | ''>('');
+  const NONE_VALUE = '__none__';
   // Données issues du manifest JSON public
   const [options, setOptions] = useState<Array<{ id: string; displayName: string }>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -81,6 +82,11 @@ export function MaterialPanel() {
               <Select
                 value={localSelection || undefined}
                 onValueChange={(val) => {
+                  if (val === NONE_VALUE) {
+                    setLocalSelection('');
+                    setSelectedMaterialId(null);
+                    return;
+                  }
                   setLocalSelection(val);
                   setSelectedMaterialId(val || null);
                 }}
@@ -89,7 +95,7 @@ export function MaterialPanel() {
                   <SelectValue placeholder="Aucune matière sélectionnée" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Aucune matière sélectionnée</SelectItem>
+                  <SelectItem value={NONE_VALUE}>Aucune matière sélectionnée</SelectItem>
                   {options.map((opt) => (
                     <SelectItem key={opt.id} value={opt.id}>
                       {opt.displayName}
