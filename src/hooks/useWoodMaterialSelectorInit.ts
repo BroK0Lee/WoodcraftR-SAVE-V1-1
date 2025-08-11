@@ -1,17 +1,17 @@
-import { useEffect, useState, useRef } from 'react';
-import { useLoadingStore } from '@/store/loadingStore';
-import * as THREE from 'three';
-import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
-import { TweenGroup } from '@/lib/tween';
-import { materialPreloader } from '@/services/materialPreloader';
+import { useEffect, useState, useRef } from "react";
+import { useLoadingStore } from "@/store/loadingStore";
+import * as THREE from "three";
+import { CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
+import { TrackballControls } from "three/examples/jsm/controls/TrackballControls.js";
+import { TweenGroup } from "@/lib/tween";
+import { materialPreloader } from "@/services/materialPreloader";
 // Cache global pour les instances 3D
 interface WoodMaterialSelectorCache {
   scene: THREE.Scene | null;
   renderer: CSS3DRenderer | null;
   camera: THREE.PerspectiveCamera | null;
   controls: TrackballControls | null;
-  materialSphere: any | null; // Instance de MaterialSphere
+  materialSphere: { destroy: () => void } | null; // Instance de MaterialSphere minimale
   isInitialized: boolean;
   isSphereCreated: boolean;
   animationId: number | null; // ID de l'animation pour pouvoir l'arrêter
@@ -24,7 +24,7 @@ let globalCache: WoodMaterialSelectorCache = {
   materialSphere: null,
   isInitialized: false,
   isSphereCreated: false,
-  animationId: null
+  animationId: null,
 };
 // Boucle d'animation globale (identique à l'exemple Three.js original)
 function animate() {
@@ -60,8 +60,12 @@ export function useWoodMaterialSelectorInit() {
         }
         initializationInProgress.current = true;
         // Précharger les matériaux en arrière-plan
-        materialPreloader.preloadMaterials().catch(() => {
+        materialPreloader.preloadMaterials().catch((e: unknown) => {
           // Continuer l'initialisation même si le préchargement échoue
+          console.warn(
+            "[useWoodMaterialSelectorInit] preloadMaterials error:",
+            e
+          );
         });
         // Créer les instances 3D de base (sans montage DOM)
         const scene = new THREE.Scene();
@@ -69,7 +73,7 @@ export function useWoodMaterialSelectorInit() {
         const camera = new THREE.PerspectiveCamera(40, 1, 1, 10000);
         camera.position.z = 2750; // Rapproché de 3000 à 2000 pour une meilleure vision des cartes
         const renderer = new CSS3DRenderer();
-        renderer.setSize(800, 600);           // Taille par défaut, sera ajustée au montage
+        renderer.setSize(800, 600); // Taille par défaut, sera ajustée au montage
         // Sauvegarder dans le cache global
         globalCache = {
           scene,
@@ -79,15 +83,15 @@ export function useWoodMaterialSelectorInit() {
           materialSphere: null, // Sera créé au premier montage
           isInitialized: true,
           isSphereCreated: false,
-          animationId: null
+          animationId: null,
         };
         // Démarrer la boucle d'animation globale (comme Three.js original)
         animate();
-        
+
         setIsInitialized(true);
         setWoodMaterialSelectorLoaded(true);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+        setError(err instanceof Error ? err.message : "Erreur inconnue");
         // Marquer comme chargé même en cas d'erreur pour ne pas bloquer l'app
         setWoodMaterialSelectorLoaded(true);
       } finally {
@@ -113,7 +117,10 @@ export function useWoodMaterialSelectorInit() {
       element.appendChild(globalCache.renderer.domElement);
       // Créer les controls s'ils n'existent pas
       if (!globalCache.controls && globalCache.camera) {
-        globalCache.controls = new TrackballControls(globalCache.camera, globalCache.renderer.domElement);
+        globalCache.controls = new TrackballControls(
+          globalCache.camera,
+          globalCache.renderer.domElement
+        );
         // === CONFIGURATION IDENTIQUE À L'EXEMPLE THREE.JS ORIGINAL ===
         globalCache.controls.rotateSpeed = 3.0; // Réduit de 5.0 à 3.0 pour une rotation plus douce
         globalCache.controls.minDistance = 300; // Réduit de 500 à 300 pour permettre un zoom plus proche
@@ -123,6 +130,7 @@ export function useWoodMaterialSelectorInit() {
       }
       return globalCache.renderer;
     } catch (err) {
+      console.warn("[useWoodMaterialSelectorInit] mountRenderer error:", err);
       return null;
     }
   };
@@ -134,6 +142,7 @@ export function useWoodMaterialSelectorInit() {
         element.removeChild(globalCache.renderer.domElement);
       }
     } catch (err) {
+      console.warn("[useWoodMaterialSelectorInit] unmountRenderer error:", err);
     }
   };
   // Méthode pour obtenir les instances du cache
@@ -144,11 +153,11 @@ export function useWoodMaterialSelectorInit() {
       camera: globalCache.camera,
       controls: globalCache.controls,
       materialSphere: globalCache.materialSphere,
-      isSphereCreated: globalCache.isSphereCreated
+      isSphereCreated: globalCache.isSphereCreated,
     };
   };
   // Méthode pour sauvegarder la sphère dans le cache
-  const setCachedSphere = (materialSphere: any) => {
+  const setCachedSphere = (materialSphere: { destroy: () => void }) => {
     globalCache.materialSphere = materialSphere;
     globalCache.isSphereCreated = true;
   };
@@ -176,7 +185,7 @@ export function useWoodMaterialSelectorInit() {
       materialSphere: null,
       isInitialized: false,
       isSphereCreated: false,
-      animationId: null
+      animationId: null,
     };
     setIsInitialized(false);
   };
@@ -187,6 +196,6 @@ export function useWoodMaterialSelectorInit() {
     unmountRenderer,
     getCachedInstances,
     setCachedSphere,
-    clearCache
+    clearCache,
   };
 }

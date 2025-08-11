@@ -46,13 +46,13 @@ Une application web professionnelle pour configurer des panneaux en bois à la d
 Ce projet utilise exclusivement **npm**.
 
 - Installation des dépendances:
-     - `npm install`
+  - `npm install`
 - Démarrer le serveur de développement:
-     - `npm run dev`
+  - `npm run dev`
 - Build de production:
-     - `npm run build`
+  - `npm run build`
 - Lint:
-     - `npm run lint`
+  - `npm run lint`
 
 Merci de ne pas utiliser `pnpm` ou `yarn`. Les fichiers `pnpm-lock.yaml` / `yarn.lock` ne doivent pas être committés.
 
@@ -60,7 +60,6 @@ Merci de ne pas utiliser `pnpm` ou `yarn`. Les fichiers `pnpm-lock.yaml` / `yarn
 
 - ✅ Intégration de OpenCascade.js (OCCT WebAssembly)
 - ✅ Communication WebWorker ↔ React
-
 
 ## 🔧 Développement en cours
 
@@ -73,18 +72,18 @@ Merci de ne pas utiliser `pnpm` ou `yarn`. Les fichiers `pnpm-lock.yaml` / `yarn
 - 🔄 Onglet “Découpes/Usinages” (circulaire, rectangulaire, polygonale, chanfrein, etc)
 - 🔄Onglet “Finitions” (vernis, laque, inserts filetés…)
 
-
 ## 👨‍💻 Standards de développement
 
 - 📘 Commentaires clairs en français pour la logique métier
 - 🔍 Architecture modulaire (src/components, src/models, src/modals…)
 - 🧪 Tests unitaires sur les modules critiques
 - ✅ Code typé strictement avec TypeScript
-- 
+-
 
 ## 📘 Documentation développement
 
 - 🔍 se référer à la documentation présente sous docs/ ==> docs\doc-opencascade.md pour le développement et des aides sur les fonctions notamment en lien avec OpenCascade
+
 ---
 
 > Ce projet est conçu pour servir d’interface de configuration 3D complète et fiable pour une offre de **découpe sur-mesure de panneaux bois** en ligne. Il combine un moteur BREP robuste avec une interface moderne pensée pour des professionnels et des particuliers exigeants.

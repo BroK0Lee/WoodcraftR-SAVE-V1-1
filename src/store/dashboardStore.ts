@@ -1,7 +1,12 @@
 import { create } from "zustand";
 import { usePanelStore } from "@/store/panelStore";
 
-type TabType = "material" | "general" | "cutting" | "engraving" | "finishing";
+export type TabType =
+  | "material"
+  | "general"
+  | "cutting"
+  | "engraving"
+  | "finishing";
 
 interface DashboardStore {
   activeTab: TabType;

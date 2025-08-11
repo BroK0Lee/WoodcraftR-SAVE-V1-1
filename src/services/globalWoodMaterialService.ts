@@ -3,7 +3,7 @@
  * Utilise uniquement les images locales et précharge tout au démarrage
  */
 
-import { GlobalWoodMaterial } from '@/store/globalMaterialStore';
+import { GlobalWoodMaterial } from "@/store/globalMaterialStore";
 
 // Interface pour les caractéristiques brutes du fichier _caract.txt
 interface RawWoodCharacteristics {
@@ -30,13 +30,13 @@ export class GlobalWoodMaterialService {
 
   // Liste des matériaux disponibles (correspondant aux dossiers dans assets)
   private readonly AVAILABLE_WOODS = [
-    { id: 'chataignier', displayName: 'Châtaignier' },
-    { id: 'chene', displayName: 'Chêne' },
-    { id: 'frene', displayName: 'Frêne' },
-    { id: 'hetre', displayName: 'Hêtre' },
-    { id: 'merisier', displayName: 'Merisier' },
-    { id: 'noyer', displayName: 'Noyer' },
-    { id: 'sycomore', displayName: 'Sycomore' }
+    { id: "chataignier", displayName: "Châtaignier" },
+    { id: "chene", displayName: "Chêne" },
+    { id: "frene", displayName: "Frêne" },
+    { id: "hetre", displayName: "Hêtre" },
+    { id: "merisier", displayName: "Merisier" },
+    { id: "noyer", displayName: "Noyer" },
+    { id: "sycomore", displayName: "Sycomore" },
   ];
 
   private constructor() {}
@@ -56,11 +56,21 @@ export class GlobalWoodMaterialService {
 
     for (const wood of this.AVAILABLE_WOODS) {
       try {
-        const material = await this.loadSingleMaterial(wood.id, wood.displayName);
+        const material = await this.loadSingleMaterial(
+          wood.id,
+          wood.displayName
+        );
         materials.push(material);
       } catch (error) {
+        console.warn(
+          "[GlobalWoodMaterialService] loadSingleMaterial error:",
+          error
+        );
         // Créer un matériau de fallback
-        const fallbackMaterial = this.createFallbackMaterial(wood.id, wood.displayName);
+        const fallbackMaterial = this.createFallbackMaterial(
+          wood.id,
+          wood.displayName
+        );
         materials.push(fallbackMaterial);
       }
     }
@@ -71,24 +81,27 @@ export class GlobalWoodMaterialService {
   /**
    * Charge un matériau spécifique
    */
-  private async loadSingleMaterial(id: string, displayName: string): Promise<GlobalWoodMaterial> {
+  private async loadSingleMaterial(
+    id: string,
+    displayName: string
+  ): Promise<GlobalWoodMaterial> {
     const basePath = `/src/assets/textures/wood/${id}`;
-    
+
     // Image locale (_basecolor.jpg)
     const imageUrl = `${basePath}/${id}_basecolor.jpg`;
-    
+
     // Charger les caractéristiques depuis le fichier _caract.txt
     const rawCharacteristics = await this.loadCharacteristics(id);
-    
+
     // Convertir en format unifié
     const characteristics = this.convertToUnifiedFormat(rawCharacteristics);
-    
+
     // Métadonnées des fichiers disponibles
     const metadata = {
       folder: id,
       hasNormalMap: true,
       hasRoughnessMap: true,
-      hasAOMap: true
+      hasAOMap: true,
     };
 
     // Calculer un prix basé sur les caractéristiques
@@ -100,28 +113,35 @@ export class GlobalWoodMaterialService {
       displayName,
       image: imageUrl,
       price,
-      description: characteristics.generalDescription || `Bois de ${displayName} - Excellent choix pour vos projets`,
+      description:
+        characteristics.generalDescription ||
+        `Bois de ${displayName} - Excellent choix pour vos projets`,
       characteristics,
-      metadata
+      metadata,
     };
   }
 
   /**
    * Charge les caractéristiques depuis le fichier _caract.txt
    */
-  private async loadCharacteristics(id: string): Promise<RawWoodCharacteristics> {
+  private async loadCharacteristics(
+    id: string
+  ): Promise<RawWoodCharacteristics> {
     const caractUrl = `/src/assets/textures/wood/${id}/${id}_caract.txt`;
-    
+
     try {
       const response = await fetch(caractUrl);
       if (!response.ok) {
         throw new Error(`Fichier non trouvé: ${response.status}`);
       }
-      
+
       const content = await response.text();
       return this.parseCharacteristics(content);
-      
     } catch (error) {
+      console.warn(
+        "[GlobalWoodMaterialService] loadCharacteristics error:",
+        error
+      );
       return this.getDefaultCharacteristics(id);
     }
   }
@@ -130,91 +150,111 @@ export class GlobalWoodMaterialService {
    * Parse le contenu du fichier _caract.txt
    */
   private parseCharacteristics(rawText: string): RawWoodCharacteristics {
-    const lines = rawText.split('\n');
-    let currentSection = '';
-    
+    const lines = rawText.split("\n");
+    let currentSection = "";
+
     const characteristics: Partial<RawWoodCharacteristics> = {
       colorAspect: {
-        dominantColor: '',
-        variations: '',
-        grain: ''
+        dominantColor: "",
+        variations: "",
+        grain: "",
       },
       density: {
-        typical: '',
-        range: ''
+        typical: "",
+        range: "",
       },
       hardness: {
-        classification: ''
+        classification: "",
       },
       applications: [],
-      raw: rawText
+      raw: rawText,
     };
 
-    let generalDescription = '';
-    
+    let generalDescription = "";
+
     for (const line of lines) {
       const trimmedLine = line.trim();
-      
-      if (trimmedLine.startsWith('# ')) {
+
+      if (trimmedLine.startsWith("# ")) {
         continue;
-      } else if (trimmedLine.startsWith('## ')) {
-        currentSection = trimmedLine.replace('## ', '').toLowerCase();
+      } else if (trimmedLine.startsWith("## ")) {
+        currentSection = trimmedLine.replace("## ", "").toLowerCase();
         continue;
       }
-      
+
       switch (currentSection) {
-        case 'caractéristique générale':
-          if (trimmedLine && !trimmedLine.startsWith('-')) {
-            generalDescription += trimmedLine + ' ';
+        case "caractéristique générale":
+          if (trimmedLine && !trimmedLine.startsWith("-")) {
+            generalDescription += trimmedLine + " ";
           }
           break;
-          
-        case 'couleur / aspect':
-          if (trimmedLine.includes('couleur dominante')) {
-            characteristics.colorAspect!.dominantColor = this.extractValue(trimmedLine);
-          } else if (trimmedLine.includes('variations') || trimmedLine.includes('veinage')) {
-            characteristics.colorAspect!.variations = this.extractValue(trimmedLine);
-          } else if (trimmedLine.includes('grain') || trimmedLine.includes('maillure')) {
+
+        case "couleur / aspect":
+          if (trimmedLine.includes("couleur dominante")) {
+            characteristics.colorAspect!.dominantColor =
+              this.extractValue(trimmedLine);
+          } else if (
+            trimmedLine.includes("variations") ||
+            trimmedLine.includes("veinage")
+          ) {
+            characteristics.colorAspect!.variations =
+              this.extractValue(trimmedLine);
+          } else if (
+            trimmedLine.includes("grain") ||
+            trimmedLine.includes("maillure")
+          ) {
             characteristics.colorAspect!.grain = this.extractValue(trimmedLine);
           }
           break;
-          
-        case 'densité (12% h)':
-          if (trimmedLine.includes('valeur typique')) {
+
+        case "densité (12% h)":
+          if (trimmedLine.includes("valeur typique")) {
             characteristics.density!.typical = this.extractValue(trimmedLine);
-          } else if (trimmedLine.includes('fourchette')) {
+          } else if (trimmedLine.includes("fourchette")) {
             characteristics.density!.range = this.extractValue(trimmedLine);
           }
           break;
-          
-        case 'dureté':
-          if (trimmedLine.includes('classement') || trimmedLine.includes('**')) {
-            characteristics.hardness!.classification = this.extractValue(trimmedLine);
-          } else if (trimmedLine.includes('janka')) {
+
+        case "dureté":
+          if (
+            trimmedLine.includes("classement") ||
+            trimmedLine.includes("**")
+          ) {
+            characteristics.hardness!.classification =
+              this.extractValue(trimmedLine);
+          } else if (trimmedLine.includes("janka")) {
             characteristics.hardness!.janka = this.extractValue(trimmedLine);
           }
           break;
-          
-        case 'applications privilégiées':
-          if (trimmedLine.startsWith('-')) {
-            characteristics.applications!.push(trimmedLine.replace('- ', ''));
+
+        case "applications privilégiées":
+          if (trimmedLine.startsWith("-")) {
+            characteristics.applications!.push(trimmedLine.replace("- ", ""));
           }
           break;
       }
     }
 
     characteristics.generalDescription = generalDescription.trim();
-    
+
     return characteristics as RawWoodCharacteristics;
   }
 
   /**
    * Convertit les caractéristiques brutes en format unifié
    */
-  private convertToUnifiedFormat(raw: RawWoodCharacteristics): GlobalWoodMaterial['characteristics'] {
+  private convertToUnifiedFormat(
+    raw: RawWoodCharacteristics
+  ): GlobalWoodMaterial["characteristics"] {
     // Extraction des valeurs numériques pour densité et dureté
-    const densityValue = this.extractNumericValue(raw.density.typical || raw.density.range, 600);
-    const hardnessValue = this.extractNumericValue(raw.hardness.janka || '', 500);
+    const densityValue = this.extractNumericValue(
+      raw.density.typical || raw.density.range,
+      600
+    );
+    const hardnessValue = this.extractNumericValue(
+      raw.hardness.janka || "",
+      500
+    );
 
     return {
       generalDescription: raw.generalDescription,
@@ -222,29 +262,29 @@ export class GlobalWoodMaterialService {
       density: {
         ...raw.density,
         value: densityValue,
-        unit: 'kg/m³'
+        unit: "kg/m³",
       },
       hardness: {
         ...raw.hardness,
         value: hardnessValue,
-        unit: 'N'
+        unit: "N",
       },
       workability: {
-        cutting: 'Bon',
-        drilling: 'Bon',
-        finishing: 'Bon'
+        cutting: "Bon",
+        drilling: "Bon",
+        finishing: "Bon",
       },
       appearance: {
-        grain: raw.colorAspect.grain || 'Moyen',
-        color: raw.colorAspect.dominantColor || 'Naturel',
-        texture: 'Lisse'
+        grain: raw.colorAspect.grain || "Moyen",
+        color: raw.colorAspect.dominantColor || "Naturel",
+        texture: "Lisse",
       },
       sustainability: {
-        origin: 'Europe',
-        certification: 'FSC',
-        carbon_impact: 'Faible'
+        origin: "Europe",
+        certification: "FSC",
+        carbon_impact: "Faible",
       },
-      applications: raw.applications
+      applications: raw.applications,
     };
   }
 
@@ -260,12 +300,13 @@ export class GlobalWoodMaterialService {
    * Extrait la valeur après les deux-points
    */
   private extractValue(line: string): string {
-    const colonIndex = line.indexOf(':');
+    const colonIndex = line.indexOf(":");
     if (colonIndex === -1) return line.trim();
-    
-    return line.substring(colonIndex + 1)
-      .replace(/【.*?】/g, '')
-      .replace(/\*\*/g, '')
+
+    return line
+      .substring(colonIndex + 1)
+      .replace(/【.*?】/g, "")
+      .replace(/\*\*/g, "")
       .trim();
   }
 
@@ -276,53 +317,60 @@ export class GlobalWoodMaterialService {
     return {
       generalDescription: `Bois de qualité adapté à de nombreux projets`,
       colorAspect: {
-        dominantColor: 'Naturel',
-        variations: 'Modérées',
-        grain: 'Moyen'
+        dominantColor: "Naturel",
+        variations: "Modérées",
+        grain: "Moyen",
       },
       density: {
-        typical: '600 kg/m³',
-        range: '550-650 kg/m³'
+        typical: "600 kg/m³",
+        range: "550-650 kg/m³",
       },
       hardness: {
-        classification: 'Moyen',
-        janka: '500 N'
+        classification: "Moyen",
+        janka: "500 N",
       },
-      applications: ['Menuiserie générale', 'Mobilier', 'Décoration'],
-      raw: `# ${id}\n\nCaractéristiques par défaut`
+      applications: ["Menuiserie générale", "Mobilier", "Décoration"],
+      raw: `# ${id}\n\nCaractéristiques par défaut`,
     };
   }
 
   /**
    * Calcule un prix basé sur les caractéristiques
    */
-  private calculatePrice(characteristics: GlobalWoodMaterial['characteristics']): number {
+  private calculatePrice(
+    characteristics: GlobalWoodMaterial["characteristics"]
+  ): number {
     let basePrice = 35;
-    
+
     // Ajustement selon la dureté
-    if (characteristics.hardness.classification.toLowerCase().includes('dur')) {
+    if (characteristics.hardness.classification.toLowerCase().includes("dur")) {
       basePrice += 15;
-    } else if (characteristics.hardness.classification.toLowerCase().includes('tendre')) {
+    } else if (
+      characteristics.hardness.classification.toLowerCase().includes("tendre")
+    ) {
       basePrice -= 10;
     }
-    
+
     // Ajustement selon la densité
     if (characteristics.density.value > 700) {
       basePrice += 10;
     } else if (characteristics.density.value < 500) {
       basePrice -= 5;
     }
-    
+
     return Math.max(20, basePrice);
   }
 
   /**
    * Crée un matériau de fallback
    */
-  private createFallbackMaterial(id: string, displayName: string): GlobalWoodMaterial {
+  private createFallbackMaterial(
+    id: string,
+    displayName: string
+  ): GlobalWoodMaterial {
     const defaultCharacteristics = this.getDefaultCharacteristics(id);
     const characteristics = this.convertToUnifiedFormat(defaultCharacteristics);
-    
+
     return {
       id,
       name: id,
@@ -335,11 +383,12 @@ export class GlobalWoodMaterialService {
         folder: id,
         hasNormalMap: true,
         hasRoughnessMap: true,
-        hasAOMap: true
-      }
+        hasAOMap: true,
+      },
     };
   }
 }
 
 // Export d'une instance singleton
-export const globalWoodMaterialService = GlobalWoodMaterialService.getInstance();
+export const globalWoodMaterialService =
+  GlobalWoodMaterialService.getInstance();
