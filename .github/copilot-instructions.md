@@ -5,6 +5,11 @@
 - Gestion d'état avec **Zustand**.
 - Objectif : configurateur 3D fluide, interactions intuitives, textures PBR cohérentes (sRGB pour baseColor, linéaire pour normal/roughness/ao).
 
+## Gestionnaire de paquets
+- Utiliser exclusivement **npm** (pas de pnpm/yarn).
+- Ne pas générer de `pnpm-lock.yaml` ni `yarn.lock` (refusés en CI). Seul `package-lock.json` est autorisé.
+- Quand des commandes sont suggérées, toujours proposer la variante `npm`.
+
 ## Style & conventions
 - Utiliser **TypeScript** pour tous les nouveaux fichiers (types explicites pour props, state, utilitaires).
 - Nommage : `useXxx` pour hooks, `XxxStore` pour Zustand, `XxxControls` pour composants UI.

@@ -41,6 +41,21 @@ Une application web professionnelle pour configurer des panneaux en bois à la d
 [ WebWorker → OCCT.js ] → [ Triangulation → BufferGeometry ]
 ```
 
+## 📦 Gestionnaire de paquets (NPM only)
+
+Ce projet utilise exclusivement **npm**.
+
+- Installation des dépendances:
+     - `npm install`
+- Démarrer le serveur de développement:
+     - `npm run dev`
+- Build de production:
+     - `npm run build`
+- Lint:
+     - `npm run lint`
+
+Merci de ne pas utiliser `pnpm` ou `yarn`. Les fichiers `pnpm-lock.yaml` / `yarn.lock` ne doivent pas être committés.
+
 ## ✅ Fonctionnalités MVP en place
 
 - ✅ Intégration de OpenCascade.js (OCCT WebAssembly)
