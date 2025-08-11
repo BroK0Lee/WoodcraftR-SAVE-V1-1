@@ -22,26 +22,16 @@ const disposeObject = (obj: any) => {
   }
 };
 
-interface Props {
-  // Plus de props nécessaires - on lit depuis le store
-}
+type Props = Record<string, never>;
 
-const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(_props, _ref) {
+const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer() {
   const groupRef = useRef<Group>(new Group());
-  const { scene, size } = useThree();
-  
+  const { size } = useThree();
+
   // Lire les edges depuis le store au lieu des props
   const edges = usePanelStore((state) => state.edges);
 
-  useEffect(() => {
-    const group = groupRef.current;
-    scene.add(group);
-    return () => {
-      scene.remove(group);
-      group.children.forEach(disposeObject);
-      group.clear();
-    };
-  }, [scene]);
+  // Le group est désormais géré par la hiérarchie R3F (pas d'ajout manuel à la scène)
 
   useEffect(() => {
     const group = groupRef.current;
@@ -52,7 +42,7 @@ const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(_props, _ref) {
       const positions = Array.from(edge.xyz) as number[];
       const lineGeo = new LineGeometry();
       lineGeo.setPositions(positions);
-      
+
       const mat2 = new LineMaterial({
         color: 0x000000, // Toujours noir
         linewidth: 1, // Épaisseur de base
@@ -75,7 +65,8 @@ const EdgesLayer = forwardRef<Group, Props>(function EdgesLayer(_props, _ref) {
   // Sélection des arêtes
   useEdgeSelection(groupRef.current);
 
-  return null;
+  // Rendu: on renvoie un group afin qu'il hérite des transforms parents (panelOffset)
+  return <group ref={groupRef} />;
 });
 
 export default EdgesLayer;

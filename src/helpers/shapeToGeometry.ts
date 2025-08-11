@@ -57,8 +57,8 @@ export function shapeToGeometry(
       // Skip face if triangulation fails
       continue;
     }
-    if (triangulation && typeof triangulation === 'object') {
-      if (typeof triangulation.get === 'function') {
+    if (triangulation && typeof triangulation === "object") {
+      if (typeof triangulation.get === "function") {
         triangulation = triangulation.get();
       }
     }
@@ -68,10 +68,29 @@ export function shapeToGeometry(
     const nbNodes = triangulation.NbNodes();
     const nbTriangles = triangulation.NbTriangles();
 
-    // Ajout des sommets
+    // Transformation de repère éventuelle (placement de la face)
+    // Certaines formes (ex: cylindre translaté) possèdent un TopLoc_Location
+    // qu'il faut appliquer pour obtenir des coordonnées globales cohérentes
+    const trsf =
+      location && typeof location.Transformation === "function"
+        ? location.Transformation()
+        : null;
+
+    // Ajout des sommets (avec application du TopLoc_Location si présent)
     for (let i = 1; i <= nbNodes; i++) {
-      const pnt = triangulation.Node(i);
-      positions.push(pnt.X(), pnt.Y(), pnt.Z());
+      const node = triangulation.Node(i);
+      if (trsf) {
+        const p = new oc.gp_Pnt_3(node.X(), node.Y(), node.Z());
+        // Méthode binding: suffixe _1 pour Transform
+        if (typeof p.Transform_1 === "function") {
+          p.Transform_1(trsf);
+        } else if (typeof p.Transform === "function") {
+          p.Transform(trsf);
+        }
+        positions.push(p.X(), p.Y(), p.Z());
+      } else {
+        positions.push(node.X(), node.Y(), node.Z());
+      }
     }
     // Ajout des indices
     for (let i = 1; i <= nbTriangles; i++) {
@@ -88,7 +107,10 @@ export function shapeToGeometry(
 
   return {
     positions: new Float32Array(positions),
-    indices: positions.length / 3 > 65535 ? new Uint32Array(indices) : new Uint16Array(indices),
+    indices:
+      positions.length / 3 > 65535
+        ? new Uint32Array(indices)
+        : new Uint16Array(indices),
     // Normales et UVs peuvent être ajoutées ici si besoin
   };
 }
