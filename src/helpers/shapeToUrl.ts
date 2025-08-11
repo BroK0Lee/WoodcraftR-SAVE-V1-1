@@ -33,11 +33,13 @@ export default function shapeToUrl(
     new oc.Message_ProgressRange_1()
   );
 
-  // Read the GLB file from the in-memory virtual file system
+  // Read the GLB file from the in-memory virtual file system (Uint8Array expected)
   const glbFile = oc.FS.readFile("./file.glb", { encoding: "binary" });
+  // Safely convert to a real ArrayBuffer to satisfy DOM BlobPart typing (avoid SharedArrayBuffer)
+  const src = glbFile as Uint8Array;
+  const ab = new ArrayBuffer(src.byteLength);
+  new Uint8Array(ab).set(src);
 
   // Return a Blob URL for the GLB file (MIME type: model/gltf-binary)
-  return URL.createObjectURL(
-    new Blob([glbFile.buffer], { type: "model/gltf-binary" })
-  );
+  return URL.createObjectURL(new Blob([ab], { type: "model/gltf-binary" }));
 }
