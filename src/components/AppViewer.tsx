@@ -7,7 +7,14 @@ import DimensionLabels from "./DimensionLabels";
 import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 import { useGlobalMaterialStore } from "@/store/globalMaterialStore";
-import { TextureLoader, RepeatWrapping, DoubleSide, Vector2 } from "three";
+import {
+  TextureLoader,
+  RepeatWrapping,
+  DoubleSide,
+  Vector2,
+  SRGBColorSpace,
+  NoColorSpace,
+} from "three";
 
 function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   // Calculs optimisés des dimensions une seule fois
@@ -96,32 +103,57 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
     useAO && hasMaterial ? `${baseUrl}/ao.jpg` : white1x1,
   ]);
   // Improve texture sampling
-  [colorTex, normalTex, roughTex, aoTex].forEach((t) => {
+  [colorTex, normalTex, roughTex, aoTex].forEach((t, idx) => {
     t.wrapS = t.wrapT = RepeatWrapping;
     t.anisotropy = 4;
+    // Définir l'espace colorimétrique: baseColor en sRGB, autres en linéaire
+    if (idx === 0) {
+      t.colorSpace = SRGBColorSpace;
+    } else {
+      t.colorSpace = NoColorSpace;
+    }
+    t.needsUpdate = true;
   });
   const baseColor = hasMaterial ? "#ffffff" : "#9ca3af"; // neutral gray when no material selected
 
   return (
     <mesh position={[0, 0, 0]} castShadow receiveShadow>
-      <bufferGeometry>
+      <bufferGeometry
+        key={`geom-${geometry.positions.length}-${geometry.indices.length}`}
+        onUpdate={(g) => {
+          // Assurer des bornes correctes pour le culling
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const geom = g as any;
+          geom.computeBoundingBox?.();
+          geom.computeBoundingSphere?.();
+        }}
+      >
         <bufferAttribute
           attach="attributes-position"
           array={geometry.positions}
           count={geometry.positions.length / 3}
           itemSize={3}
+          onUpdate={(attr) => {
+            attr.needsUpdate = true;
+          }}
         />
         <bufferAttribute
           attach="index"
           array={geometry.indices}
           count={geometry.indices.length}
           itemSize={1}
+          onUpdate={(attr) => {
+            attr.needsUpdate = true;
+          }}
         />
         <bufferAttribute
           attach="attributes-uv"
           array={uvs}
           count={uvs.length / 2}
           itemSize={2}
+          onUpdate={(attr) => {
+            attr.needsUpdate = true;
+          }}
         />
         {useAO && (
           <bufferAttribute
@@ -129,6 +161,9 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
             array={uvs}
             count={uvs.length / 2}
             itemSize={2}
+            onUpdate={(attr) => {
+              attr.needsUpdate = true;
+            }}
           />
         )}
       </bufferGeometry>
@@ -152,7 +187,6 @@ export default function PanelViewer() {
   const isPanelVisible = usePanelStore((state) => state.isPanelVisible);
   const geometry = usePanelStore((state) => state.geometry);
   const edges = usePanelStore((state) => state.edges);
-  const isCalculating = usePanelStore((state) => state.isCalculating);
 
   // États pour les cotations
   const dimensions = usePanelStore((state) => state.dimensions);
@@ -189,15 +223,13 @@ export default function PanelViewer() {
         <Environment preset="city" />
 
         <group position={panelOffset}>
-          {isPanelVisible && geometry && !isCalculating && (
+          {isPanelVisible && geometry && (
             <Suspense fallback={null}>
               <PanelMesh geometry={geometry} />
             </Suspense>
           )}
 
-          {edges.length > 0 && isPanelVisible && !isCalculating && (
-            <EdgesLayer />
-          )}
+          {edges.length > 0 && isPanelVisible && <EdgesLayer />}
 
           {/* Cotations lors de l'édition/prévisualisation d'une découpe */}
           {isPanelVisible && (

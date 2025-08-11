@@ -40,45 +40,71 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
 
   // Référence pour le groupe Three.js
   const groupRef = useRef<Group>(null);
+  // Références persistantes pour les labels (créés une fois)
+  const labelXRef = useRef<CSS2DObject | null>(null);
+  const labelYRef = useRef<CSS2DObject | null>(null);
+  const labelClass =
+    "px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none";
 
-  // Ajout des labels CSS2D comme dans AxesHelper
+  // Création/démontage des labels une seule fois
   useEffect(() => {
     const group = groupRef.current;
     if (!group) return;
-    // Nettoyer les anciens labels CSS2D
-    group.children = group.children.filter(
-      (obj) => !(obj instanceof CSS2DObject)
-    );
-    // Style cohérent avec AxesHelper
-    const labelClass =
-      "px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none";
-    // Label X
-    const labelXDiv = document.createElement("div");
-    labelXDiv.className = labelClass;
-    labelXDiv.textContent = `X: ${cotationData.displayX}`;
-    const labelXObj = new CSS2DObject(labelXDiv);
-    labelXObj.position.set(
+
+    // Créer X si absent
+    if (!labelXRef.current) {
+      const labelXDiv = document.createElement("div");
+      labelXDiv.className = labelClass;
+      labelXRef.current = new CSS2DObject(labelXDiv);
+      group.add(labelXRef.current);
+    }
+    // Créer Y si absent
+    if (!labelYRef.current) {
+      const labelYDiv = document.createElement("div");
+      labelYDiv.className = labelClass;
+      labelYDiv.style.display = "flex";
+      labelYDiv.style.justifyContent = "center";
+      labelYDiv.style.alignItems = "center";
+      labelYDiv.style.whiteSpace = "nowrap";
+      labelYRef.current = new CSS2DObject(labelYDiv);
+      group.add(labelYRef.current);
+    }
+
+    // Cleanup au démontage
+    return () => {
+      if (group && labelXRef.current) {
+        group.remove(labelXRef.current);
+        // Detacher l'élément DOM par sécurité
+        (labelXRef.current.element as HTMLElement | undefined)?.remove?.();
+        labelXRef.current = null;
+      }
+      if (group && labelYRef.current) {
+        group.remove(labelYRef.current);
+        (labelYRef.current.element as HTMLElement | undefined)?.remove?.();
+        labelYRef.current = null;
+      }
+    };
+  }, []);
+
+  // Mise à jour du contenu/position des labels quand les données changent
+  useEffect(() => {
+    const lx = labelXRef.current;
+    const ly = labelYRef.current;
+    if (!lx || !ly) return;
+    // Texte
+    (lx.element as HTMLDivElement).textContent = `X: ${cotationData.displayX}`;
+    (ly.element as HTMLDivElement).textContent = `Y: ${cotationData.displayY}`;
+    // Positions
+    lx.position.set(
       (cotationData.originX + cotationData.positionX) / 2,
       cotationData.xCotationY - 8,
       cotationData.zOffset
     );
-    group.add(labelXObj);
-    // Label Y standard, identique à X
-    const labelYDiv = document.createElement("div");
-    labelYDiv.className = labelClass;
-    labelYDiv.style.display = "flex";
-    labelYDiv.style.justifyContent = "center";
-    labelYDiv.style.alignItems = "center";
-    labelYDiv.style.whiteSpace = "nowrap";
-    labelYDiv.textContent = `Y: ${cotationData.displayY}`;
-    const labelYObj = new CSS2DObject(labelYDiv);
-    labelYObj.position.set(
+    ly.position.set(
       cotationData.yCotationX - 8,
       (cotationData.originY + cotationData.positionY) / 2,
       cotationData.zOffset
     );
-    group.add(labelYObj);
-    // Pas besoin de cleanup manuel, group.clear() suffit
   }, [cotationData]);
 
   return (

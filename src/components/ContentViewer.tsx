@@ -12,6 +12,7 @@ export default function ContentViewer() {
   );
   const [lastError, setLastError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const inFlightRef = useRef(false);
 
   // Utiliser le worker global
   const { isReady: ocReady, getWorkerProxy } = useOpenCascadeWorker();
@@ -38,20 +39,42 @@ export default function ContentViewer() {
   // État de prévisualisation depuis le store
   const previewCut = usePanelStore((state) => state.previewCut);
   const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
+  const lastInputSigRef = useRef<string>("__init__");
 
   // Recalcul quand les dimensions/découpes changent
   useEffect(() => {
     const proxy = getWorkerProxy();
     if (!proxy || !ocReady) {
-      console.log("� [ContentViewer] Worker pas encore prêt, attente...");
+      console.log("⏳ [ContentViewer] Worker pas encore prêt, attente...");
       return;
     }
 
+    // Construire une signature stable des entrées pour éviter les recalculs identiques
+    const inputSig = JSON.stringify({
+      dims: dimensions,
+      cuts,
+      preview: previewCut,
+      shape,
+      circleDiameter,
+    });
+    if (inputSig === lastInputSigRef.current) {
+      // Entrées identiques: ignorer sans bruit pour éviter les logs en boucle
+      return;
+    }
+    lastInputSigRef.current = inputSig;
+
     console.log("📋 [useEffect] Changement détecté - recalcul nécessaire");
 
+    let isCancelled = false;
     const performCalculation = async () => {
+      if (inFlightRef.current) {
+        console.warn(
+          "[ContentViewer] Calcul déjà en cours, on ignore ce trigger"
+        );
+        return;
+      }
+      inFlightRef.current = true;
       setCalculating(true);
-      let isCancelled = false;
       const currentDimensions = { ...dimensions };
       const currentCuts = [...cuts];
 
@@ -134,7 +157,7 @@ export default function ContentViewer() {
           );
 
           setLastError(errorMessage);
-          setRetryCount((prev) => prev + 1);
+          setRetryCount((prev) => (prev < 3 ? prev + 1 : prev));
 
           // Si on a une géométrie valide précédente et que c'est un échec de découpe, on peut faire un rollback
           if (
@@ -150,24 +173,21 @@ export default function ContentViewer() {
           }
         }
       } finally {
-        if (!isCancelled) {
-          setCalculating(false);
-        }
+        // Toujours réinitialiser l'état de calcul, même si la tâche a été annulée,
+        // pour éviter de rester bloqué sur "Calcul en cours..."
+        setCalculating(false);
+        inFlightRef.current = false;
       }
-
-      return () => {
-        isCancelled = true;
-      };
     };
 
     // Mise à jour simplifiée : plus besoin de throttling car CuttingPanel
     // utilise maintenant onBlur (comme GeneralPanel)
     console.log("⚡ [useEffect] Recalcul géométrique immédiat");
-    performCalculation();
+    void performCalculation();
 
     // Cleanup automatique par React lors du démontage/changement
     return () => {
-      // Pas de cleanup nécessaire pour les calculs immédiats
+      isCancelled = true;
     };
   }, [
     dimensions,
@@ -176,14 +196,22 @@ export default function ContentViewer() {
     ocReady,
     previewCut,
     isPreviewMode,
-    retryCount,
     shape,
     circleDiameter,
+    retryCount,
+    getWorkerProxy,
     setGeometry,
     setEdges,
     setCalculating,
-    getWorkerProxy,
   ]);
+
+  // Fallback: garder en mémoire une géométrie locale si celle du store devient brièvement nulle
+  const localLastGeometryRef = useRef<PanelGeometryDTO | null>(null);
+  useEffect(() => {
+    if (geometry) {
+      localLastGeometryRef.current = geometry;
+    }
+  }, [geometry]);
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">
@@ -211,7 +239,7 @@ export default function ContentViewer() {
             </div>
           )}
 
-          {geometry && <PanelViewer />}
+          {(geometry || localLastGeometryRef.current) && <PanelViewer />}
 
           <div className="absolute bottom-2 right-2 text-xs text-neutral-50 space-y-1">
             <div>{edges.length} edges</div>

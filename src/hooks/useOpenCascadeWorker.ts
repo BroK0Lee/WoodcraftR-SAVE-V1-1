@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLoadingStore } from "@/store/loadingStore";
 import {
   initOccWorker,
@@ -40,8 +40,7 @@ export function useOpenCascadeWorker() {
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
-        // En cas d'erreur, marquer comme prêt pour ne pas bloquer l'app
-        setWorkerReady(true);
+        // Ne pas marquer comme prêt en cas d'erreur: laisser l'écran de chargement informer l'utilisateur
       } finally {
         initializationInProgress.current = false;
       }
@@ -56,13 +55,13 @@ export function useOpenCascadeWorker() {
   }, [setWorkerReady]);
 
   // Fonction pour obtenir le proxy du worker (pour les composants qui en ont besoin)
-  const getWorkerProxy = () => getOccProxy();
+  const getWorkerProxy = useCallback(() => getOccProxy(), []);
 
   // Fonction pour terminer le worker (à appeler uniquement lors de la fermeture de l'app)
-  const terminateWorker = () => {
+  const terminateWorker = useCallback(() => {
     terminateOccWorker();
     setIsReady(false);
-  };
+  }, []);
 
   return {
     isReady,
