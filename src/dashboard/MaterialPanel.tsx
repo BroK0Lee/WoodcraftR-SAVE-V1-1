@@ -41,7 +41,10 @@ export function MaterialPanel() {
       try {
         const manifest = await getMaterialsManifest();
         if (!mounted) return;
-        const opts = manifest.materials.map((m) => ({ id: m.id, displayName: m.displayName }));
+        const opts = manifest.materials.map((m) => ({
+          id: m.id,
+          displayName: m.displayName,
+        }));
         const images: Record<string, string> = {};
         for (const m of manifest.materials) images[m.id] = m.carousel.image;
         setOptions(opts);

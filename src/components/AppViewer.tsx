@@ -15,7 +15,10 @@ import {
   SRGBColorSpace,
   NoColorSpace,
 } from "three";
-import { getMaterialsManifest, type MaterialsManifest } from "@/services/materialsManifest";
+import {
+  getMaterialsManifest,
+  type MaterialsManifest,
+} from "@/services/materialsManifest";
 
 function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   // Calculs optimisés des dimensions une seule fois
@@ -92,7 +95,9 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=";
   const hasMaterial = !!selectedMaterialId;
   // Récupérer folder/maps depuis le manifest pour l'id sélectionné
-  const [selectedEntry, setSelectedEntry] = useState<MaterialsManifest["materials"][number] | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<
+    MaterialsManifest["materials"][number] | null
+  >(null);
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -103,7 +108,8 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
       try {
         const manifest = await getMaterialsManifest();
         if (!mounted) return;
-        const entry = manifest.materials.find((m) => m.id === selectedMaterialId) ?? null;
+        const entry =
+          manifest.materials.find((m) => m.id === selectedMaterialId) ?? null;
         setSelectedEntry(entry);
       } catch {
         setSelectedEntry(null);
@@ -114,15 +120,26 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
     };
   }, [hasMaterial, selectedMaterialId]);
 
-  const baseUrl = hasMaterial && selectedEntry ? `/textures/wood/${selectedEntry.folder}` : undefined;
+  const baseUrl =
+    hasMaterial && selectedEntry
+      ? `/textures/wood/${selectedEntry.folder}`
+      : undefined;
   const [colorTex, normalTex, roughTex] = useLoader(TextureLoader, [
-    hasMaterial && selectedEntry ? `${baseUrl}/${selectedEntry.maps.basecolor}` : white1x1,
-    hasMaterial && selectedEntry ? `${baseUrl}/${selectedEntry.maps.normal}` : white1x1,
-    hasMaterial && selectedEntry ? `${baseUrl}/${selectedEntry.maps.roughness}` : white1x1,
+    hasMaterial && selectedEntry
+      ? `${baseUrl}/${selectedEntry.maps.basecolor}`
+      : white1x1,
+    hasMaterial && selectedEntry
+      ? `${baseUrl}/${selectedEntry.maps.normal}`
+      : white1x1,
+    hasMaterial && selectedEntry
+      ? `${baseUrl}/${selectedEntry.maps.roughness}`
+      : white1x1,
   ]);
   // AO texture (optional based on flag)
   const [aoTex] = useLoader(TextureLoader, [
-    useAO && hasMaterial && selectedEntry ? `${baseUrl}/${selectedEntry.maps.ao}` : white1x1,
+    useAO && hasMaterial && selectedEntry
+      ? `${baseUrl}/${selectedEntry.maps.ao}`
+      : white1x1,
   ]);
   // Improve texture sampling
   [colorTex, normalTex, roughTex, aoTex].forEach((t, idx) => {
