@@ -14,7 +14,9 @@ export function StepItem({ step, progress }: StepItemProps) {
       case "completed":
         return <CheckCircle className="w-4 h-4 text-green-600" />;
       default:
-        return <div className="w-4 h-4 rounded-full border-2 border-gray-300" />;
+        return (
+          <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
+        );
     }
   };
 

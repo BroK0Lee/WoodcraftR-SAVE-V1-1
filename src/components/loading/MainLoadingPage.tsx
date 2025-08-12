@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useLoadingStore } from "@/store/loadingStore";
-import { materialPreloader } from "@/services/materialPreloader";
 import { BrandingHeader } from "./components/BrandingHeader";
 import { GlobalProgressBar } from "./components/GlobalProgressBar";
 import { StepList } from "./components/StepList";
 import type { LoadingStep } from "./types";
+import { useProgressTimer } from "./hooks/useProgressTimer";
+import { PROGRESS_CONFIG } from "./config";
+import { waitForFlag, guards } from "./utils/storeGuards";
+import { ensureMaterialsPreloaded } from "./utils/preloader";
 
 interface MainLoadingPageProps {
   onLoadingComplete: () => void;
@@ -27,11 +30,20 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     { id: "materials", label: "Chargement des matières...", status: "pending" },
   ]);
 
-  // Progression visuelle par étape
-  const [workerProgress, setWorkerProgress] = useState(0); // Étape 1
-  const [materialsProgress, setMaterialsProgress] = useState(0); // Étape 2
-  const workerTimerRef = useRef<number | null>(null);
-  const materialsTimerRef = useRef<number | null>(null);
+  // Timers de progression visuelle par étape
+  const {
+    value: workerProgress,
+    start: startWorkerTimer,
+    finish: finishWorkerTimer,
+    reset: resetWorkerTimer,
+    stop: stopWorkerTimer,
+  } = useProgressTimer(PROGRESS_CONFIG.worker);
+  const materialsLoadTimer = useProgressTimer(PROGRESS_CONFIG.materialsLoad);
+  const materialsWaitTimer = useProgressTimer(PROGRESS_CONFIG.materialsWaiting);
+  const materialsProgress = Math.max(
+    materialsLoadTimer.value,
+    materialsWaitTimer.value
+  );
 
   // Store state pour suivre l'avancement du chargement
   const { initializeApp } = useLoadingStore();
@@ -42,7 +54,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
     // Étape 1: Attendre OpenCascade Worker
     setCurrentStep(0);
-    setWorkerProgress(0);
+    resetWorkerTimer();
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
@@ -50,18 +62,9 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       }))
     );
     // Animation de progression simulée jusqu'à 90%
-    if (workerTimerRef.current) window.clearInterval(workerTimerRef.current);
-    workerTimerRef.current = window.setInterval(() => {
-      setWorkerProgress((p) => Math.min(p + 3, 90));
-    }, 120);
-    while (!useLoadingStore.getState().isWorkerReady) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    if (workerTimerRef.current) {
-      window.clearInterval(workerTimerRef.current);
-      workerTimerRef.current = null;
-    }
-    setWorkerProgress(100);
+    startWorkerTimer();
+    await waitForFlag(guards.workerReady, 100);
+    finishWorkerTimer();
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
@@ -71,7 +74,8 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
     // Étape 2: Matières (manifest + préchargement images)
     setCurrentStep(1);
-    setMaterialsProgress(0);
+    materialsLoadTimer.reset();
+    materialsWaitTimer.reset();
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
@@ -79,47 +83,15 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       }))
     );
     // Forcer le préchargement si pas déjà fait (idempotent via service)
-    if (materialsTimerRef.current)
-      window.clearInterval(materialsTimerRef.current);
-    materialsTimerRef.current = window.setInterval(() => {
-      setMaterialsProgress((p) => Math.min(p + 2, 90));
-    }, 120);
-    if (!useLoadingStore.getState().isMaterialsLoaded) {
-      try {
-        await materialPreloader.preloadMaterials();
-      } catch {
-        // On ne bloque pas le lancement si une image échoue
-      }
-      // Marquer comme chargé côté store pour synchroniser les états
-      useLoadingStore.getState().setMaterialsLoaded(true);
-    } else {
-      // Même si le flag est à true, s'assurer que les images sont bien en cache
-      try {
-        await materialPreloader.preloadMaterials();
-      } catch {
-        // no-op
-      }
-    }
-    if (materialsTimerRef.current) {
-      window.clearInterval(materialsTimerRef.current);
-      materialsTimerRef.current = null;
-    }
+    materialsLoadTimer.start();
+    await ensureMaterialsPreloaded();
+    materialsLoadTimer.stop();
     // Poursuivre l'attente pour components + selector dans la même étape "materials"
     // Faire grimper doucement la progression jusqu'à 98% pendant l'attente
-    materialsTimerRef.current = window.setInterval(() => {
-      setMaterialsProgress((p) => Math.min(p + 1, 98));
-    }, 150);
-    while (!useLoadingStore.getState().isComponentsLoaded) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    while (!useLoadingStore.getState().isWoodMaterialSelectorLoaded) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    if (materialsTimerRef.current) {
-      window.clearInterval(materialsTimerRef.current);
-      materialsTimerRef.current = null;
-    }
-    setMaterialsProgress(100);
+    materialsWaitTimer.start();
+    await waitForFlag(guards.componentsLoaded, 100);
+    await waitForFlag(guards.selectorLoaded, 100);
+    materialsWaitTimer.finish();
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
@@ -145,7 +117,15 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
         onLoadingComplete();
       },
     });
-  }, [initializeApp, onLoadingComplete]);
+  }, [
+    initializeApp,
+    onLoadingComplete,
+    finishWorkerTimer,
+    materialsLoadTimer,
+    materialsWaitTimer,
+    resetWorkerTimer,
+    startWorkerTimer,
+  ]);
 
   useEffect(() => {
     // Animation d'entrée du logo
@@ -190,11 +170,16 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     startLoadingProcess();
     return () => {
       // Nettoyage des timers si le composant se démonte
-      if (workerTimerRef.current) window.clearInterval(workerTimerRef.current);
-      if (materialsTimerRef.current)
-        window.clearInterval(materialsTimerRef.current);
+      stopWorkerTimer();
+      materialsLoadTimer.stop();
+      materialsWaitTimer.stop();
     };
-  }, [startLoadingProcess]);
+  }, [
+    startLoadingProcess,
+    materialsLoadTimer,
+    materialsWaitTimer,
+    stopWorkerTimer,
+  ]);
 
   // Icônes désormais gérées par StepItem
 
@@ -204,8 +189,8 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       className="fixed inset-0 bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center z-50"
     >
       <div className="max-w-md w-full mx-4 text-center">
-  {/* Logo animé */}
-  <BrandingHeader ref={logoRef} />
+        {/* Logo animé */}
+        <BrandingHeader ref={logoRef} />
 
         {/* Barre de progression */}
         <GlobalProgressBar ref={progressBarRef} />

@@ -7,7 +7,11 @@ export interface StepListProps {
   materialsProgress: number;
 }
 
-export function StepList({ steps, workerProgress, materialsProgress }: StepListProps) {
+export function StepList({
+  steps,
+  workerProgress,
+  materialsProgress,
+}: StepListProps) {
   return (
     <div className="space-y-3">
       {steps.map((step) => {
