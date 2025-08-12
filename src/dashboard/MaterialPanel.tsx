@@ -1,39 +1,55 @@
-import { useEffect, useState } from 'react';
-import { useGlobalMaterialStore } from '@/store/globalMaterialStore';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TreePine } from 'lucide-react';
-import { 
+import { useEffect, useState } from "react";
+import { useGlobalMaterialStore } from "@/store/globalMaterialStore";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { TreePine } from "lucide-react";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { listMaterials } from '@/services/materialsManifest';
-import { Switch } from '@/components/ui/switch';
+  SelectValue,
+} from "@/components/ui/select";
+import { getMaterialsManifest } from "@/services/materialsManifest";
+import { Switch } from "@/components/ui/switch";
 
 export function MaterialPanel() {
-  const { selectedMaterialId, setSelectedMaterialId } = useGlobalMaterialStore();
+  const { selectedMaterialId, setSelectedMaterialId } =
+    useGlobalMaterialStore();
   const useAO = useGlobalMaterialStore((s) => s.useAO);
   const setUseAO = useGlobalMaterialStore((s) => s.setUseAO);
   // État: sélection courante (par défaut: aucune)
-  const [localSelection, setLocalSelection] = useState<string | ''>('');
-  const NONE_VALUE = '__none__';
+  const [localSelection, setLocalSelection] = useState<string | "">("");
+  const NONE_VALUE = "__none__";
   // Données issues du manifest JSON public
-  const [options, setOptions] = useState<Array<{ id: string; displayName: string }>>([]);
+  const [options, setOptions] = useState<
+    Array<{ id: string; displayName: string }>
+  >([]);
+  const [imageById, setImageById] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Charger la liste depuis public/textures/wood/materials.json
+  // Charger la liste + image depuis le manifest public
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       try {
-        const opts = await listMaterials();
+        const manifest = await getMaterialsManifest();
         if (!mounted) return;
+        const opts = manifest.materials.map((m) => ({ id: m.id, displayName: m.displayName }));
+        const images: Record<string, string> = {};
+        for (const m of manifest.materials) images[m.id] = m.carousel.image;
         setOptions(opts);
+        setImageById(images);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Erreur de chargement des matières');
+        setError(
+          e instanceof Error ? e.message : "Erreur de chargement des matières"
+        );
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -46,7 +62,7 @@ export function MaterialPanel() {
 
   // Synchroniser la sélection locale avec le store global
   useEffect(() => {
-    setLocalSelection(selectedMaterialId ?? '');
+    setLocalSelection(selectedMaterialId ?? "");
   }, [selectedMaterialId]);
 
   return (
@@ -76,12 +92,14 @@ export function MaterialPanel() {
           )}
           {!isLoading && !error && (
             <div className="space-y-2">
-              <div className="text-sm font-medium text-foreground">Liste des matières</div>
+              <div className="text-sm font-medium text-foreground">
+                Liste des matières
+              </div>
               <Select
                 value={localSelection || undefined}
                 onValueChange={(val) => {
                   if (val === NONE_VALUE) {
-                    setLocalSelection('');
+                    setLocalSelection("");
                     setSelectedMaterialId(null);
                     return;
                   }
@@ -89,11 +107,17 @@ export function MaterialPanel() {
                   setSelectedMaterialId(val || null);
                 }}
               >
-                <SelectTrigger size="default" className="w-full" aria-label="Choisir une matière">
+                <SelectTrigger
+                  size="default"
+                  className="w-full"
+                  aria-label="Choisir une matière"
+                >
                   <SelectValue placeholder="Aucune matière sélectionnée" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE_VALUE}>Aucune matière sélectionnée</SelectItem>
+                  <SelectItem value={NONE_VALUE}>
+                    Aucune matière sélectionnée
+                  </SelectItem>
                   {options.map((opt) => (
                     <SelectItem key={opt.id} value={opt.id}>
                       {opt.displayName}
@@ -108,31 +132,51 @@ export function MaterialPanel() {
                   <div className="text-xs text-gray-600 mb-1">Aperçu</div>
                   <div className="rounded-md overflow-hidden border border-border bg-card hover:shadow-sm transition-shadow">
                     <img
-                      src={`/textures/wood/${selectedMaterialId}/basecolor.png`}
-                      alt={`Aperçu ${options.find(o => o.id === selectedMaterialId)?.displayName || selectedMaterialId}`}
+                      src={imageById[selectedMaterialId] || ""}
+                      alt={`Aperçu ${
+                        options.find((o) => o.id === selectedMaterialId)
+                          ?.displayName || selectedMaterialId
+                      }`}
                       className="w-full h-28 object-cover"
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.opacity = '0.3';
+                        (e.currentTarget as HTMLImageElement).style.opacity =
+                          "0.3";
                       }}
                     />
                   </div>
                 </div>
               ) : (
-                <div className="mt-3 text-xs text-muted-foreground">Aucune matière sélectionnée</div>
+                <div className="mt-3 text-xs text-muted-foreground">
+                  Aucune matière sélectionnée
+                </div>
               )}
 
               <div className="text-xs text-muted-foreground">
-                État: {selectedMaterialId ? `"${options.find(o => o.id === selectedMaterialId)?.displayName ?? selectedMaterialId}" sélectionnée` : 'Aucune matière sélectionnée'}
+                État:{" "}
+                {selectedMaterialId
+                  ? `"${
+                      options.find((o) => o.id === selectedMaterialId)
+                        ?.displayName ?? selectedMaterialId
+                    }" sélectionnée`
+                  : "Aucune matière sélectionnée"}
               </div>
 
               {/* Debug / Options d'affichage */}
               <div className="mt-4 rounded-md border border-border bg-card/60 p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-medium text-foreground">Occlusion ambiante (AO)</div>
-                    <div className="text-xs text-muted-foreground">Active/désactive l'aoMap pour debug</div>
+                    <div className="text-sm font-medium text-foreground">
+                      Occlusion ambiante (AO)
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Active/désactive l'aoMap pour debug
+                    </div>
                   </div>
-                  <Switch checked={useAO} onCheckedChange={setUseAO} aria-label="Activer l'AO" />
+                  <Switch
+                    checked={useAO}
+                    onCheckedChange={setUseAO}
+                    aria-label="Activer l'AO"
+                  />
                 </div>
               </div>
             </div>

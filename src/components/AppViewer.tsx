@@ -1,5 +1,5 @@
 import { Canvas, useLoader } from "@react-three/fiber";
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useEffect, useState } from "react";
 import { OrbitControls, Environment } from "@react-three/drei";
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
@@ -15,6 +15,7 @@ import {
   SRGBColorSpace,
   NoColorSpace,
 } from "three";
+import { getMaterialsManifest, type MaterialsManifest } from "@/services/materialsManifest";
 
 function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   // Calculs optimisés des dimensions une seule fois
@@ -90,15 +91,38 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   const white1x1 =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=";
   const hasMaterial = !!selectedMaterialId;
-  const baseUrl = hasMaterial ? `/textures/wood/${selectedMaterialId}` : undefined;
+  // Récupérer folder/maps depuis le manifest pour l'id sélectionné
+  const [selectedEntry, setSelectedEntry] = useState<MaterialsManifest["materials"][number] | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!hasMaterial) {
+        setSelectedEntry(null);
+        return;
+      }
+      try {
+        const manifest = await getMaterialsManifest();
+        if (!mounted) return;
+        const entry = manifest.materials.find((m) => m.id === selectedMaterialId) ?? null;
+        setSelectedEntry(entry);
+      } catch {
+        setSelectedEntry(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [hasMaterial, selectedMaterialId]);
+
+  const baseUrl = hasMaterial && selectedEntry ? `/textures/wood/${selectedEntry.folder}` : undefined;
   const [colorTex, normalTex, roughTex] = useLoader(TextureLoader, [
-    hasMaterial ? `${baseUrl}/basecolor.png` : white1x1,
-    hasMaterial ? `${baseUrl}/normalmap.png` : white1x1,
-    hasMaterial ? `${baseUrl}/roughnessmap.png` : white1x1,
+    hasMaterial && selectedEntry ? `${baseUrl}/${selectedEntry.maps.basecolor}` : white1x1,
+    hasMaterial && selectedEntry ? `${baseUrl}/${selectedEntry.maps.normal}` : white1x1,
+    hasMaterial && selectedEntry ? `${baseUrl}/${selectedEntry.maps.roughness}` : white1x1,
   ]);
   // AO texture (optional based on flag)
   const [aoTex] = useLoader(TextureLoader, [
-    useAO && hasMaterial ? `${baseUrl}/AOmap.png` : white1x1,
+    useAO && hasMaterial && selectedEntry ? `${baseUrl}/${selectedEntry.maps.ao}` : white1x1,
   ]);
   // Improve texture sampling
   [colorTex, normalTex, roughTex, aoTex].forEach((t, idx) => {

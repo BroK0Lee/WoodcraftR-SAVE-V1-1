@@ -3,8 +3,8 @@
  * Charge une seule fois les matériaux et les met en cache global
  */
 
-import { useGlobalMaterialStore } from '@/store/globalMaterialStore';
-import { initializeMaterialsWithDefault } from '@/services/globalMaterialsFromManifest';
+import { useGlobalMaterialStore } from "@/store/globalMaterialStore";
+import { initializeMaterialsWithDefault } from "@/services/globalMaterialsFromManifest";
 
 export class MaterialPreloader {
   private static instance: MaterialPreloader;
@@ -27,21 +27,22 @@ export class MaterialPreloader {
     }
 
     this.isLoading = true;
-  const { setLoading, setError } = useGlobalMaterialStore.getState();
+    const { setLoading, setError } = useGlobalMaterialStore.getState();
 
     try {
       setLoading(true);
 
-  // Charger depuis le manifest public et définir la matière par défaut
-  await initializeMaterialsWithDefault('mdf_standard');
-  // Précharger les images en arrière-plan (après injection dans le store)
-  const state = useGlobalMaterialStore.getState();
-  await this.preloadImages(state.materials.map(m => m.image));
-      
+      // Charger depuis le manifest public et définir la matière par défaut
+      await initializeMaterialsWithDefault("mdf_standard");
+      // Précharger les images en arrière-plan (après injection dans le store)
+      const state = useGlobalMaterialStore.getState();
+      await this.preloadImages(state.materials.map((m) => m.image));
+
       this.isLoaded = true;
-      
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erreur de préchargement');
+      setError(
+        error instanceof Error ? error.message : "Erreur de préchargement"
+      );
       throw error;
     } finally {
       this.isLoading = false;
@@ -52,7 +53,7 @@ export class MaterialPreloader {
    * Précharge les images pour éviter les "image not found"
    */
   private async preloadImages(imageUrls: string[]): Promise<void> {
-    const imagePromises = imageUrls.map(url => {
+    const imagePromises = imageUrls.map((url) => {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {

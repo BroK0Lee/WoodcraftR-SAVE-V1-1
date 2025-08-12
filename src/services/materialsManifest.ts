@@ -78,7 +78,7 @@ export async function getMaterialsManifest(): Promise<MaterialsManifest> {
         }
 
         const c = meta?.carousel ?? {};
-  const image = `/textures/wood/${entry.folder}/${entry.maps.basecolor}`;
+        const image = `/textures/wood/${entry.folder}/${entry.maps.basecolor}`;
 
         const materialEntry = {
           id: entry.id,
