@@ -1,0 +1,15 @@
+{
+  "id": "noyer",
+  "displayName": "Noyer",
+  "carousel": {
+    "title": "Noyer — Walnut",
+    "description": "Bois noble, teinte brune, grain moyen et veiné, très apprécié en ébénisterie.",
+    "image": "/textures/wood/noyer/basecolor.png",
+    "color": "#5C3A21",
+    "fullDescription": "Le bois de noyer est une essence de grande valeur, recherchée pour les meubles haut de gamme et la menuiserie. Le duramen oscille du jaune foncé au brun, avec un veinage plus sombre et un grain moyen【684797375482740†L167-L170】【122431629099364†L72-L75】. Sa masse volumique se situe entre 630 et 680 kg/m³, ce qui en fait un bois mi‑lourd à mi‑dur avec une bonne stabilité【122431629099364†L79-L83】. Le noyer est naturellement durable et peut être employé en classe de risque 2 ; après traitement, il convient même en classe 4【684797375482740†L174-L176】. Originaire de France, d’Europe, de la CEI et d’Amérique du Nord【684797375482740†L141-L145】, il est prisé en ébénisterie, menuiserie haut de gamme, escaliers, parquets et pour le placage【122431629099364†L87-L93】【684797375482740†L178-L181】.",
+    "Origin": "France / Europe / CEI / Amérique du Nord",
+    "Hardness": "Mi-dur",
+    "Class": 2,
+    "tags": ["Bois mi-dur", "Ebénisterie", "Mobilier haut de gamme", "Parquet"]
+  }
+}

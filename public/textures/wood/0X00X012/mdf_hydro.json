@@ -1,0 +1,20 @@
+{
+  "id": "mdf_hydro",
+  "displayName": "MDF Hydro",
+  "carousel": {
+    "title": "MDF Hydro",
+    "description": "Panneau de fibres à densité moyenne traité contre l'humidité, texture homogène et dense, teinte verdâtre.",
+    "image": "/textures/wood/mdf_hydro/basecolor.png",
+    "color": "#7C8C77",
+    "fullDescription": "Le MDF Hydro est une version hydrofuge du MDF standard. Fabriqué à partir de fibres de bois compactées et liées, il bénéficie d'un traitement spécifique contre l'humidité. Sa densité est plus élevée que celle du MDF classique (≥ 700 kg/m³) et ses propriétés hydrofuges renforcées lui permettent de résister aux conditions humides, mais il n'est pas adapté pour l'extérieur【930475596624949†L214-L252】. Il est conçu pour les environnements intérieurs à forte humidité comme les cuisines et les salles de bains【731402245002241†L140-L152】. Comme le MDF standard, il offre une surface lisse qui se peint et se scie facilement, mais il nécessite un traitement hydrofuge et un stockage à l'abri pour éviter les gonflements【171321534285087†L450-L453】.",
+    "Origin": "Manufacturé",
+    "Hardness": "Mi-dur",
+    "Class": 2,
+    "tags": [
+      "MDF",
+      "Hydrofuge",
+      "Cuisine",
+      "Salle de bain"
+    ]
+  }
+}

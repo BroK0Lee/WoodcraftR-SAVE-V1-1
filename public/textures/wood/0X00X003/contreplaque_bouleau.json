@@ -1,0 +1,15 @@
+{
+  "id": "contreplaque_bouleau",
+  "displayName": "Contreplaqué Bouleau",
+  "carousel": {
+    "title": "Contreplaqué Bouleau — Birch plywood",
+    "description": "Panneau structurel dense et robuste, teinte beige claire, structure multicouche.",
+    "image": "/textures/wood/contreplaque_bouleau/basecolor.png",
+    "color": "#E7C89C",
+    "fullDescription": "Ce panneau est composé de fines feuilles de bouleau collées en plis croisés. Sa teinte claire et uniforme, beige à brun clair, et ses chants décoratifs s\u2019int\u00e8grent bien en ameublement. La densité élevée (650\u2013700\u00a0kg/m\u00b3) offre une excellente résistance mécanique et un rapport résistance/poids avantageux\u3010587107140745331\u2020L139-L175\u3011. Les propriétés hydrofuges et la classe\u00a03 lui permettent une utilisation en intérieur humide ou en extérieur abrité; il demeure durable et résistant \u00e0 l\u2019humidité\u3010587107140745331\u2020L169-L175\u3011. Le contreplaqu\u00e9 bouleau est appr\u00e9ci\u00e9 pour sa surface lisse et dure, facile \u00e0 usiner, et sa stabilit\u00e9 dimensionnelle m\u00eame face aux variations d\u2019humidit\u00e9\u3010208362039757023\u2020L116-L131\u3011. Originaire des r\u00e9gions froides de l\u2019h\u00e9misph\u00e8re nord (Europe, Asie, Am\u00e9rique du Nord)\u3010208362039757023\u2020L59-L61\u3011, il est utilis\u00e9 en construction, menuiserie, agencement, mobilier, emballage et transport\u3010587107140745331\u2020L141-L147\u3011.",
+    "Origin": "R\u00e9gions froides d\u2019Europe du Nord, d\u2019Asie et d\u2019Am\u00e9rique du Nord",
+    "Hardness": "Mi-dur",
+    "Class": 3,
+    "tags": ["Panneau structurel", "Résistant", "Hydrofuge", "Ameublement"]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "frene",
+  "displayName": "Frêne",
+  "carousel": {
+    "title": "Frêne — Ash",
+    "description": "Bois clair à veinage prononcé, combinant élasticité et dureté pour des usages variés.",
+    "image": "/textures/wood/frene/basecolor.png",
+    "color": "#E3D6B5",
+    "fullDescription": "Le frêne (Fraxinus excelsior) est un bois feuillu de couleur blanche à crème, parfois teinté de reflets nacrés ou rosés. Son duramen brun‑rougeâtre contraste avec l’aubier crème et s’assombrit rapidement après l’abattage【139088227029208†L110-L115】. Le bois présente un fil droit et un grain grossier avec un veinage très prononcé, ce qui lui confère une esthétique recherchée pour la décoration intérieure【139088227029208†L119-L121】. Sa densité moyenne est d’environ 0,68 (soit ~680 kg/m³) et il est classé comme bois mi‑dur à dur【610757143070356†L141-L164】. Les longues fibres du frêne lui apportent une élasticité et une résistance exceptionnelles【610757143070356†L178-L181】; il combine ainsi dureté et flexibilité, une caractéristique rare parmi les feuillus【139088227029208†L160-L165】. Peu durable à l’état brut, il se traite aisément et peut alors être utilisé en classe d’emploi 3【610757143070356†L172-L176】.\n\nUtilisé surtout en menuiserie intérieure, ameublement et parquet【610757143070356†L185-L186】, le frêne est aussi prisé pour la charpente, la fabrication de manches d’outils, d’équipements sportifs et de pièces cintrées où l’élasticité et la résistance aux chocs sont essentielles【139088227029208†L125-L156】. Grâce à sa surface lisse et perméable, il accepte bien les finitions et est facile à travailler, coller ou polir【139088227029208†L167-L175】. On le trouve principalement en Europe du Nord et du Centre, mais aussi en Amérique du Nord et dans les zones humides d’Asie occidentale【139088227029208†L205-L214】.",
+    "Origin": "Europe du Nord et du Centre, Amérique du Nord, Asie occidentale",
+    "Hardness": "Mi-dur à dur",
+    "Class": 2,
+    "tags": ["Élastique", "Menuiserie", "Parquet", "Charpente", "Sport"]
+  }
+}

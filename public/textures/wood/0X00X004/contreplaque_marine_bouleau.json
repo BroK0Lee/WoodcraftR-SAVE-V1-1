@@ -1,0 +1,15 @@
+{
+  "id": "contreplaque_marine_bouleau",
+  "displayName": "Contreplaqué Marine Bouleau",
+  "carousel": {
+    "title": "Contreplaqué marine Bouleau — Marine birch plywood",
+    "description": "Panneau marin robuste en bouleau, stratification homogène, faces claires, forte résistance mécanique.",
+    "image": "/textures/wood/contreplaque_bouleau/basecolor.png",
+    "color": "#E7C89C",
+    "fullDescription": "Ce contreplaqué marin est composé de fines feuilles de bouleau collées en plis croisés. Le bouleau est une essence dure et compacte, et sa stratification homogène et ses faces claires offrent un aspect décoratif agréable【422330514606859†L42-L60】. Grâce à sa densité élevée (environ 690 kg/m³) et à ses couches croisées, ce panneau présente une excellente résistance mécanique et une très bonne stabilité dimensionnelle en milieu humide et salin【422330514606859†L101-L127】. Sa composition en bouleau robuste le rend plus lourd que l’okoumé, mais lui confère une durabilité supérieure et une grande capacité de tenue des vis【422330514606859†L101-L127】. Collé avec une résine phénolique classe 3‑E1, ce contreplaqué résiste à l’eau bouillante conformément à la norme EN 314‑2 et se destine aux applications extérieures ou soumises à l’humidité【422330514606859†L101-L127】. Il est apprécié pour la fabrication de meubles extérieurs, de marches et tiroirs, d’aménagements nautiques ou portuaires, d’agencements et de mobilier public nécessitant une forte résistance à l’usure【422330514606859†L56-L66】.",
+    "Origin": "Forêts froides d’Europe du Nord et d’Asie (bouleaux)",
+    "Hardness": "Dur",
+    "Class": 3,
+    "tags": ["Marine", "Robuste", "Bouleau", "Extérieur", "Hydrofuge"]
+  }
+}

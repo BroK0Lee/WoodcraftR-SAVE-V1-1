@@ -1,0 +1,15 @@
+{
+  "id": "pin_sylvestre",
+  "displayName": "Pin sylvestre",
+  "carousel": {
+    "title": "Pin sylvestre — Scots pine",
+    "description": "Bois résineux de couleur jaune clair à brun rougeâtre, grain fin à moyen avec fil droit, utilisé pour terrasses, bardages et charpentes.",
+    "image": "/textures/wood/pin_sylvestre/basecolor.png",
+    "color": "#D8A656",
+    "fullDescription": "Le pin sylvestre (Pinus sylvestris), aussi appelé sapin rouge du Nord, est un résineux répandu en Europe centrale, en Scandinavie et en Asie. Son duramen varie du jaune clair au brun rougeâtre, tandis que l’aubier est blanc jaunâtre ; la teinte s’assombrit sous l’effet de la lumière【641206567086568†L155-L163】. Le grain est fin à moyen avec un fil généralement droit et des veines bien marquées【539572599069353†L219-L221】. Sa densité moyenne est d’environ 550 kg/m³ et la dureté Monnin est de 2,6, ce qui en fait un bois tendre à mi‑dur【539572599069353†L194-L200】. Le duramen est moyennement à peu durable (classes III–IV) et l’aubier est non durable【641206567086568†L165-L167】 ; après traitement en autoclave, il peut atteindre la classe d’emploi 4 pour les usages extérieurs【539572599069353†L266-L274】. Grâce à sa bonne résistance mécanique et à sa stabilité correcte, le pin sylvestre est utilisé pour les charpentes, ossatures, bardages, terrasses et menuiseries intérieures【539572599069353†L226-L230】.",
+    "Origin": "Europe centrale et septentrionale, Scandinavie et Asie du Nord【539572599069353†L234-L241】",
+    "Hardness": "Mi‑dur (Monnin ≈ 2,6)【539572599069353†L194-L200】",
+    "Class": 3,
+    "tags": ["Résineux", "Structure", "Aménagement extérieur", "Menuiserie"]
+  }
+}

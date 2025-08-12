@@ -1,0 +1,15 @@
+{
+  "id": "epicea",
+  "displayName": "Épicéa",
+  "carousel": {
+    "title": "Épicéa — Spruce",
+    "description": "Bois résineux très clair, blanchâtre à crème avec fil droit, grain fin et petits nœuds ; idéal pour structures et lambris.",
+    "image": "/textures/wood/epicea/basecolor.png",
+    "color": "#F2E3C3",
+    "fullDescription": "L’épicéa (Picea abies ou Picea excelsa) est un conifère des régions montagneuses d’Europe et de Scandinavie. Son bois est très clair, blanchâtre à crème ; duramen et aubier sont indistincts et les cernes annuels sont bien visibles【800956885759611†L201-L205】. Le grain est fin, le fil très droit, avec des canaux résinifères fins visibles à l’œil nu et de petits nœuds sains【800956885759611†L206-L208】【522806125488218†L191-L219】. Sa densité moyenne est d’environ 450 kg/m³ et il est classé parmi les bois tendres【800956885759611†L267-L280】【548658897500885†L150-L168】. L’épicéa est faiblement durable (classe de durabilité naturelle 4) et sensible au bleuissement, à la pourriture et aux insectes【800956885759611†L212-L215】 ; il doit être traité pour un usage extérieur durable et reste principalement utilisé en classe 1 en intérieur【548658897500885†L154-L167】. Grâce à sa légèreté et à son élasticité, il est très apprécié pour les charpentes et structures, les huisseries et lambris, les bardages, les panneaux, la menuiserie, les emballages ainsi que pour la lutherie et même l’aéronautique【800956885759611†L249-L265】.",
+    "Origin": "Scandinavie, Europe centrale et zones montagneuses d’Europe【522806125488218†L199-L204】【800956885759611†L146-L151】",
+    "Hardness": "Tendre【548658897500885†L166-L168】",
+    "Class": 1,
+    "tags": ["Résineux", "Structure", "Menuiserie", "Lutherie"]
+  }
+}

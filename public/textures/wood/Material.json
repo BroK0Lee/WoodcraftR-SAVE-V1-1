@@ -1,0 +1,9 @@
+{
+  "materials": [
+    { "id": "agglomere", "displayName": "Aggloméré", "folder": "0X00X001", "meta": "agglomere.json", "maps": { "basecolor": "basecolor.png", "normal": "normalmap.png", "roughness": "roughnessmap.png", "ao": "AOmap.png" } },
+    { "id": "chene", "displayName": "Chêne", "folder": "0X00X002", "meta": "chene.json", "maps": { "basecolor": "basecolor.png", "normal": "normalmap.png", "roughness": "roughnessmap.png", "ao": "AOmap.png" } },
+    { "id": "contreplaque_bouleau", "displayName": "Contreplaqué Bouleau", "folder": "0X00X003", "meta": "contreplaque_bouleau.json", "maps": { "basecolor": "basecolor.png", "normal": "normalmap.png", "roughness": "roughnessmap.png", "ao": "AOmap.png" } },
+    { "id": "contreplaque_marine_bouleau", "displayName": "Contreplaqué Marine Bouleau", "folder": "0X00X004", "meta": "contreplaque_marine_bouleau.json", "maps": { "basecolor": "basecolor.png", "normal": "normalmap.png", "roughness": "roughnessmap.png", "ao": "AOmap.png" } },
+    { "id": "contreplaque_marine_okoume", "displayName": "Contreplaqué Marine Okoumé", "folder": "0X00X005", "meta": "contreplaque_marine_okoume.json", "maps": { "basecolor": "basecolor.png", "normal": "normalmap.png", "roughness": "roughnessmap.png", "ao": "AOmap.png" } }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "agglomere",
+  "displayName": "Aggloméré",
+  "carousel": {
+    "title": "Aggloméré",
+    "description": "Panneau de particules pressées, texture rugueuse et couleur claire.",
+    "image": "/textures/wood/agglomere/basecolor.png",
+    "color": "#D4B483",
+    "fullDescription": "L’aggloméré, aussi appelé panneau de particules, est constitué de sciures, copeaux et autres déchets de bois de conifères et de feuillus pressés à chaud et liés par une résine thermodurcissable. La part de liant reste inférieure à 10 % et peut être une résine urée‑formaldéhyde ou une résine phénol‑formaldéhyde, cette dernière étant utilisée pour les agglomérés destinés aux milieux humides【98803778261698†L124-L134】. Les panneaux sont classés en plusieurs qualités (P1 à P7) en fonction de leur usage en milieu sec ou humide【98803778261698†L94-L104】. La densité varie entre 550 et 820 kg/m³【98803778261698†L198-L204】 ; ces panneaux se caractérisent par une bonne résistance aux rayures et aux chocs et sont faciles à travailler【98803778261698†L142-L145】. Ils sont utilisés pour la construction (cloisons, planchers bruts), les portes, les supports d’isolation et une large gamme de meubles en kit【98803778261698†L146-L160】. Leur surface brute étant peu esthétique, ils sont souvent recouverts d’un décor mélaminé ou peints pour l’agencement【98803778261698†L110-L120】.",
+    "Origin": "Bois recyclé (copeaux, sciures, déchets de scierie)",
+    "Hardness": "Mi-dur",
+    "Class": 1,
+    "tags": [
+      "Aggloméré",
+      "Panneau de particules",
+      "Construction",
+      "Agencement"
+    ]
+  }
+}
