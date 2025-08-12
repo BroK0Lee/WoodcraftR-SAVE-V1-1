@@ -40,6 +40,12 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     },
   ]);
 
+  // Progression visuelle par étape
+  const [workerProgress, setWorkerProgress] = useState(0); // Étape 1
+  const [materialsProgress, setMaterialsProgress] = useState(0); // Étape 2
+  const workerTimerRef = useRef<number | null>(null);
+  const materialsTimerRef = useRef<number | null>(null);
+
   // Store state pour suivre l'avancement du chargement
   const { initializeApp } = useLoadingStore();
 
@@ -49,15 +55,26 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
     // Étape 1: Attendre OpenCascade Worker
     setCurrentStep(0);
+    setWorkerProgress(0);
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
         status: i === 0 ? "loading" : "pending",
       }))
     );
+    // Animation de progression simulée jusqu'à 90%
+    if (workerTimerRef.current) window.clearInterval(workerTimerRef.current);
+    workerTimerRef.current = window.setInterval(() => {
+      setWorkerProgress((p) => Math.min(p + 3, 90));
+    }, 120);
     while (!useLoadingStore.getState().isWorkerReady) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
+    if (workerTimerRef.current) {
+      window.clearInterval(workerTimerRef.current);
+      workerTimerRef.current = null;
+    }
+    setWorkerProgress(100);
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
@@ -67,6 +84,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
     // Étape 2: Matières (manifest + préchargement images)
     setCurrentStep(1);
+    setMaterialsProgress(0);
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
@@ -74,6 +92,11 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       }))
     );
     // Forcer le préchargement si pas déjà fait (idempotent via service)
+    if (materialsTimerRef.current)
+      window.clearInterval(materialsTimerRef.current);
+    materialsTimerRef.current = window.setInterval(() => {
+      setMaterialsProgress((p) => Math.min(p + 2, 90));
+    }, 120);
     if (!useLoadingStore.getState().isMaterialsLoaded) {
       try {
         await materialPreloader.preloadMaterials();
@@ -90,6 +113,11 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
         // no-op
       }
     }
+    if (materialsTimerRef.current) {
+      window.clearInterval(materialsTimerRef.current);
+      materialsTimerRef.current = null;
+    }
+    setMaterialsProgress(100);
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
@@ -194,6 +222,12 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     );
     // Démarrer le processus de chargement
     startLoadingProcess();
+    return () => {
+      // Nettoyage des timers si le composant se démonte
+      if (workerTimerRef.current) window.clearInterval(workerTimerRef.current);
+      if (materialsTimerRef.current)
+        window.clearInterval(materialsTimerRef.current);
+    };
   }, [startLoadingProcess]);
 
   const getStepIcon = (step: LoadingStep) => {
@@ -244,31 +278,54 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
         {/* Liste des étapes */}
         <div ref={stepsRef} className="space-y-3">
-          {steps.map((step) => (
-            <div
-              key={step.id}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-300 ${
-                step.status === "loading"
-                  ? "bg-amber-100 border border-amber-200"
-                  : step.status === "completed"
-                  ? "bg-green-50 border border-green-200"
-                  : "bg-gray-50 border border-gray-200"
-              }`}
-            >
-              {getStepIcon(step)}
-              <span
-                className={`text-sm font-medium ${
+          {steps.map((step) => {
+            const isWorker = step.id === "worker";
+            const isMaterials = step.id === "materials";
+            const progress = isWorker
+              ? workerProgress
+              : isMaterials
+              ? materialsProgress
+              : step.status === "completed"
+              ? 100
+              : 0;
+            return (
+              <div
+                key={step.id}
+                className={`p-3 rounded-lg transition-all duration-300 ${
                   step.status === "loading"
-                    ? "text-amber-800"
+                    ? "bg-amber-100 border border-amber-200"
                     : step.status === "completed"
-                    ? "text-green-800"
-                    : "text-gray-600"
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-gray-50 border border-gray-200"
                 }`}
               >
-                {step.label}
-              </span>
-            </div>
-          ))}
+                <div className="flex items-center gap-3">
+                  {getStepIcon(step)}
+                  <span
+                    className={`text-sm font-medium ${
+                      step.status === "loading"
+                        ? "text-amber-800"
+                        : step.status === "completed"
+                        ? "text-green-800"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+                {(isWorker || isMaterials) && (
+                  <div className="mt-2 w-full h-1.5 bg-white/50 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-200"
+                      style={{
+                        width: `${Math.max(0, Math.min(100, progress))}%`,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Message de patience */}
