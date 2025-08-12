@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { materialPreloader } from '@/services/materialPreloader';
 
 interface LoadingState {
   isAppLoading: boolean;
@@ -31,26 +32,22 @@ export const useLoadingStore = create<LoadingState>((set, get) => ({
     const state = get();
     
     try {
-      // Le worker OpenCascade sera géré par ContentViewer
-      // Ici on s'occupe juste des autres composants
-      
-      // Étape 1: Charger les matières
+      // Le worker OpenCascade est géré ailleurs; ici on garantit le cache des matières
+      // Étape 1: Charger les matières + précharger les images (cache navigateur)
       if (!state.isMaterialsLoaded) {
-        // Précharger les images des matières si nécessaire
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await materialPreloader.preloadMaterials();
         set({ isMaterialsLoaded: true });
       }
-      
-      // Étape 2: Initialiser les composants
+
+      // Étape 2: Initialiser les composants (UI non-bloquante)
       if (!state.isComponentsLoaded) {
-        await new Promise(resolve => setTimeout(resolve, 100));
         set({ isComponentsLoaded: true });
       }
       
       // Pas de finalisation ici - on attend que le worker et WoodMaterialSelector soient prêts
       
     } catch (error) {
-      console.error('Erreur lors de l\'initialisation de l\'application:', error);
+  console.error('Erreur lors de l\'initialisation de l\'application:', error);
       // En cas d'erreur, on continue quand même
       set({ 
         isMaterialsLoaded: true,

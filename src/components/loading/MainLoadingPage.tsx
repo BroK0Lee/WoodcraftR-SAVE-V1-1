@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { TreePine, Loader2, CheckCircle } from "lucide-react";
 import { useLoadingStore } from "@/store/loadingStore";
+import { materialPreloader } from "@/services/materialPreloader";
 
 interface LoadingStep {
   id: string;
@@ -64,7 +65,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       }))
     );
 
-    // Étape 2: Matières
+    // Étape 2: Matières (manifest + préchargement images)
     setCurrentStep(1);
     setSteps((prev) =>
       prev.map((step, i) => ({
@@ -72,8 +73,22 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
         status: i === 1 ? "loading" : i < 1 ? "completed" : "pending",
       }))
     );
-    while (!useLoadingStore.getState().isMaterialsLoaded) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    // Forcer le préchargement si pas déjà fait (idempotent via service)
+    if (!useLoadingStore.getState().isMaterialsLoaded) {
+      try {
+        await materialPreloader.preloadMaterials();
+      } catch {
+        // On ne bloque pas le lancement si une image échoue
+      }
+      // Marquer comme chargé côté store pour synchroniser les états
+      useLoadingStore.getState().setMaterialsLoaded(true);
+    } else {
+      // Même si le flag est à true, s'assurer que les images sont bien en cache
+      try {
+        await materialPreloader.preloadMaterials();
+      } catch {
+        // no-op
+      }
     }
     setSteps((prev) =>
       prev.map((step, i) => ({
