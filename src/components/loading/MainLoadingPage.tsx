@@ -28,16 +28,6 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       status: "pending",
     },
     { id: "materials", label: "Chargement des matières...", status: "pending" },
-    {
-      id: "components",
-      label: "Préparation des composants...",
-      status: "pending",
-    },
-    {
-      id: "selector",
-      label: "Initialisation WoodMaterialSelector...",
-      status: "pending",
-    },
   ]);
 
   // Progression visuelle par étape
@@ -117,47 +107,26 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       window.clearInterval(materialsTimerRef.current);
       materialsTimerRef.current = null;
     }
+    // Poursuivre l'attente pour components + selector dans la même étape "materials"
+    // Faire grimper doucement la progression jusqu'à 98% pendant l'attente
+    materialsTimerRef.current = window.setInterval(() => {
+      setMaterialsProgress((p) => Math.min(p + 1, 98));
+    }, 150);
+    while (!useLoadingStore.getState().isComponentsLoaded) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    while (!useLoadingStore.getState().isWoodMaterialSelectorLoaded) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (materialsTimerRef.current) {
+      window.clearInterval(materialsTimerRef.current);
+      materialsTimerRef.current = null;
+    }
     setMaterialsProgress(100);
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
         status: i <= 1 ? "completed" : "pending",
-      }))
-    );
-
-    // Étape 3: Composants
-    setCurrentStep(2);
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i === 2 ? "loading" : i < 2 ? "completed" : "pending",
-      }))
-    );
-    while (!useLoadingStore.getState().isComponentsLoaded) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i <= 2 ? "completed" : "pending",
-      }))
-    );
-
-    // Étape 4: Finalisation (attendre WoodMaterialSelector)
-    setCurrentStep(3);
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i === 3 ? "loading" : i < 3 ? "completed" : "pending",
-      }))
-    );
-    while (!useLoadingStore.getState().isWoodMaterialSelectorLoaded) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    setSteps((prev) =>
-      prev.map((step) => ({
-        ...step,
-        status: "completed",
       }))
     );
 
