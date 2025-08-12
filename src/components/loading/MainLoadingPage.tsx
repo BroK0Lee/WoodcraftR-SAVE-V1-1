@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
 import { useLoadingStore } from "@/store/loadingStore";
 import { BrandingHeader } from "./components/BrandingHeader";
 import { GlobalProgressBar } from "./components/GlobalProgressBar";
@@ -9,6 +8,8 @@ import { useProgressTimer } from "./hooks/useProgressTimer";
 import { PROGRESS_CONFIG } from "./config";
 import { waitForFlag, guards } from "./utils/storeGuards";
 import { ensureMaterialsPreloaded } from "./utils/preloader";
+import { useGsapIntro } from "./hooks/useGsapIntro";
+import { runGsapOutro } from "./hooks/useGsapOutro";
 
 interface MainLoadingPageProps {
   onLoadingComplete: () => void;
@@ -99,23 +100,11 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       }))
     );
 
-    // Animations finales
-    gsap.to(progressBarRef.current, {
-      width: "100%",
-      duration: 0.3,
-      ease: "power2.out",
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    gsap.to(containerRef.current, {
-      opacity: 0,
-      scale: 0.9,
-      duration: 0.8,
-      ease: "power2.inOut",
-      onComplete: () => {
-        onLoadingComplete();
-      },
+    // Animations finales via hook dédié
+    await runGsapOutro({
+      containerRef,
+      progressBarRef,
+      onComplete: onLoadingComplete,
     });
   }, [
     initializeApp,
@@ -127,49 +116,13 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     startWorkerTimer,
   ]);
 
+  // Animations d'intro (logo, barre, liste)
+  useGsapIntro({ logoRef, progressBarRef, stepsRef });
+
+  // Démarrer le processus de chargement + cleanup timers
   useEffect(() => {
-    // Animation d'entrée du logo
-    gsap.fromTo(
-      logoRef.current,
-      { scale: 0, rotation: -180, opacity: 0 },
-      {
-        scale: 1,
-        rotation: 0,
-        opacity: 1,
-        duration: 1.2,
-        ease: "back.out(1.7)",
-        delay: 0.3,
-      }
-    );
-
-    // Animation de la barre de progression
-    gsap.fromTo(
-      progressBarRef.current,
-      { scaleX: 0 },
-      {
-        scaleX: 1,
-        duration: 0.8,
-        ease: "power2.inOut",
-        delay: 0.8,
-      }
-    );
-
-    // Animation des étapes
-    gsap.fromTo(
-      stepsRef.current?.children || [],
-      { y: 30, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.6,
-        stagger: 0.1,
-        delay: 1.2,
-      }
-    );
-    // Démarrer le processus de chargement
     startLoadingProcess();
     return () => {
-      // Nettoyage des timers si le composant se démonte
       stopWorkerTimer();
       materialsLoadTimer.stop();
       materialsWaitTimer.stop();
