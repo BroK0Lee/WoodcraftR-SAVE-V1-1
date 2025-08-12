@@ -90,17 +90,15 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   const white1x1 =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=";
   const hasMaterial = !!selectedMaterialId;
-  const baseUrl = hasMaterial
-    ? `/textures/wood/${selectedMaterialId}`
-    : undefined;
+  const baseUrl = hasMaterial ? `/textures/wood/${selectedMaterialId}` : undefined;
   const [colorTex, normalTex, roughTex] = useLoader(TextureLoader, [
-    hasMaterial ? `${baseUrl}/basecolor.jpg` : white1x1,
-    hasMaterial ? `${baseUrl}/normal.jpg` : white1x1,
-    hasMaterial ? `${baseUrl}/roughness.jpg` : white1x1,
+    hasMaterial ? `${baseUrl}/basecolor.png` : white1x1,
+    hasMaterial ? `${baseUrl}/normalmap.png` : white1x1,
+    hasMaterial ? `${baseUrl}/roughnessmap.png` : white1x1,
   ]);
   // AO texture (optional based on flag)
   const [aoTex] = useLoader(TextureLoader, [
-    useAO && hasMaterial ? `${baseUrl}/ao.jpg` : white1x1,
+    useAO && hasMaterial ? `${baseUrl}/AOmap.png` : white1x1,
   ]);
   // Improve texture sampling
   [colorTex, normalTex, roughTex, aoTex].forEach((t, idx) => {

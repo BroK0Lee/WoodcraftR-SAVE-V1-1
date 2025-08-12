@@ -108,7 +108,7 @@ export function MaterialPanel() {
                   <div className="text-xs text-gray-600 mb-1">Aperçu</div>
                   <div className="rounded-md overflow-hidden border border-border bg-card hover:shadow-sm transition-shadow">
                     <img
-                      src={`/textures/wood/${selectedMaterialId}/basecolor.jpg`}
+                      src={`/textures/wood/${selectedMaterialId}/basecolor.png`}
                       alt={`Aperçu ${options.find(o => o.id === selectedMaterialId)?.displayName || selectedMaterialId}`}
                       className="w-full h-28 object-cover"
                       onError={(e) => {

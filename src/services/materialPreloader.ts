@@ -4,7 +4,7 @@
  */
 
 import { useGlobalMaterialStore } from '@/store/globalMaterialStore';
-import { globalWoodMaterialService } from '@/services/globalWoodMaterialService';
+import { initializeMaterialsWithDefault } from '@/services/globalMaterialsFromManifest';
 
 export class MaterialPreloader {
   private static instance: MaterialPreloader;
@@ -27,17 +27,16 @@ export class MaterialPreloader {
     }
 
     this.isLoading = true;
-    const { setLoading, setMaterials, setError } = useGlobalMaterialStore.getState();
+  const { setLoading, setError } = useGlobalMaterialStore.getState();
 
     try {
       setLoading(true);
 
-      const materials = await globalWoodMaterialService.loadAllMaterials();
-      
-      // Précharger les images en arrière-plan
-      await this.preloadImages(materials.map(m => m.image));
-      
-      setMaterials(materials);
+  // Charger depuis le manifest public et définir la matière par défaut
+  await initializeMaterialsWithDefault('mdf_standard');
+  // Précharger les images en arrière-plan (après injection dans le store)
+  const state = useGlobalMaterialStore.getState();
+  await this.preloadImages(state.materials.map(m => m.image));
       
       this.isLoaded = true;
       
