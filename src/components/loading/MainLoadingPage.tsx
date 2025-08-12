@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { TreePine, Loader2, CheckCircle } from "lucide-react";
 import { useLoadingStore } from "@/store/loadingStore";
 import { materialPreloader } from "@/services/materialPreloader";
-
-interface LoadingStep {
-  id: string;
-  label: string;
-  status: "pending" | "loading" | "completed";
-}
+import { BrandingHeader } from "./components/BrandingHeader";
+import { GlobalProgressBar } from "./components/GlobalProgressBar";
+import { StepList } from "./components/StepList";
+import type { LoadingStep } from "./types";
 
 interface MainLoadingPageProps {
   onLoadingComplete: () => void;
@@ -199,18 +196,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     };
   }, [startLoadingProcess]);
 
-  const getStepIcon = (step: LoadingStep) => {
-    switch (step.status) {
-      case "loading":
-        return <Loader2 className="w-4 h-4 animate-spin text-amber-600" />;
-      case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      default:
-        return (
-          <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
-        );
-    }
-  };
+  // Icônes désormais gérées par StepItem
 
   return (
     <div
@@ -218,83 +204,22 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       className="fixed inset-0 bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center z-50"
     >
       <div className="max-w-md w-full mx-4 text-center">
-        {/* Logo animé */}
-        <div ref={logoRef} className="mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
-            <TreePine className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">WoodcraftR</h1>
-          <p className="text-gray-600 text-sm">
-            Votre atelier de découpe bois personnalisé
-          </p>
-        </div>
+  {/* Logo animé */}
+  <BrandingHeader ref={logoRef} />
 
         {/* Barre de progression */}
-        <div className="mb-8">
-          <div
-            ref={progressBarRef}
-            className="w-full h-2 bg-gray-200 rounded-full overflow-hidden"
-          >
-            <div
-              className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-300 ease-out"
-              style={{ width: "0%" }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Étape {currentStep + 1} sur {steps.length}
-          </p>
-        </div>
+        <GlobalProgressBar ref={progressBarRef} />
+        <p className="text-xs text-gray-500 -mt-6 mb-6">
+          Étape {currentStep + 1} sur {steps.length}
+        </p>
 
         {/* Liste des étapes */}
-        <div ref={stepsRef} className="space-y-3">
-          {steps.map((step) => {
-            const isWorker = step.id === "worker";
-            const isMaterials = step.id === "materials";
-            const progress = isWorker
-              ? workerProgress
-              : isMaterials
-              ? materialsProgress
-              : step.status === "completed"
-              ? 100
-              : 0;
-            return (
-              <div
-                key={step.id}
-                className={`p-3 rounded-lg transition-all duration-300 ${
-                  step.status === "loading"
-                    ? "bg-amber-100 border border-amber-200"
-                    : step.status === "completed"
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-gray-50 border border-gray-200"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {getStepIcon(step)}
-                  <span
-                    className={`text-sm font-medium ${
-                      step.status === "loading"
-                        ? "text-amber-800"
-                        : step.status === "completed"
-                        ? "text-green-800"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </div>
-                {(isWorker || isMaterials) && (
-                  <div className="mt-2 w-full h-1.5 bg-white/50 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-200"
-                      style={{
-                        width: `${Math.max(0, Math.min(100, progress))}%`,
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div ref={stepsRef}>
+          <StepList
+            steps={steps}
+            workerProgress={workerProgress}
+            materialsProgress={materialsProgress}
+          />
         </div>
 
         {/* Message de patience */}
