@@ -7,4 +7,4 @@ Dossier d’exemple pour une essence. Ajoutez ici vos images PBR:
 - roughness.jpg (Linear)
 - ao.jpg (Linear, optionnel)
 
-Et un fichier `meta.json` si vous souhaitez stocker des métadonnées spécifiques à l’essence. 
+Et un fichier `meta.json` si vous souhaitez stocker des métadonnées spécifiques à l’essence.
