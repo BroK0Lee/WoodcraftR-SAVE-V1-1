@@ -27,7 +27,8 @@ export function useProgressTimer(options: ProgressTimerOptions) {
 
   const finish = useCallback(() => {
     stop();
-    setValue(100);
+    // Utiliser requestAnimationFrame pour éviter une course avec le dernier tick
+    requestAnimationFrame(() => setValue(100));
   }, [stop]);
 
   const reset = useCallback(() => {

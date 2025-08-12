@@ -33,7 +33,12 @@ export const useLoadingStore = create<LoadingState>((set, get) => ({
     const state = get();
 
     try {
-      // Le worker OpenCascade est géré ailleurs; ici on garantit le cache des matières
+      // Étape 0: S'assurer que le worker est prêt AVANT de charger les matières
+      // (polling simple; l'écran de chargement prend en charge le feedback visuel)
+      while (!get().isWorkerReady) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
       // Étape 1: Charger les matières + précharger les images (cache navigateur)
       if (!state.isMaterialsLoaded) {
         await materialPreloader.preloadMaterials();

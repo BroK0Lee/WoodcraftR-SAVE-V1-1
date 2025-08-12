@@ -8,7 +8,11 @@ interface OutroArgs {
   onComplete: () => void;
 }
 
-export async function runGsapOutro({ containerRef, progressBarRef, onComplete }: OutroArgs) {
+export async function runGsapOutro({
+  containerRef,
+  progressBarRef,
+  onComplete,
+}: OutroArgs) {
   // Étendre la barre à 100%
   gsap.to(progressBarRef.current, {
     width: "100%",
@@ -17,7 +21,9 @@ export async function runGsapOutro({ containerRef, progressBarRef, onComplete }:
   });
 
   // Petite pause
-  await new Promise((resolve) => setTimeout(resolve, GSAP_CONFIG.outro.afterBarDelayMs));
+  await new Promise((resolve) =>
+    setTimeout(resolve, GSAP_CONFIG.outro.afterBarDelayMs)
+  );
 
   // Disparition du container
   gsap.to(containerRef.current, {
