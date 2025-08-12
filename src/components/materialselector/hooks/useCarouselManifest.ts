@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { CarouselItem } from "../types";
+import type { CarouselItem } from "@/components/materialselector/types";
 import { getMaterialsManifest } from "@/services/materialsManifest";
 
 export function useCarouselManifest() {
