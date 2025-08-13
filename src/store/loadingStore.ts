@@ -4,14 +4,30 @@ import { materialPreloader } from "@/services/materialPreloader";
 interface LoadingState {
   isAppLoading: boolean;
   isWorkerReady: boolean; // OpenCascade worker
-  workerProgress: number; // 0..100 progression réelle
-  workerPhase: "idle" | "start" | "download" | "compile" | "ready" | "error";
+  workerPct: number; // % global segmenté (0..100)
+  workerRawDownloadPct: number; // % brut du download (0..100)
+  workerPhase:
+    | "idle"
+    | "start"
+    | "download"
+    | "compile-start"
+    | "compile"
+    | "compile-done"
+    | "init"
+    | "ready"
+    | "error";
+  workerErrorMessage?: string;
   isMaterialsLoaded: boolean;
   isComponentsLoaded: boolean;
   isWoodMaterialSelectorLoaded: boolean;
   setAppLoading: (loading: boolean) => void;
   setWorkerReady: (ready: boolean) => void;
-  setWorkerProgress: (pct: number, phase?: LoadingState["workerPhase"]) => void;
+  setWorkerProgressEvent: (evt: {
+    pct?: number;
+    rawPct?: number;
+    phase: LoadingState["workerPhase"];
+    errorMessage?: string;
+  }) => void;
   setMaterialsLoaded: (loaded: boolean) => void;
   setComponentsLoaded: (loaded: boolean) => void;
   setWoodMaterialSelectorLoaded: (loaded: boolean) => void;
@@ -21,18 +37,28 @@ interface LoadingState {
 export const useLoadingStore = create<LoadingState>((set, get) => ({
   isAppLoading: true,
   isWorkerReady: false,
-  workerProgress: 0,
+  workerPct: 0,
+  workerRawDownloadPct: 0,
   workerPhase: "idle",
+  workerErrorMessage: undefined,
   isMaterialsLoaded: false,
   isComponentsLoaded: false,
   isWoodMaterialSelectorLoaded: false,
 
   setAppLoading: (loading) => set({ isAppLoading: loading }),
   setWorkerReady: (ready) => set({ isWorkerReady: ready }),
-  setWorkerProgress: (pct, phase) =>
+  setWorkerProgressEvent: (evt) =>
     set((s) => ({
-      workerProgress: Math.max(0, Math.min(100, pct)),
-      workerPhase: phase ?? s.workerPhase,
+      workerPct:
+        typeof evt.pct === "number"
+          ? Math.max(0, Math.min(100, evt.pct))
+          : s.workerPct,
+      workerRawDownloadPct:
+        typeof evt.rawPct === "number"
+          ? Math.max(0, Math.min(100, evt.rawPct))
+          : s.workerRawDownloadPct,
+      workerPhase: evt.phase ?? s.workerPhase,
+      workerErrorMessage: evt.errorMessage ?? s.workerErrorMessage,
     })),
   setMaterialsLoaded: (loaded) => set({ isMaterialsLoaded: loaded }),
   setComponentsLoaded: (loaded) => set({ isComponentsLoaded: loaded }),

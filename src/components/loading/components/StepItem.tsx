@@ -27,7 +27,9 @@ export function StepItem({ step, progress }: StepItemProps) {
   const showIndeterminate =
     isWorkerStep &&
     step.status === "loading" &&
-    workerPhase === "compile" &&
+    ["compile-start", "compile", "compile-done", "init"].includes(
+      workerPhase as string
+    ) &&
     !isProgressVisible;
 
   return (

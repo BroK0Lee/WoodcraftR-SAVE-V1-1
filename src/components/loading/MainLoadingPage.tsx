@@ -44,6 +44,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   // Store state pour suivre l'avancement du chargement
   const { initializeApp } = useLoadingStore();
   const workerPhase = useLoadingStore((s) => s.workerPhase);
+  const workerPct = useLoadingStore((s) => s.workerPct);
   const setAppLoading = useLoadingStore((s) => s.setAppLoading);
 
   const startLoadingProcess = useCallback(async () => {
@@ -184,7 +185,10 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
               </button>
             </div>
           ) : (
-            <p>Initialisation en cours, merci de patienter...</p>
+            <p>
+              Initialisation en cours ({Math.round(workerPct)}%) – merci de
+              patienter...
+            </p>
           )}
         </div>
       </div>

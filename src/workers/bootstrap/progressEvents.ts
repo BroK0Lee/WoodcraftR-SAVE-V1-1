@@ -37,7 +37,7 @@ export interface ProgressEmitter {
 const DL_RANGE: [number, number] = [0, 40];
 const COMPILE_RANGE: [number, number] = [40, 80];
 const INIT_RANGE: [number, number] = [80, 100];
-const COMPILE_MIN_MS = 30_000; // 30s minimale
+const COMPILE_MIN_MS = 20_000; // 20s minimale
 const READY_MIN_MS = 5_000; // 5s minimale
 const TICK_MS = 100; // fréquence d'émission
 
@@ -168,7 +168,11 @@ export function createProgressEmitter(post: ProgressSink): ProgressEmitter {
       if (st.initStartedAt === undefined) {
         maybeStartInitPhase();
       }
-      if (st.initStartedAt !== undefined && st.initProgress >= 1 && !st.finalEmitted) {
+      if (
+        st.initStartedAt !== undefined &&
+        st.initProgress >= 1 &&
+        !st.finalEmitted
+      ) {
         st.finalEmitted = true;
         clearInterval(st.initTimer);
         st.initTimer = undefined;

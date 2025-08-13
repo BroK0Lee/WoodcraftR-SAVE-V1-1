@@ -10,11 +10,21 @@ let proxyInstance: Comlink.Remote<OccWorkerAPI> | null = null;
 let ready = false;
 let initPromise: Promise<boolean> | null = null;
 
-type WorkerProgressEvent = {
+// Reflète la nouvelle machine d'états du worker (progressEvents.ts)
+export type WorkerProgressEvent = {
   type: "oc:progress";
-  phase: "start" | "download" | "compile" | "ready" | "error";
-  pct?: number;
-  message?: string;
+  phase:
+    | "start"
+    | "download"
+    | "compile-start"
+    | "compile"
+    | "compile-done"
+    | "init"
+    | "ready"
+    | "error";
+  pct?: number; // progression globale segmentée (0..100)
+  rawPct?: number; // progression brute de téléchargement (download uniquement)
+  errorMessage?: string; // message d'erreur éventuel
 };
 
 type ProgressListener = (evt: WorkerProgressEvent) => void;

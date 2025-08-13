@@ -11,7 +11,7 @@ export function StepList({
   steps,
   materialsProgress,
 }: StepListProps): JSX.Element {
-  const workerPct = useLoadingStore((s) => s.workerProgress);
+  const workerPct = useLoadingStore((s) => s.workerPct);
   const workerPhase = useLoadingStore((s) => s.workerPhase);
 
   return (
@@ -22,13 +22,14 @@ export function StepList({
 
         let progress: number | undefined;
         if (isWorker) {
-          // Affiche uniquement le pourcentage réel (phase download) ou reste à 0.
-          progress =
-            workerPhase === "download"
-              ? workerPct
-              : workerPhase === "ready"
-              ? 100
-              : undefined;
+          if (workerPhase === "ready") {
+            progress = 100;
+          } else if (workerPhase === "start") {
+            progress = 0;
+          } else {
+            // Montrer la progression segmentée continue
+            progress = workerPct;
+          }
         } else if (isMaterials) {
           progress = materialsProgress;
         } else if (step.status === "completed") {

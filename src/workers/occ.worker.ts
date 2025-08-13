@@ -72,12 +72,12 @@ async function init(): Promise<boolean> {
     }
     const blob = new Blob([wasmBuffer], { type: "application/wasm" });
     const blobUrl = URL.createObjectURL(blob);
-  progress.compileStart();
-  oc = await factory({ locateFile: () => blobUrl });
-  progress.compileDone();
+    progress.compileStart();
+    oc = await factory({ locateFile: () => blobUrl });
+    progress.compileDone();
     URL.revokeObjectURL(blobUrl);
-  // Le progressEmitter gèrera le timer init -> ready; on signale simplement ready ici
-  progress.ready();
+    // Le progressEmitter gèrera le timer init -> ready; on signale simplement ready ici
+    progress.ready();
     return true;
   } catch (e) {
     progress.error(e instanceof Error ? e.message : String(e));
