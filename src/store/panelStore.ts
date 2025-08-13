@@ -13,7 +13,7 @@ import {
   updateCutTimestamp,
 } from "@/models/Cut";
 import { clamp } from "@/lib/utils";
-import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
+import type { PanelGeometryDTO } from "@/workers/api/shapeToGeometry";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 
 /** Store Zustand pour la gestion globale du panneau */

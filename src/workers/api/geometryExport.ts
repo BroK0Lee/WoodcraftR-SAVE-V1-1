@@ -1,13 +1,13 @@
 import type { EdgeDTO } from "@/models/EdgeDTO";
-import { shapeToGeometry } from "@/helpers/shapeToGeometry";
-import shapeToUrl from "@/helpers/shapeToUrl";
+import { shapeToGeometry } from "@/workers/api/shapeToGeometry";
+import shapeToUrl from "@/workers/api/shapeToUrl";
 import { getEdges } from "./edges";
 import type { OCCLike } from "./occtypes";
 import { assertOc } from "./occtypes";
 import type { OpenCascadeInstance } from "opencascade.js";
 
 export interface ExportResult {
-  geometry: import("@/helpers/shapeToGeometry").PanelGeometryDTO;
+  geometry: import("@/workers/api/shapeToGeometry").PanelGeometryDTO;
   edges: EdgeDTO[];
   url: string;
 }

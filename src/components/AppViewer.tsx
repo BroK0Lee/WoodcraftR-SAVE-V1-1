@@ -4,7 +4,7 @@ import { OrbitControls, Environment } from "@react-three/drei";
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
 import DimensionLabels from "./DimensionLabels";
-import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
+import type { PanelGeometryDTO } from "@/workers/api/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 import { useGlobalMaterialStore } from "@/store/globalMaterialStore";
 import {

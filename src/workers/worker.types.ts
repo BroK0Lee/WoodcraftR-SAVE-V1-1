@@ -1,4 +1,4 @@
-import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
+import type { PanelGeometryDTO } from "@/workers/api/shapeToGeometry";
 import type { PanelDimensions } from "@/models/Panel";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 import type { Cut, RectangularCut, CircularCut } from "@/models/Cut";

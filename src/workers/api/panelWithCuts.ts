@@ -7,7 +7,7 @@ import type { OCCLike } from "./occtypes";
 import { assertOc } from "./occtypes";
 
 export interface PanelWithCutsResult {
-  geometry: import("@/helpers/shapeToGeometry").PanelGeometryDTO;
+  geometry: import("@/workers/api/shapeToGeometry").PanelGeometryDTO;
   edges: EdgeDTO[];
   url: string;
   cuttingInfo: CuttingInfo;

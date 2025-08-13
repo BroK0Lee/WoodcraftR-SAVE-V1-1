@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import PanelViewer from "./AppViewer";
-import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
+import type { PanelGeometryDTO } from "@/workers/api/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 import { useOpenCascadeWorker } from "@/hooks/useOpenCascadeWorker";
 import type { EdgeDTO } from "@/models/EdgeDTO";
