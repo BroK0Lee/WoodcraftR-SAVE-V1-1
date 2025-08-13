@@ -50,7 +50,7 @@ export interface PanelWithCutsConfig {
   /** Liste des découpes à appliquer */
   cuts: Cut[];
   /** Forme du panneau (défaut: rectangle) */
-  shape?: 'rectangle' | 'circle';
+  shape?: "rectangle" | "circle";
   /** Diamètre du panneau si forme circulaire (en mm) */
   circleDiameter?: number;
 }
@@ -111,7 +111,10 @@ export interface OccWorkerAPI {
    * @param panelThickness Épaisseur du panneau (pour la profondeur par défaut)
    * @returns Forme TopoDS_Shape de la découpe
    */
-  createRectangularCut: (cut: RectangularCut, panelThickness: number) => TopoDS_Shape;
+  createRectangularCut: (
+    cut: RectangularCut,
+    panelThickness: number
+  ) => TopoDS_Shape;
 
   /**
    * Crée une forme de découpe circulaire positionnée
