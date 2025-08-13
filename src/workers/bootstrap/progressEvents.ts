@@ -1,24 +1,39 @@
-import { createInitialPhaseState, mapPhasePct, transition, type OccPhase } from "./phases";
+// Étape 1 : émetteur brut sans timers ni segmentation.
+// Phases granularisées: start, download, compile-start, compile-done, ready, error.
 
-export type WorkerProgressEvent = {
+export type WorkerProgressPhase =
+  | "start"
+  | "download"
+  | "compile-start"
+  | "compile-done"
+  | "ready"
+  | "error";
+
+export interface WorkerProgressEvent {
   type: "oc:progress";
-  phase: OccPhase;
-  pct?: number; // segmenté
-  rawPct?: number; // brut (download)
-  message?: string;
-};
+  phase: WorkerProgressPhase;
+  rawPct?: number; // % brut (download uniquement)
+  ts: number; // horodatage performance.now()
+  errorMessage?: string;
+}
 
 export type ProgressSink = (evt: WorkerProgressEvent) => void;
 
-export function createProgressEmitter(post: ProgressSink) {
-  let state = createInitialPhaseState();
+export interface ProgressEmitter {
+  start(): void;
+  reportDownload(rawPct: number): void;
+  compileStart(): void;
+  compileDone(): void;
+  ready(): void;
+  error(err: unknown): void;
+}
 
-  function emit(phase: OccPhase, rawPct?: number, message?: string) {
-    state = transition(state, phase);
-    const pct = mapPhasePct(phase, rawPct);
-    post({ type: "oc:progress", phase, pct, rawPct, message });
-    if (pct !== undefined) state.lastPct = pct;
-  }
+export function createProgressEmitter(post: ProgressSink): ProgressEmitter {
+  const emit = (
+    phase: WorkerProgressPhase,
+    rawPct?: number,
+    errorMessage?: string
+  ) => post({ type: "oc:progress", phase, rawPct, ts: performance.now(), errorMessage });
 
   return {
     start() {
@@ -28,16 +43,20 @@ export function createProgressEmitter(post: ProgressSink) {
       emit("download", rawPct);
     },
     compileStart() {
-      emit("compile");
+      emit("compile-start");
     },
-    initStart() {
-      emit("init", 0);
+    compileDone() {
+      emit("compile-done");
     },
     ready() {
       emit("ready", 100);
     },
-    error(message: string) {
-      emit("error", undefined, message);
+    error(err: unknown) {
+      emit(
+        "error",
+        undefined,
+        err instanceof Error ? err.message : String(err)
+      );
     },
   };
 }

@@ -32,7 +32,9 @@ async function init(): Promise<boolean> {
     progress.ready();
     return true;
   }
-  type OpenCascadeFactory = (opts: { locateFile: () => string }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
+  type OpenCascadeFactory = (opts: {
+    locateFile: () => string;
+  }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
   const factory = openCascadeFactory as unknown as OpenCascadeFactory;
   progress.start();
   try {
@@ -50,7 +52,10 @@ async function init(): Promise<boolean> {
         if (value) {
           chunks.push(value);
           loaded += value.byteLength;
-          const pct = Math.max(0, Math.min(100, Math.round((loaded / total) * 100)));
+          const pct = Math.max(
+            0,
+            Math.min(100, Math.round((loaded / total) * 100))
+          );
           progress.reportDownload(pct);
         }
       }
@@ -67,11 +72,11 @@ async function init(): Promise<boolean> {
     }
     const blob = new Blob([wasmBuffer], { type: "application/wasm" });
     const blobUrl = URL.createObjectURL(blob);
-    progress.compileStart();
-    oc = await factory({ locateFile: () => blobUrl });
-    URL.revokeObjectURL(blobUrl);
-    progress.initStart();
-    progress.ready();
+  progress.compileStart();
+  oc = await factory({ locateFile: () => blobUrl });
+  progress.compileDone();
+  URL.revokeObjectURL(blobUrl);
+  progress.ready();
     return true;
   } catch (e) {
     progress.error(e instanceof Error ? e.message : String(e));

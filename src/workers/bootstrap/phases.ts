@@ -22,9 +22,13 @@ const SEGMENTS: Record<string, [number, number]> = {
   init: [80, 100],
 };
 
-export function mapPhasePct(phase: OccPhase, rawPct?: number): number | undefined {
+export function mapPhasePct(
+  phase: OccPhase,
+  rawPct?: number
+): number | undefined {
   if (phase === "ready") return 100;
-  if (phase === "start" || phase === "idle" || phase === "error") return undefined;
+  if (phase === "start" || phase === "idle" || phase === "error")
+    return undefined;
   if (rawPct === undefined) return undefined;
   const seg = SEGMENTS[phase];
   if (!seg) return rawPct;
