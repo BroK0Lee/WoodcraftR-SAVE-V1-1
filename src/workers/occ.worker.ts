@@ -2,7 +2,11 @@
 import * as Comlink from "comlink";
 import openCascadeFactory from "opencascade.js/dist/opencascade.full.js";
 import wasmURL from "opencascade.js/dist/opencascade.full.wasm?url";
-import type { OccWorkerAPI, CutValidationResult, PanelWithCutsConfig } from "./worker.types";
+import type {
+  OccWorkerAPI,
+  CutValidationResult,
+  PanelWithCutsConfig,
+} from "./worker.types";
 import type { PanelDimensions } from "@/models/Panel";
 import type { Cut, RectangularCut, CircularCut } from "@/models/Cut";
 import type { TopoDS_Shape } from "opencascade.js";
@@ -10,8 +14,13 @@ import type { TopoDS_Shape } from "opencascade.js";
 import { createBox as createBoxBase } from "./api/panelBase";
 import { getEdges as getEdgesBase } from "./api/edges";
 import { createPanelWithCuts as createPanelWithCutsBase } from "./api/panelWithCuts";
-import { createCircularCut as createCircularCutBase, createRectangularCut as createRectangularCutBase, applyAllCuts as applyAllCutsBase } from "./api/cuts";
+import {
+  createCircularCut as createCircularCutBase,
+  createRectangularCut as createRectangularCutBase,
+  applyAllCuts as applyAllCutsBase,
+} from "./api/cuts";
 import { validateSingleCut } from "./api/validation";
+import type { OCCLike } from "./api/occtypes";
 
 // --- ETAT GLOBAL ---
 let oc: Awaited<ReturnType<typeof openCascadeFactory>> | null = null;
@@ -25,10 +34,15 @@ type WorkerProgressEvent = {
 
 async function init(): Promise<boolean> {
   if (!oc) {
-    type OpenCascadeFactory = (opts: { locateFile: () => string }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
+    type OpenCascadeFactory = (opts: {
+      locateFile: () => string;
+    }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
     const factory = openCascadeFactory as unknown as OpenCascadeFactory;
     try {
-      self.postMessage({ type: "oc:progress", phase: "start" } satisfies WorkerProgressEvent);
+      self.postMessage({
+        type: "oc:progress",
+        phase: "start",
+      } satisfies WorkerProgressEvent);
       const resp = await fetch(wasmURL);
       const totalStr = resp.headers.get("Content-Length");
       const total = totalStr ? parseInt(totalStr, 10) : undefined;
@@ -39,33 +53,58 @@ async function init(): Promise<boolean> {
         const chunks: Uint8Array[] = [];
         while (true) {
           const { done, value } = await reader.read();
-            if (done) break;
+          if (done) break;
           if (value) {
             chunks.push(value);
             loaded += value.byteLength;
-            const pct = Math.max(0, Math.min(100, Math.round((loaded / total) * 100)));
-            self.postMessage({ type: "oc:progress", phase: "download", pct } satisfies WorkerProgressEvent);
+            const pct = Math.max(
+              0,
+              Math.min(100, Math.round((loaded / total) * 100))
+            );
+            self.postMessage({
+              type: "oc:progress",
+              phase: "download",
+              pct,
+            } satisfies WorkerProgressEvent);
           }
         }
         const combined = new Uint8Array(loaded);
         let offset = 0;
-        for (const chunk of chunks) { combined.set(chunk, offset); offset += chunk.byteLength; }
+        for (const chunk of chunks) {
+          combined.set(chunk, offset);
+          offset += chunk.byteLength;
+        }
         wasmBuffer = combined.buffer;
       } else {
         wasmBuffer = await resp.arrayBuffer();
-        self.postMessage({ type: "oc:progress", phase: "download", pct: 100 } satisfies WorkerProgressEvent);
+        self.postMessage({
+          type: "oc:progress",
+          phase: "download",
+          pct: 100,
+        } satisfies WorkerProgressEvent);
       }
       const blob = new Blob([wasmBuffer], { type: "application/wasm" });
       const blobUrl = URL.createObjectURL(blob);
-      self.postMessage({ type: "oc:progress", phase: "compile" } satisfies WorkerProgressEvent);
+      self.postMessage({
+        type: "oc:progress",
+        phase: "compile",
+      } satisfies WorkerProgressEvent);
       oc = await factory({ locateFile: () => blobUrl });
       URL.revokeObjectURL(blobUrl);
     } catch (e) {
-      self.postMessage({ type: "oc:progress", phase: "error", message: e instanceof Error ? e.message : String(e) } satisfies WorkerProgressEvent);
+      self.postMessage({
+        type: "oc:progress",
+        phase: "error",
+        message: e instanceof Error ? e.message : String(e),
+      } satisfies WorkerProgressEvent);
       throw e;
     }
   }
-  self.postMessage({ type: "oc:progress", phase: "ready", pct: 100 } satisfies WorkerProgressEvent);
+  self.postMessage({
+    type: "oc:progress",
+    phase: "ready",
+    pct: 100,
+  } satisfies WorkerProgressEvent);
   return true;
 }
 
@@ -76,16 +115,51 @@ function requireOc() {
 }
 
 // Wrappers
-async function createBox(dims: PanelDimensions) { return createBoxBase(requireOc(), dims); }
-function getEdges(shape: TopoDS_Shape, tolerance: number) { return getEdgesBase(requireOc(), shape, tolerance); }
-async function createPanelWithCuts(config: PanelWithCutsConfig) { return createPanelWithCutsBase(requireOc(), config); }
-async function validateCutFeasibility(panelDims: PanelDimensions, cut: Cut): Promise<CutValidationResult> {
-  const res = validateSingleCut({ width: panelDims.width, height: panelDims.length }, cut.type === "rectangle" ? { type: "rect", width: cut.length, height: cut.width, x: cut.positionX, y: cut.positionY } : { type: "circle", radius: cut.radius, x: cut.positionX, y: cut.positionY });
+async function createBox(dims: PanelDimensions) {
+  return createBoxBase(requireOc() as unknown as OCCLike, dims);
+}
+function getEdges(shape: TopoDS_Shape, tolerance: number) {
+  return getEdgesBase(requireOc() as unknown as OCCLike, shape, tolerance);
+}
+async function createPanelWithCuts(config: PanelWithCutsConfig) {
+  return createPanelWithCutsBase(requireOc() as unknown as OCCLike, config);
+}
+async function validateCutFeasibility(
+  panelDims: PanelDimensions,
+  cut: Cut
+): Promise<CutValidationResult> {
+  const res = validateSingleCut(
+    { width: panelDims.width, height: panelDims.length },
+    cut.type === "rectangle"
+      ? {
+          type: "rect",
+          width: cut.length,
+          height: cut.width,
+          x: cut.positionX,
+          y: cut.positionY,
+        }
+      : {
+          type: "circle",
+          radius: cut.radius,
+          x: cut.positionX,
+          y: cut.positionY,
+        }
+  );
   return { isValid: res.ok, errors: res.errors, warnings: [] };
 }
-function createRectangularCut(cut: RectangularCut, thickness: number) { return createRectangularCutBase(requireOc(), cut, thickness); }
-function createCircularCut(cut: CircularCut, thickness: number) { return createCircularCutBase(requireOc(), cut, thickness); }
-async function applyAllCuts(panel: TopoDS_Shape, cuts: Cut[], thickness: number) { return applyAllCutsBase(requireOc(), panel, cuts, thickness); }
+function createRectangularCut(cut: RectangularCut, thickness: number) {
+  return createRectangularCutBase(requireOc() as unknown as OCCLike, cut, thickness);
+}
+function createCircularCut(cut: CircularCut, thickness: number) {
+  return createCircularCutBase(requireOc() as unknown as OCCLike, cut, thickness);
+}
+async function applyAllCuts(
+  panel: TopoDS_Shape,
+  cuts: Cut[],
+  thickness: number
+) {
+  return applyAllCutsBase(requireOc() as unknown as OCCLike, panel, cuts, thickness);
+}
 
 Comlink.expose({
   init,
