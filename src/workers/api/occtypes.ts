@@ -1,7 +1,10 @@
-import type { TopoDS_Shape, gp_Trsf } from "opencascade.js";
+import type { TopoDS_Shape, gp_Trsf, gp_Vec } from "opencascade.js";
 
 // Interface partagée minimaliste décrivant UNIQUEMENT les membres OCC utilisés.
 // Chaque propriété est optionnelle pour tolérer des variantes de build; les fonctions doivent vérifier oc.
+// Type structurel minimal compatible avec gp_Vec réel
+type GpVecLike = gp_Vec; // on référence directement pour compat stricte
+
 export interface OCCLike {
   // Primitives
   BRepPrimAPI_MakeBox_2?: new (l: number, w: number, h: number) => {
@@ -13,7 +16,7 @@ export interface OCCLike {
 
   // Transforms
   gp_Trsf_1?: new () => gp_Trsf;
-  gp_Vec_4?: new (x: number, y: number, z: number) => unknown;
+  gp_Vec_4?: new (x: number, y: number, z: number) => GpVecLike;
   BRepBuilderAPI_Transform_2?: new (
     shape: TopoDS_Shape,
     trsf: gp_Trsf,

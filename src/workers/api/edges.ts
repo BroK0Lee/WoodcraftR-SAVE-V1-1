@@ -21,9 +21,9 @@ export function getEdges(
   const result: EdgeDTO[] = [];
   let id = 0;
   while (explorer.More()) {
-  const edge = oc.TopoDS!.Edge_1(explorer.Current());
-  const adaptor = new oc.BRepAdaptor_Curve_2!(edge);
-  const discretizer = new oc.GCPnts_UniformDeflection_2!(
+    const edge = oc.TopoDS!.Edge_1(explorer.Current());
+    const adaptor = new oc.BRepAdaptor_Curve_2!(edge);
+    const discretizer = new oc.GCPnts_UniformDeflection_2!(
       adaptor,
       tolerance,
       false

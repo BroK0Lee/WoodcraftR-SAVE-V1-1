@@ -26,21 +26,21 @@ export async function createPanelWithCuts(
     const diameter =
       circleDiameter ?? Math.min(dimensions.length, dimensions.width);
     const radius = Math.max(0.1, diameter / 2);
-  const rawCylinder = new oc.BRepPrimAPI_MakeCylinder_2!(
+    const rawCylinder = new oc.BRepPrimAPI_MakeCylinder_2!(
       radius,
       dimensions.thickness,
       2 * Math.PI
     ).Shape();
-  const trsf = new oc.gp_Trsf_1!();
-  trsf.SetTranslation_1(new oc.gp_Vec_4!(radius, radius, 0));
-  const transform = new oc.BRepBuilderAPI_Transform_2!(
+    const trsf = new oc.gp_Trsf_1!();
+    trsf.SetTranslation_1(new oc.gp_Vec_4!(radius, radius, 0));
+    const transform = new oc.BRepBuilderAPI_Transform_2!(
       rawCylinder,
       trsf,
       false
     );
     basePanel = transform.Shape();
   } else {
-  basePanel = new oc.BRepPrimAPI_MakeBox_2!(
+    basePanel = new oc.BRepPrimAPI_MakeBox_2!(
       dimensions.length,
       dimensions.width,
       dimensions.thickness

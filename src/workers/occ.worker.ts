@@ -148,17 +148,30 @@ async function validateCutFeasibility(
   return { isValid: res.ok, errors: res.errors, warnings: [] };
 }
 function createRectangularCut(cut: RectangularCut, thickness: number) {
-  return createRectangularCutBase(requireOc() as unknown as OCCLike, cut, thickness);
+  return createRectangularCutBase(
+    requireOc() as unknown as OCCLike,
+    cut,
+    thickness
+  );
 }
 function createCircularCut(cut: CircularCut, thickness: number) {
-  return createCircularCutBase(requireOc() as unknown as OCCLike, cut, thickness);
+  return createCircularCutBase(
+    requireOc() as unknown as OCCLike,
+    cut,
+    thickness
+  );
 }
 async function applyAllCuts(
   panel: TopoDS_Shape,
   cuts: Cut[],
   thickness: number
 ) {
-  return applyAllCutsBase(requireOc() as unknown as OCCLike, panel, cuts, thickness);
+  return applyAllCutsBase(
+    requireOc() as unknown as OCCLike,
+    panel,
+    cuts,
+    thickness
+  );
 }
 
 Comlink.expose({
