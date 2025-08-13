@@ -1,5 +1,6 @@
 import { Loader2, CheckCircle } from "lucide-react";
 import type { LoadingStep } from "../types";
+import { useLoadingStore } from "@/store/loadingStore";
 
 export interface StepItemProps {
   step: LoadingStep;
@@ -7,6 +8,7 @@ export interface StepItemProps {
 }
 
 export function StepItem({ step, progress }: StepItemProps) {
+  const workerPhase = useLoadingStore((s) => s.workerPhase);
   const getIcon = () => {
     switch (step.status) {
       case "loading":
@@ -21,6 +23,8 @@ export function StepItem({ step, progress }: StepItemProps) {
   };
 
   const isProgressVisible = typeof progress === "number";
+  const isWorkerStep = step.id === "worker";
+  const showIndeterminate = isWorkerStep && step.status === "loading" && workerPhase === "compile" && !isProgressVisible;
 
   return (
     <div
@@ -52,6 +56,11 @@ export function StepItem({ step, progress }: StepItemProps) {
             className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-200"
             style={{ width: `${Math.max(0, Math.min(100, progress ?? 0))}%` }}
           />
+        </div>
+      )}
+      {showIndeterminate && (
+        <div className="mt-2 w-full h-1.5 bg-white/50 rounded-full overflow-hidden relative">
+          <div className="absolute inset-0 animate-pulse bg-[repeating-linear-gradient(45deg,rgba(251,191,36,0.4)_0,rgba(251,191,36,0.4)_10px,rgba(253,230,138,0.6)_10px,rgba(253,230,138,0.6)_20px)]" />
         </div>
       )}
     </div>

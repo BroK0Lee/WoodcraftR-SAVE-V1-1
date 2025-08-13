@@ -4,7 +4,7 @@ export const LOADING_LABELS = {
 } as const;
 
 export const PROGRESS_CONFIG = {
-  worker: { step: 3, intervalMs: 120, cap: 90 },
+  // worker supprimé: progression réelle seulement (download / compile / ready)
   materialsLoad: { step: 2, intervalMs: 120, cap: 90 },
   materialsWaiting: { step: 1, intervalMs: 150, cap: 98 },
 } as const;

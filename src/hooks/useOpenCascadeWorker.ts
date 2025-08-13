@@ -48,16 +48,23 @@ export function useOpenCascadeWorker() {
     };
 
     const unsubscribe = onOccProgress((evt) => {
-      if (evt.phase === "download" && typeof evt.pct === "number") {
-        setWorkerProgress(evt.pct, evt.phase);
-      } else if (evt.phase === "compile") {
-        setWorkerProgress(90, evt.phase); // convention: compile ~90%
-      } else if (evt.phase === "ready") {
-        setWorkerProgress(100, evt.phase);
-      } else if (evt.phase === "start") {
-        setWorkerProgress(0, evt.phase);
-      } else if (evt.phase === "error") {
-        setWorkerProgress(Math.max(0, isReady ? 90 : 0), "error");
+      switch (evt.phase) {
+        case "start":
+          setWorkerProgress(0, "start");
+          break;
+        case "download":
+          if (typeof evt.pct === "number") setWorkerProgress(evt.pct, "download");
+          break;
+        case "compile":
+          // Pas de % réel exposé: on conserve la dernière valeur download et met à jour seulement la phase.
+          setWorkerProgress(useLoadingStore.getState().workerProgress, "compile");
+          break;
+        case "ready":
+          setWorkerProgress(100, "ready");
+          break;
+        case "error":
+          setWorkerProgress(useLoadingStore.getState().workerProgress, "error");
+          break;
       }
     });
 

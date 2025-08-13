@@ -33,13 +33,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   ]);
 
   // Timers de progression visuelle par étape
-  const {
-    value: workerProgress,
-    start: startWorkerTimer,
-    finish: finishWorkerTimer,
-    reset: resetWorkerTimer,
-    stop: stopWorkerTimer,
-  } = useProgressTimer(PROGRESS_CONFIG.worker);
+  // Suppression du timer simulé pour le worker: on affiche désormais uniquement la progression réelle (download) envoyée par le worker.
   const materialsLoadTimer = useProgressTimer(PROGRESS_CONFIG.materialsLoad);
   const materialsWaitTimer = useProgressTimer(PROGRESS_CONFIG.materialsWaiting);
   const materialsProgress = Math.max(
@@ -58,15 +52,12 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
     // Étape 1: Attendre OpenCascade Worker
     setCurrentStep(0);
-    resetWorkerTimer();
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
         status: i === 0 ? "loading" : "pending",
       }))
     );
-    // Animation de progression simulée jusqu'à 90%
-    startWorkerTimer();
     // Attendre le worker, mais arrêter en cas d'erreur détectée
     try {
       await waitForFlag(guards.workerReady, 100, guards.workerError);
@@ -74,7 +65,6 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       // Si la garde échoue, on reste sur l'étape worker
       return;
     }
-    finishWorkerTimer();
     setSteps((prev) =>
       prev.map((step, i) => ({
         ...step,
@@ -118,11 +108,8 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   }, [
     initializeApp,
     onLoadingComplete,
-    finishWorkerTimer,
-    materialsLoadTimer,
-    materialsWaitTimer,
-    resetWorkerTimer,
-    startWorkerTimer,
+  materialsLoadTimer,
+  materialsWaitTimer,
   ]);
 
   // Animations d'intro (logo, barre, liste)
@@ -132,16 +119,10 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   useEffect(() => {
     startLoadingProcess();
     return () => {
-      stopWorkerTimer();
       materialsLoadTimer.stop();
       materialsWaitTimer.stop();
     };
-  }, [
-    startLoadingProcess,
-    materialsLoadTimer,
-    materialsWaitTimer,
-    stopWorkerTimer,
-  ]);
+  }, [startLoadingProcess, materialsLoadTimer, materialsWaitTimer]);
 
   // Icônes désormais gérées par StepItem
 
@@ -162,11 +143,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
         {/* Liste des étapes */}
         <div ref={stepsRef}>
-          <StepList
-            steps={steps}
-            workerProgress={workerProgress}
-            materialsProgress={materialsProgress}
-          />
+          <StepList steps={steps} materialsProgress={materialsProgress} />
         </div>
 
         {/* Message / Erreur / Action */}
