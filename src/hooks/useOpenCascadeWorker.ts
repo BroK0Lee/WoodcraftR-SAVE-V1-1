@@ -53,11 +53,15 @@ export function useOpenCascadeWorker() {
           setWorkerProgress(0, "start");
           break;
         case "download":
-          if (typeof evt.pct === "number") setWorkerProgress(evt.pct, "download");
+          if (typeof evt.pct === "number")
+            setWorkerProgress(evt.pct, "download");
           break;
         case "compile":
           // Pas de % réel exposé: on conserve la dernière valeur download et met à jour seulement la phase.
-          setWorkerProgress(useLoadingStore.getState().workerProgress, "compile");
+          setWorkerProgress(
+            useLoadingStore.getState().workerProgress,
+            "compile"
+          );
           break;
         case "ready":
           setWorkerProgress(100, "ready");

@@ -108,8 +108,8 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   }, [
     initializeApp,
     onLoadingComplete,
-  materialsLoadTimer,
-  materialsWaitTimer,
+    materialsLoadTimer,
+    materialsWaitTimer,
   ]);
 
   // Animations d'intro (logo, barre, liste)

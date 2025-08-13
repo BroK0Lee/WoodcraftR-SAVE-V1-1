@@ -24,7 +24,11 @@ export function StepItem({ step, progress }: StepItemProps) {
 
   const isProgressVisible = typeof progress === "number";
   const isWorkerStep = step.id === "worker";
-  const showIndeterminate = isWorkerStep && step.status === "loading" && workerPhase === "compile" && !isProgressVisible;
+  const showIndeterminate =
+    isWorkerStep &&
+    step.status === "loading" &&
+    workerPhase === "compile" &&
+    !isProgressVisible;
 
   return (
     <div
