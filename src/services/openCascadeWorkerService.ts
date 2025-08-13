@@ -10,6 +10,21 @@ let proxyInstance: Comlink.Remote<OccWorkerAPI> | null = null;
 let ready = false;
 let initPromise: Promise<boolean> | null = null;
 
+type WorkerProgressEvent = {
+  type: "oc:progress";
+  phase: "start" | "download" | "compile" | "ready" | "error";
+  pct?: number;
+  message?: string;
+};
+
+type ProgressListener = (evt: WorkerProgressEvent) => void;
+const progressListeners = new Set<ProgressListener>();
+
+export function onOccProgress(listener: ProgressListener) {
+  progressListeners.add(listener);
+  return () => progressListeners.delete(listener);
+}
+
 /**
  * Initialise le worker OpenCascade (idempotent)
  */
@@ -23,6 +38,21 @@ export async function initOccWorker(): Promise<boolean> {
         new URL("../workers/occ.worker.ts", import.meta.url),
         { type: "module" }
       );
+      // Ecoute des messages bruts (progression)
+      workerInstance.addEventListener("message", (e: MessageEvent) => {
+        const data = e.data as unknown;
+        if (!data || typeof data !== "object") return;
+        const evt = data as Partial<WorkerProgressEvent>;
+        if (evt.type === "oc:progress" && evt.phase) {
+          progressListeners.forEach((cb) => {
+            try {
+              cb(evt as WorkerProgressEvent);
+            } catch {
+              // ignore listener errors
+            }
+          });
+        }
+      });
     }
     if (!proxyInstance) {
       proxyInstance = Comlink.wrap<OccWorkerAPI>(workerInstance);

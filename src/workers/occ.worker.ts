@@ -20,6 +20,13 @@ import type { TopoDS_Shape } from "opencascade.js";
 let oc: Awaited<ReturnType<typeof openCascadeFactory>> | null = null;
 
 // --- INIT OPENCASCADE ---
+type WorkerProgressEvent = {
+  type: "oc:progress";
+  phase: "start" | "download" | "compile" | "ready" | "error";
+  pct?: number;
+  message?: string;
+};
+
 async function init() {
   if (!oc) {
     // Correction du typage pour accepter locateFile
@@ -27,8 +34,92 @@ async function init() {
       locateFile: () => string;
     }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
     const factory = openCascadeFactory as unknown as OpenCascadeFactory;
-    oc = await factory({ locateFile: () => wasmURL });
+
+    // 1) Télécharger le binaire WASM avec feedback (réel) et fournir une URL locale au runtime
+    try {
+      const startEvt: WorkerProgressEvent = {
+        type: "oc:progress",
+        phase: "start",
+      };
+      self.postMessage(startEvt);
+
+      const resp = await fetch(wasmURL);
+      const totalStr = resp.headers.get("Content-Length");
+      const total = totalStr ? parseInt(totalStr, 10) : undefined;
+
+      let loaded = 0;
+      let wasmBuffer: ArrayBuffer;
+
+      if (resp.body && total && Number.isFinite(total)) {
+        const reader = resp.body.getReader();
+        const chunks: Uint8Array[] = [];
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            chunks.push(value);
+            loaded += value.byteLength;
+            const pct = Math.max(
+              0,
+              Math.min(100, Math.round((loaded / total) * 100))
+            );
+            const progressEvt: WorkerProgressEvent = {
+              type: "oc:progress",
+              phase: "download",
+              pct,
+            };
+            self.postMessage(progressEvt);
+          }
+        }
+        // Concaténer
+        const combined = new Uint8Array(loaded);
+        let offset = 0;
+        for (const chunk of chunks) {
+          combined.set(chunk, offset);
+          offset += chunk.byteLength;
+        }
+        wasmBuffer = combined.buffer;
+      } else {
+        // Pas de body stream ou content-length: pas de progression fine
+        wasmBuffer = await resp.arrayBuffer();
+        const progressEvt: WorkerProgressEvent = {
+          type: "oc:progress",
+          phase: "download",
+          pct: 100,
+        };
+        self.postMessage(progressEvt);
+      }
+
+      // Créer une URL locale pour le binaire
+      const blob = new Blob([wasmBuffer], { type: "application/wasm" });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const compileEvt: WorkerProgressEvent = {
+        type: "oc:progress",
+        phase: "compile",
+      };
+      self.postMessage(compileEvt);
+
+      oc = await factory({ locateFile: () => blobUrl });
+
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      const errEvt: WorkerProgressEvent = {
+        type: "oc:progress",
+        phase: "error",
+        message: e instanceof Error ? e.message : String(e),
+      };
+      self.postMessage(errEvt);
+      throw e;
+    }
   }
+
+  const readyEvt: WorkerProgressEvent = {
+    type: "oc:progress",
+    phase: "ready",
+    pct: 100,
+  };
+  self.postMessage(readyEvt);
   return true;
 }
 

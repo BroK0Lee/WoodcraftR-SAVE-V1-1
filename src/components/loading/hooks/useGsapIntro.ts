@@ -11,6 +11,22 @@ interface IntroRefs {
 
 export function useGsapIntro({ logoRef, progressBarRef, stepsRef }: IntroRefs) {
   useEffect(() => {
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReduced) {
+      // Appliquer directement les états finaux sans animation
+      gsap.set(logoRef.current, { scale: 1, rotation: 0, opacity: 1 });
+      gsap.set(progressBarRef.current, { scaleX: 1 });
+      gsap.set((stepsRef.current?.children as unknown as Element[]) || [], {
+        y: 0,
+        opacity: 1,
+      });
+      return;
+    }
+
     // Animation d'entrée du logo
     gsap.fromTo(
       logoRef.current,

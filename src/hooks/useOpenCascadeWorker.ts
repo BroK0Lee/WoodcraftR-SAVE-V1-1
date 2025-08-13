@@ -6,11 +6,12 @@ import {
   isOccReady,
   terminateOccWorker,
 } from "@/services/openCascadeWorkerService";
+import { onOccProgress } from "@/services/openCascadeWorkerService";
 
 export function useOpenCascadeWorker() {
   const [isReady, setIsReady] = useState(isOccReady());
   const [error, setError] = useState<string | null>(null);
-  const { setWorkerReady } = useLoadingStore();
+  const { setWorkerReady, setWorkerProgress } = useLoadingStore();
   const initializationInProgress = useRef(false);
 
   useEffect(() => {
@@ -46,13 +47,27 @@ export function useOpenCascadeWorker() {
       }
     };
 
+    const unsubscribe = onOccProgress((evt) => {
+      if (evt.phase === "download" && typeof evt.pct === "number") {
+        setWorkerProgress(evt.pct, evt.phase);
+      } else if (evt.phase === "compile") {
+        setWorkerProgress(90, evt.phase); // convention: compile ~90%
+      } else if (evt.phase === "ready") {
+        setWorkerProgress(100, evt.phase);
+      } else if (evt.phase === "start") {
+        setWorkerProgress(0, evt.phase);
+      } else if (evt.phase === "error") {
+        setWorkerProgress(Math.max(0, isReady ? 90 : 0), "error");
+      }
+    });
+
     initializeWorker();
 
     // Cleanup: ne pas terminer le worker ici (global). Laisser au service.
     return () => {
-      // noop
+      unsubscribe();
     };
-  }, [setWorkerReady]);
+  }, [setWorkerReady, setWorkerProgress, isReady]);
 
   // Fonction pour obtenir le proxy du worker (pour les composants qui en ont besoin)
   const getWorkerProxy = useCallback(() => getOccProxy(), []);

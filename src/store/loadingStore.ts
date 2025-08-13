@@ -4,11 +4,14 @@ import { materialPreloader } from "@/services/materialPreloader";
 interface LoadingState {
   isAppLoading: boolean;
   isWorkerReady: boolean; // OpenCascade worker
+  workerProgress: number; // 0..100 progression réelle
+  workerPhase: "idle" | "start" | "download" | "compile" | "ready" | "error";
   isMaterialsLoaded: boolean;
   isComponentsLoaded: boolean;
   isWoodMaterialSelectorLoaded: boolean;
   setAppLoading: (loading: boolean) => void;
   setWorkerReady: (ready: boolean) => void;
+  setWorkerProgress: (pct: number, phase?: LoadingState["workerPhase"]) => void;
   setMaterialsLoaded: (loaded: boolean) => void;
   setComponentsLoaded: (loaded: boolean) => void;
   setWoodMaterialSelectorLoaded: (loaded: boolean) => void;
@@ -18,12 +21,19 @@ interface LoadingState {
 export const useLoadingStore = create<LoadingState>((set, get) => ({
   isAppLoading: true,
   isWorkerReady: false,
+  workerProgress: 0,
+  workerPhase: "idle",
   isMaterialsLoaded: false,
   isComponentsLoaded: false,
   isWoodMaterialSelectorLoaded: false,
 
   setAppLoading: (loading) => set({ isAppLoading: loading }),
   setWorkerReady: (ready) => set({ isWorkerReady: ready }),
+  setWorkerProgress: (pct, phase) =>
+    set((s) => ({
+      workerProgress: Math.max(0, Math.min(100, pct)),
+      workerPhase: phase ?? s.workerPhase,
+    })),
   setMaterialsLoaded: (loaded) => set({ isMaterialsLoaded: loaded }),
   setComponentsLoaded: (loaded) => set({ isComponentsLoaded: loaded }),
   setWoodMaterialSelectorLoaded: (loaded) =>

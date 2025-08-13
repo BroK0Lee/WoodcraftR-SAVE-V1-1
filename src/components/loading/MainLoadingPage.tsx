@@ -10,6 +10,7 @@ import { waitForFlag, guards } from "./utils/storeGuards";
 import { ensureMaterialsPreloaded } from "./utils/preloader";
 import { useGsapIntro } from "./hooks/useGsapIntro";
 import { runGsapOutro } from "./hooks/useGsapOutro";
+import { initOccWorker } from "@/services/openCascadeWorkerService";
 
 interface MainLoadingPageProps {
   onLoadingComplete: () => void;
@@ -48,6 +49,8 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
   // Store state pour suivre l'avancement du chargement
   const { initializeApp } = useLoadingStore();
+  const workerPhase = useLoadingStore((s) => s.workerPhase);
+  const setAppLoading = useLoadingStore((s) => s.setAppLoading);
 
   const startLoadingProcess = useCallback(async () => {
     // Lancer l'initialisation de l'app (matières, composants)
@@ -64,7 +67,13 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     );
     // Animation de progression simulée jusqu'à 90%
     startWorkerTimer();
-    await waitForFlag(guards.workerReady, 100);
+    // Attendre le worker, mais arrêter en cas d'erreur détectée
+    try {
+      await waitForFlag(guards.workerReady, 100, guards.workerError);
+    } catch {
+      // Si la garde échoue, on reste sur l'étape worker
+      return;
+    }
     finishWorkerTimer();
     setSteps((prev) =>
       prev.map((step, i) => ({
@@ -160,9 +169,46 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
           />
         </div>
 
-        {/* Message de patience */}
+        {/* Message / Erreur / Action */}
         <div className="mt-8 text-xs text-gray-500">
-          <p>Initialisation en cours, merci de patienter...</p>
+          {workerPhase === "error" ? (
+            <div className="space-y-3">
+              <p className="text-red-600">
+                Impossible d'initialiser le moteur 3D. Vérifiez votre connexion
+                et réessayez.
+              </p>
+              <button
+                className="inline-flex items-center px-3 py-1.5 rounded bg-amber-600 text-white hover:bg-amber-700 text-xs"
+                onClick={async () => {
+                  // Forcer une relance simple: masquer/afficher l'écran de chargement et relancer le flux
+                  setAppLoading(true);
+                  setSteps([
+                    {
+                      id: "worker",
+                      label: "Initialisation OpenCascade Worker...",
+                      status: "pending",
+                    },
+                    {
+                      id: "materials",
+                      label: "Chargement des matières...",
+                      status: "pending",
+                    },
+                  ]);
+                  setCurrentStep(0);
+                  try {
+                    await initOccWorker();
+                  } catch {
+                    // laisser l'UI gérer l'erreur via workerPhase
+                  }
+                  startLoadingProcess();
+                }}
+              >
+                Réessayer
+              </button>
+            </div>
+          ) : (
+            <p>Initialisation en cours, merci de patienter...</p>
+          )}
         </div>
       </div>
     </div>

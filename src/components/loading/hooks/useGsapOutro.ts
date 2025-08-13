@@ -13,6 +13,19 @@ export async function runGsapOutro({
   progressBarRef,
   onComplete,
 }: OutroArgs) {
+  const prefersReduced =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  if (prefersReduced) {
+    // Appliquer l'état final sans animation
+    gsap.set(progressBarRef.current, { width: "100%" });
+    gsap.set(containerRef.current, { opacity: 0, scale: 0.9 });
+    onComplete();
+    return;
+  }
+
   // Étendre la barre à 100%
   gsap.to(progressBarRef.current, {
     width: "100%",
