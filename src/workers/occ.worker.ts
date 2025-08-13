@@ -75,7 +75,8 @@ async function init(): Promise<boolean> {
   progress.compileStart();
   oc = await factory({ locateFile: () => blobUrl });
   progress.compileDone();
-  URL.revokeObjectURL(blobUrl);
+    URL.revokeObjectURL(blobUrl);
+  // Le progressEmitter gèrera le timer init -> ready; on signale simplement ready ici
   progress.ready();
     return true;
   } catch (e) {
