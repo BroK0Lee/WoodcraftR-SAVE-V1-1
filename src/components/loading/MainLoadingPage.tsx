@@ -127,7 +127,8 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       });
     }, BASE_TICK_MS);
     return () => {
-      if (baseIntervalRef.current) window.clearInterval(baseIntervalRef.current);
+      if (baseIntervalRef.current)
+        window.clearInterval(baseIntervalRef.current);
       baseIntervalRef.current = null;
     };
   }, [computeTarget, startedAt]);
@@ -152,17 +153,18 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       waitingRef.current = true;
       let lastPulse = performance.now();
       const tick = () => {
-        if (!waitingRef.current || doneRef.current || finishingRef.current) return;
+        if (!waitingRef.current || doneRef.current || finishingRef.current)
+          return;
         const now = performance.now();
         if (now - lastPulse >= PULSE_INTERVAL_MS) {
           lastPulse = now;
-            setProgress((p) => {
-              if (p < HARD_WAIT_CAP * 100) {
-                const inc = 0.1; // 0.1% micro avancée
-                return Math.min(p + inc, HARD_WAIT_CAP * 100);
-              }
-              return p;
-            });
+          setProgress((p) => {
+            if (p < HARD_WAIT_CAP * 100) {
+              const inc = 0.1; // 0.1% micro avancée
+              return Math.min(p + inc, HARD_WAIT_CAP * 100);
+            }
+            return p;
+          });
         }
         pulseRafRef.current = requestAnimationFrame(tick);
       };
@@ -215,7 +217,14 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       }
     };
     requestAnimationFrame(animate);
-  }, [progress, workerStatus, selectorStatus, onLoadingComplete, setAppLoading, setAppStatus]);
+  }, [
+    progress,
+    workerStatus,
+    selectorStatus,
+    onLoadingComplete,
+    setAppLoading,
+    setAppStatus,
+  ]);
 
   // Ajuster largeur barre
   useEffect(() => {
