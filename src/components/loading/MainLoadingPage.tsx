@@ -10,11 +10,31 @@ interface MainLoadingPageProps {
   onLoadingComplete: () => void;
 }
 
-// Durées adaptatives (ms)
-const MIN_TOTAL_MS = 6000; // fast path minimal
-const TARGET_TOTAL_MS = 18000; // progression confortable
-const MAX_TOTAL_MS = 30000; // hard cap avant plateau 99%
-const TICK_MS = 100;
+// Durées / caps adaptatives (ms / ratios)
+const MIN_TOTAL_MS = 6000; // durée minimale crédible (fast path)
+const TARGET_TOTAL_MS = 18000; // durée cible confortable
+const MAX_TOTAL_MS = 30000; // durée maximale avant d'entrer en mode attente lente
+
+// Caps (en fraction de 1 pour lisibilité interne)
+const FAST_PATH_MIN = 0.6; // seuil minimum avant accélération finale si readiness précoce
+const SOFT_CAP = 0.9; // palier d'accélération avant zone d'attente
+const HARD_WAIT_CAP = 0.98; // plafond pendant attente readiness (pas de 99% figé)
+
+// Ticks
+const BASE_TICK_MS = 100; // tick principal progression adaptative
+const PULSE_INTERVAL_MS = 200; // micro pulses en zone d'attente
+
+// Finalisation animation durations (ms)
+const FINISH_MIN_MS = 500;
+const FINISH_MAX_MS = 1200;
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
+function clamp(v: number, min: number, max: number) {
+  return v < min ? min : v > max ? max : v;
+}
 
 export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,11 +55,13 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     setAppLoading,
   } = useLoadingStore();
 
-  const [progress, setProgress] = useState(0); // 0..100
+  const [progress, setProgress] = useState(0); // 0..100 (affiché)
   const [startedAt] = useState(() => performance.now());
-  const plateauRef = useRef(false);
-  const doneRef = useRef(false);
-  const intervalRef = useRef<number | null>(null);
+  const waitingRef = useRef(false); // en zone d'attente (softCap -> hardWaitCap)
+  const doneRef = useRef(false); // finalisation terminée
+  const baseIntervalRef = useRef<number | null>(null); // interval principal
+  const pulseRafRef = useRef<number | null>(null); // micro pulses
+  const finishingRef = useRef(false); // animation finale en cours
 
   // Déterminer objectif adaptatif selon readiness réelle
   const computeTarget = useCallback(() => {
@@ -85,49 +107,115 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     stepsRef: { current: null } as unknown as React.RefObject<HTMLDivElement>,
   });
 
-  // Loop de progression adaptative
+  // Progression adaptative de base (0 -> SOFT_CAP * 100) en fonction du temps cible
   useEffect(() => {
-    if (intervalRef.current) return; // déjà lancé
-    intervalRef.current = window.setInterval(() => {
-      if (doneRef.current) return;
-      const targetTotal = computeTarget();
+    if (baseIntervalRef.current) return;
+    baseIntervalRef.current = window.setInterval(() => {
+      if (doneRef.current || finishingRef.current) return;
       const elapsed = performance.now() - startedAt;
-      let ideal = (elapsed / targetTotal) * 100;
-      if (ideal >= 100) ideal = 99; // gate max avant readiness
-      // Plateau si dépassé max total ms
-      if (elapsed >= MAX_TOTAL_MS) {
-        plateauRef.current = true;
-        ideal = 99;
+      const targetTotal = computeTarget();
+      // ratio idéal 0..1
+      let ratio = elapsed / targetTotal;
+      if (ratio > 1) ratio = 1;
+      // Conversion vers progression limitée au SOFT_CAP avant readiness
+      const softCapPct = SOFT_CAP * 100;
+      const baseIdeal = ratio * softCapPct; // progression normale jusqu'à soft cap
+
+      setProgress((prev) => {
+        if (prev >= softCapPct) return prev; // laisser autres systèmes gérer
+        return baseIdeal > prev ? Math.min(baseIdeal, softCapPct) : prev;
+      });
+    }, BASE_TICK_MS);
+    return () => {
+      if (baseIntervalRef.current) window.clearInterval(baseIntervalRef.current);
+      baseIntervalRef.current = null;
+    };
+  }, [computeTarget, startedAt]);
+
+  // Micro pulses dans la zone d'attente (SOFT_CAP -> HARD_WAIT_CAP) tant que readiness pas atteinte
+  useEffect(() => {
+    const readyAll =
+      workerStatus === "worker-ready" && selectorStatus === "selector-ready";
+    if (doneRef.current || finishingRef.current) return;
+
+    if (readyAll) {
+      waitingRef.current = false;
+      if (pulseRafRef.current) {
+        cancelAnimationFrame(pulseRafRef.current);
+        pulseRafRef.current = null;
       }
-      // Si readiness complète et on est >90%, on peut finaliser
-      const readyAll =
-        workerStatus === "worker-ready" && selectorStatus === "selector-ready";
-      if (readyAll && ideal >= 95) {
+      return;
+    }
+
+    // Activer waiting si progress a atteint le soft cap
+    if (progress >= SOFT_CAP * 100 && progress < HARD_WAIT_CAP * 100) {
+      waitingRef.current = true;
+      let lastPulse = performance.now();
+      const tick = () => {
+        if (!waitingRef.current || doneRef.current || finishingRef.current) return;
+        const now = performance.now();
+        if (now - lastPulse >= PULSE_INTERVAL_MS) {
+          lastPulse = now;
+            setProgress((p) => {
+              if (p < HARD_WAIT_CAP * 100) {
+                const inc = 0.1; // 0.1% micro avancée
+                return Math.min(p + inc, HARD_WAIT_CAP * 100);
+              }
+              return p;
+            });
+        }
+        pulseRafRef.current = requestAnimationFrame(tick);
+      };
+      pulseRafRef.current = requestAnimationFrame(tick);
+      return () => {
+        waitingRef.current = false;
+        if (pulseRafRef.current) cancelAnimationFrame(pulseRafRef.current);
+        pulseRafRef.current = null;
+      };
+    }
+  }, [progress, workerStatus, selectorStatus]);
+
+  // Finalisation dès readiness + franchissement FAST_PATH_MIN
+  useEffect(() => {
+    if (doneRef.current || finishingRef.current) return;
+    const readyAll =
+      workerStatus === "worker-ready" && selectorStatus === "selector-ready";
+    if (!readyAll) return;
+
+    // Assurer un minimum crédible (si readiness trop tôt)
+    const minPct = FAST_PATH_MIN * 100;
+    setProgress((p) => (p < minPct ? minPct : p));
+
+    const start = Math.max(progress, minPct);
+    const startTime = performance.now();
+    const distance = 100 - start;
+    // Durée selon la distance restante (plus on est loin, plus c'est long)
+    const tNorm = clamp((distance / 100 - (1 - SOFT_CAP)) / SOFT_CAP, 0, 1);
+    const duration = lerp(FINISH_MIN_MS, FINISH_MAX_MS, tNorm);
+    finishingRef.current = true;
+
+    const animate = () => {
+      if (doneRef.current) return;
+      const now = performance.now();
+      const t = clamp((now - startTime) / duration, 0, 1);
+      // easing (easeOutCubic)
+      const eased = 1 - Math.pow(1 - t, 3);
+      const value = lerp(start, 100, eased);
+      setProgress(value);
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      } else {
         doneRef.current = true;
         setProgress(100);
         setAppStatus("app-ready");
-        // courte attente pour fluidité
         setTimeout(() => {
           setAppLoading(false);
           onLoadingComplete();
-        }, 150);
-        return;
+        }, 120);
       }
-      setProgress((p) => (ideal > p ? Math.min(ideal, 99) : p));
-    }, TICK_MS);
-    return () => {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
     };
-  }, [
-    computeTarget,
-    startedAt,
-    workerStatus,
-    selectorStatus,
-    setAppStatus,
-    setAppLoading,
-    onLoadingComplete,
-  ]);
+    requestAnimationFrame(animate);
+  }, [progress, workerStatus, selectorStatus, onLoadingComplete, setAppLoading, setAppStatus]);
 
   // Ajuster largeur barre
   useEffect(() => {
@@ -138,27 +226,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     if (inner) inner.style.width = `${Math.round(progress)}%`;
   }, [progress]);
 
-  // Observer readiness pour finalisation rapide si tout prêt très tôt
-  useEffect(() => {
-    if (doneRef.current) return;
-    if (
-      workerStatus === "worker-ready" &&
-      selectorStatus === "selector-ready" &&
-      progress >= 40 &&
-      performance.now() - startedAt < MIN_TOTAL_MS
-    ) {
-      // Fast path: accélérer progression vers 100
-      const fast = () => {
-        setProgress((p) => {
-          if (p >= 100) return 100;
-          const np = p + 5;
-          return np >= 100 ? 100 : np;
-        });
-        if (progress < 100) requestAnimationFrame(fast);
-      };
-      fast();
-    }
-  }, [workerStatus, selectorStatus, progress, startedAt]);
+  // (Legacy fast-path observer supprimé : remplacé par la logique finalisation ci-dessus)
 
   return (
     <div
@@ -171,7 +239,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
 
         <GlobalProgressBar ref={progressBarRef} />
         <p className="text-xs text-gray-600 mt-4">{phaseLabel}</p>
-        {plateauRef.current && !doneRef.current && (
+        {waitingRef.current && !doneRef.current && (
           <p className="text-[11px] text-amber-600 mt-2">
             Finalisation... (peut prendre quelques secondes la première fois)
           </p>
