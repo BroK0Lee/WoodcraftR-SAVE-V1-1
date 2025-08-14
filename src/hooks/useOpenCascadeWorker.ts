@@ -21,10 +21,15 @@ export function useOpenCascadeWorker() {
       if (initRef.current) return; // idempotent
       initRef.current = true;
       try {
+        // log init début
+        if (typeof window !== "undefined")
+          console.debug("[LOAD] WORKER_INIT_START");
         if (isOccReady() && getOccProxy()) {
           if (!cancelled) {
             setIsReady(true);
             setWorkerStatus("worker-ready");
+            if (typeof window !== "undefined")
+              console.debug("[LOAD] WORKER_READY (cached)");
           }
           return;
         }
@@ -34,11 +39,15 @@ export function useOpenCascadeWorker() {
         if (!cancelled) {
           setIsReady(true);
           setWorkerStatus("worker-ready");
+          if (typeof window !== "undefined")
+            console.debug("[LOAD] WORKER_READY");
         }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : String(e));
           setWorkerStatus("worker-error");
+          if (typeof window !== "undefined")
+            console.debug("[LOAD] WORKER_ERROR", e);
         }
       }
     })();

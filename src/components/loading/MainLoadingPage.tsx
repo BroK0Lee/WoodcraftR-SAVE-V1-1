@@ -99,8 +99,11 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     return "Prêt";
   })();
 
-  // Démarrage statuts
+  // Démarrage statuts (one-shot même sous StrictMode)
+  const initStartedRef = useRef(false);
   useEffect(() => {
+    if (initStartedRef.current) return;
+    initStartedRef.current = true;
     setAppStatus("app-start");
     setWorkerStatus("worker-start");
     setSelectorStatus("selector-start");
