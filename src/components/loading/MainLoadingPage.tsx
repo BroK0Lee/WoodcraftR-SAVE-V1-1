@@ -58,7 +58,11 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   useEffect(() => {
     if (workerReady) {
       const proxy = getWorkerProxy();
-      if (proxy) registerWorkerProxy(proxy);
+      if (proxy) {
+        registerWorkerProxy(proxy);
+        // Si le pré-calcul a échoué faute de proxy plus tôt, on retente immédiatement
+        void computeInitialPanelIfNeeded();
+      }
     }
   }, [workerReady, getWorkerProxy]);
   useWoodMaterialSelectorInit();
@@ -283,7 +287,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   useEffect(() => {
     const readyAll =
       workerStatus === "worker-ready" && selectorStatus === "selector-ready";
-    if (!readyAll) return;
+    if (!readyAll || !workerReady) return;
     let canceled = false;
     (async () => {
       const t0 = performance.now();
@@ -297,7 +301,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     return () => {
       canceled = true;
     };
-  }, [workerStatus, selectorStatus, dlog]);
+  }, [workerStatus, selectorStatus, workerReady, dlog]);
 
   // Watchdog & fallback
   useEffect(() => {

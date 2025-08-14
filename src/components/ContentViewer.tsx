@@ -3,12 +3,19 @@ import PanelViewer from "./AppViewer";
 import type { PanelGeometryDTO } from "@/workers/api/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 import { useOpenCascadeWorker } from "@/hooks/useOpenCascadeWorker";
+import { requestUserRecompute } from "@/services/panelGeometryService";
 
 export default function ContentViewer() {
   const log = (...a: unknown[]) => console.debug("[CV]", ...a);
   const geometry = usePanelStore((s) => s.geometry);
   const edges = usePanelStore((s) => s.edges);
   const isCalculating = usePanelStore((s) => s.isCalculating);
+  // Inputs pour signature
+  const dimensions = usePanelStore((s) => s.dimensions);
+  const cuts = usePanelStore((s) => s.cuts);
+  const previewCut = usePanelStore((s) => s.previewCut);
+  const shape = usePanelStore((s) => s.shape);
+  const circleDiameter = usePanelStore((s) => s.circleDiameter);
   const { isReady: ocReady } = useOpenCascadeWorker();
   const localLastGeometryRef = useRef<PanelGeometryDTO | null>(null);
 
@@ -25,6 +32,12 @@ export default function ContentViewer() {
       triangles: geometry.indices.length / 3,
     });
   }, [geometry]);
+
+  // Recompute automatique sur changements d'inputs panel (après montage & readiness worker)
+  useEffect(() => {
+    if (!ocReady) return;
+    requestUserRecompute("panel-input-change");
+  }, [ocReady, dimensions, cuts, previewCut, shape, circleDiameter]);
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">
