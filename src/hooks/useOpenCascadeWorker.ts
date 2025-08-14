@@ -11,7 +11,8 @@ import { onOccProgress } from "@/services/openCascadeWorkerService";
 export function useOpenCascadeWorker() {
   const [isReady, setIsReady] = useState(isOccReady());
   const [error, setError] = useState<string | null>(null);
-  const { setWorkerReady, setWorkerProgressEvent } = useLoadingStore();
+  const { setWorkerReady, setWorkerProgressEvent, setWorkerStatus } =
+    useLoadingStore();
   const initializationInProgress = useRef(false);
   // Refs pour smoothing (doivent être au niveau du hook, pas dans useEffect)
   const hasDownloadEvent = useRef(false);
@@ -62,6 +63,7 @@ export function useOpenCascadeWorker() {
         if (isOccReady() && getOccProxy()) {
           setIsReady(true);
           setWorkerReady(true);
+          setWorkerStatus("worker-ready");
           return;
         }
 
@@ -83,6 +85,7 @@ export function useOpenCascadeWorker() {
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
         // Ne pas marquer comme prêt en cas d'erreur: laisser l'écran de chargement informer l'utilisateur
+        setWorkerStatus("worker-error");
       } finally {
         initializationInProgress.current = false;
       }
@@ -151,9 +154,11 @@ export function useOpenCascadeWorker() {
           });
           if (evt.phase === "ready") {
             setWorkerReady(true);
+            setWorkerStatus("worker-ready");
           }
           if (evt.phase === "error") {
             setWorkerReady(false);
+            setWorkerStatus("worker-error");
           }
           break;
       }
@@ -169,7 +174,7 @@ export function useOpenCascadeWorker() {
       unsubscribe();
       // hasDownloadRef pas besoin de reset (idempotent sur nouvelle mount)
     };
-  }, [setWorkerReady, setWorkerProgressEvent, isReady]);
+  }, [setWorkerReady, setWorkerProgressEvent, setWorkerStatus, isReady]);
 
   // Fonction pour obtenir le proxy du worker (pour les composants qui en ont besoin)
   const getWorkerProxy = useCallback(() => getOccProxy(), []);

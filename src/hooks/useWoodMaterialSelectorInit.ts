@@ -43,7 +43,8 @@ function animate() {
 export function useWoodMaterialSelectorInit() {
   const [isInitialized, setIsInitialized] = useState(globalCache.isInitialized);
   const [error, setError] = useState<string | null>(null);
-  const { setWoodMaterialSelectorLoaded } = useLoadingStore();
+  const { setWoodMaterialSelectorLoaded, setSelectorStatus } =
+    useLoadingStore();
   const initializationInProgress = useRef(false);
   useEffect(() => {
     const initializeWoodMaterialSelector = async () => {
@@ -52,6 +53,7 @@ export function useWoodMaterialSelectorInit() {
         if (globalCache.isInitialized) {
           setIsInitialized(true);
           setWoodMaterialSelectorLoaded(true);
+          setSelectorStatus("selector-ready");
           return;
         }
         // Éviter les initialisations multiples simultanées
@@ -90,16 +92,18 @@ export function useWoodMaterialSelectorInit() {
 
         setIsInitialized(true);
         setWoodMaterialSelectorLoaded(true);
+        setSelectorStatus("selector-ready");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
         // Marquer comme chargé même en cas d'erreur pour ne pas bloquer l'app
         setWoodMaterialSelectorLoaded(true);
+        setSelectorStatus("selector-error");
       } finally {
         initializationInProgress.current = false;
       }
     };
     initializeWoodMaterialSelector();
-  }, [setWoodMaterialSelectorLoaded]);
+  }, [setWoodMaterialSelectorLoaded, setSelectorStatus]);
   // Méthode pour monter le renderer dans un élément DOM
   const mountRenderer = (element: HTMLElement): CSS3DRenderer | null => {
     if (!globalCache.isInitialized || !globalCache.renderer) {

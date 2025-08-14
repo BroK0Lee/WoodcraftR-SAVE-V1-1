@@ -6,7 +6,7 @@ import { GSAP_CONFIG } from "../config";
 interface IntroRefs {
   logoRef: RefObject<HTMLDivElement>;
   progressBarRef: RefObject<HTMLDivElement>;
-  stepsRef: RefObject<HTMLDivElement>;
+  stepsRef?: RefObject<HTMLDivElement>; // optionnel désormais
 }
 
 export function useGsapIntro({ logoRef, progressBarRef, stepsRef }: IntroRefs) {
@@ -20,10 +20,12 @@ export function useGsapIntro({ logoRef, progressBarRef, stepsRef }: IntroRefs) {
       // Appliquer directement les états finaux sans animation
       gsap.set(logoRef.current, { scale: 1, rotation: 0, opacity: 1 });
       gsap.set(progressBarRef.current, { scaleX: 1 });
-      gsap.set((stepsRef.current?.children as unknown as Element[]) || [], {
-        y: 0,
-        opacity: 1,
-      });
+      if (stepsRef?.current?.children) {
+        gsap.set((stepsRef.current.children as unknown as Element[]) || [], {
+          y: 0,
+          opacity: 1,
+        });
+      }
       return;
     }
 
@@ -54,16 +56,18 @@ export function useGsapIntro({ logoRef, progressBarRef, stepsRef }: IntroRefs) {
     );
 
     // Animation des étapes (stagger)
-    gsap.fromTo(
-      (stepsRef.current?.children as unknown as Element[]) || [],
-      { y: 30, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: GSAP_CONFIG.intro.steps.duration,
-        stagger: GSAP_CONFIG.intro.steps.stagger,
-        delay: GSAP_CONFIG.intro.steps.delay,
-      }
-    );
+    if (stepsRef?.current?.children) {
+      gsap.fromTo(
+        (stepsRef.current.children as unknown as Element[]) || [],
+        { y: 30, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: GSAP_CONFIG.intro.steps.duration,
+          stagger: GSAP_CONFIG.intro.steps.stagger,
+          delay: GSAP_CONFIG.intro.steps.delay,
+        }
+      );
+    }
   }, [logoRef, progressBarRef, stepsRef]);
 }
