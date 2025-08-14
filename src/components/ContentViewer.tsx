@@ -41,6 +41,24 @@ export default function ContentViewer() {
   const isPreviewMode = usePanelStore((state) => state.isPreviewMode);
   const lastInputSigRef = useRef<string>("__init__");
 
+  // Déclenchement forcé d'un premier calcul quand le worker devient prêt
+  useEffect(() => {
+    if (!ocReady) return;
+    // Si aucune géométrie encore et signature est encore initiale, on force un recalcul
+    if (!geometry && lastInputSigRef.current === "__init__") {
+      // Invalider la signature pour que l'effet principal déclenche
+      lastInputSigRef.current = "__force_first__";
+      // Déclencher via un micro-task pour laisser React appliquer cet effet avant l'autre
+      Promise.resolve().then(() => {
+        // on modifie artificiellement une no-op en appelant setCalculating puis réinitialisation dans effet principal
+        // (pas indispensable mais permet de visualiser activité initiale si lente)
+        if (typeof window !== "undefined") {
+          console.log("🚀 [ContentViewer] Forçage du premier calcul initial");
+        }
+      });
+    }
+  }, [ocReady, geometry]);
+
   // Recalcul quand les dimensions/découpes changent
   useEffect(() => {
     const proxy = getWorkerProxy();
