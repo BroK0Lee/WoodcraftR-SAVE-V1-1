@@ -1,5 +1,6 @@
 import * as Comlink from "comlink";
 import type { OccWorkerAPI } from "@/workers/worker.types";
+import { useLoadingStore } from "@/store/loadingStore";
 
 // Service singleton pour gérer le worker OpenCascade via Comlink
 // - Création unique, même sous StrictMode (double mount)
@@ -82,6 +83,18 @@ export async function initOccWorker(): Promise<boolean> {
       ]);
       ready = !!ok;
       wlog("init result", ready);
+      if (ready) {
+        // Promotion immédiate du statut global si pas déjà fait
+        const st = useLoadingStore.getState();
+        if (st.workerStatus !== "worker-ready") {
+          try {
+            st.setWorkerStatus("worker-ready");
+            wlog("promote worker-ready (service)");
+          } catch {
+            // Ignore promotion error (store possiblement indisponible)
+          }
+        }
+      }
       return ready;
     } catch (e) {
       wlog("init error", e);

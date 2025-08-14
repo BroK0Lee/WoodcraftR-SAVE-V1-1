@@ -26,11 +26,17 @@ import type { OCCLike } from "./api/occtypes";
 let oc: Awaited<ReturnType<typeof openCascadeFactory>> | null = null;
 
 async function init(): Promise<boolean> {
-  if (oc) return true;
+  // instrumentation simple
+  console.debug("[LOAD][OCC_WORKER] init start");
+  if (oc) {
+    console.debug("[LOAD][OCC_WORKER] already cached");
+    return true;
+  }
   type OpenCascadeFactory = (opts: {
     locateFile: () => string;
   }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
   const factory = openCascadeFactory as unknown as OpenCascadeFactory;
+  console.debug("[LOAD][OCC_WORKER] fetch wasm", wasmURL);
   const resp = await fetch(wasmURL);
   const totalStr = resp.headers.get("Content-Length");
   const total = totalStr ? parseInt(totalStr, 10) : undefined;
@@ -61,11 +67,10 @@ async function init(): Promise<boolean> {
   }
   const blob = new Blob([wasmBuffer], { type: "application/wasm" });
   const blobUrl = URL.createObjectURL(blob);
-  // progression legacy supprimée
+  console.debug("[LOAD][OCC_WORKER] instantiating module");
   oc = await factory({ locateFile: () => blobUrl });
-  // progression legacy supprimée
   URL.revokeObjectURL(blobUrl);
-  // progression legacy supprimée
+  console.debug("[LOAD][OCC_WORKER] init done");
   return true;
 }
 

@@ -122,6 +122,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   // Progression adaptative de base (0 -> SOFT_CAP * 100) en fonction du temps cible
   useEffect(() => {
     if (baseIntervalRef.current) return;
+    dlog("BASE_INTERVAL_START");
     baseIntervalRef.current = window.setInterval(() => {
       if (doneRef.current || finishingRef.current) return;
       const elapsed = performance.now() - startedAt;
@@ -134,6 +135,14 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       const baseIdeal = ratio * softCapPct; // progression normale jusqu'à soft cap
 
       setProgress((prev) => {
+        if (DEBUG_LOADING && Math.abs(prev - baseIdeal) > 5) {
+          dlog("BASE_TICK", {
+            elapsed: Math.round(elapsed),
+            targetTotal: Math.round(targetTotal),
+            prev,
+            baseIdeal: Math.round(baseIdeal),
+          });
+        }
         if (prev >= softCapPct) return prev; // laisser autres systèmes gérer
         return baseIdeal > prev ? Math.min(baseIdeal, softCapPct) : prev;
       });
@@ -142,8 +151,9 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       if (baseIntervalRef.current)
         window.clearInterval(baseIntervalRef.current);
       baseIntervalRef.current = null;
+      dlog("BASE_INTERVAL_CLEARED");
     };
-  }, [computeTarget, startedAt]);
+  }, [computeTarget, startedAt, dlog]);
 
   // Logs de jalons progression
   const lastMarkerRef = useRef<number | null>(null);

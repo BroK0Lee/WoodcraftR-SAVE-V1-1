@@ -12,7 +12,7 @@ import {
 export function useOpenCascadeWorker() {
   const [isReady, setIsReady] = useState(isOccReady());
   const [error, setError] = useState<string | null>(null);
-  const { setWorkerStatus } = useLoadingStore();
+  const { setWorkerStatus, workerStatus } = useLoadingStore();
   const initRef = useRef(false);
 
   useEffect(() => {
@@ -27,9 +27,14 @@ export function useOpenCascadeWorker() {
         if (isOccReady() && getOccProxy()) {
           if (!cancelled) {
             setIsReady(true);
-            setWorkerStatus("worker-ready");
-            if (typeof window !== "undefined")
+            if (workerStatus !== "worker-ready") {
+              // Sécurité si service n'a pas promu
+              setWorkerStatus("worker-ready");
+              if (typeof window !== "undefined")
+                console.debug("[LOAD] WORKER_READY (cached promote)");
+            } else if (typeof window !== "undefined") {
               console.debug("[LOAD] WORKER_READY (cached)");
+            }
           }
           return;
         }
@@ -38,9 +43,14 @@ export function useOpenCascadeWorker() {
           throw new Error("Échec de l'initialisation du worker OpenCascade");
         if (!cancelled) {
           setIsReady(true);
-          setWorkerStatus("worker-ready");
-          if (typeof window !== "undefined")
-            console.debug("[LOAD] WORKER_READY");
+          // Normalement déjà promu par service, fallback si besoin
+          if (workerStatus !== "worker-ready") {
+            setWorkerStatus("worker-ready");
+            if (typeof window !== "undefined")
+              console.debug("[LOAD] WORKER_READY (hook fallback promote)");
+          } else if (typeof window !== "undefined") {
+            console.debug("[LOAD] WORKER_READY (service)");
+          }
         }
       } catch (e) {
         if (!cancelled) {
@@ -54,7 +64,7 @@ export function useOpenCascadeWorker() {
     return () => {
       cancelled = true;
     };
-  }, [setWorkerStatus]);
+  }, [setWorkerStatus, workerStatus]);
 
   const getWorkerProxy = useCallback(() => getOccProxy(), []);
   const terminateWorker = useCallback(() => {
