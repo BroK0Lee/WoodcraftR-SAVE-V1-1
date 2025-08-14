@@ -98,7 +98,10 @@ async function computePanelCore(force = false): Promise<boolean> {
   }
   const proxy = workerProxy;
   // Garde supplémentaire : éviter TypeError si proxy disparaît ou est incomplet
-  if (!proxy || typeof (proxy as WorkerProxyType).createPanelWithCuts !== "function") {
+  if (
+    !proxy ||
+    typeof (proxy as WorkerProxyType).createPanelWithCuts !== "function"
+  ) {
     plog("PROXY_INVALID_OR_MISSING");
     return false;
   }
@@ -126,7 +129,7 @@ async function computePanelCore(force = false): Promise<boolean> {
 
   const computation = async () => {
     try {
-  const res = await proxy.createPanelWithCuts({
+      const res = await proxy.createPanelWithCuts({
         dimensions,
         cuts: previewCut ? [...cuts, previewCut] : cuts,
         shape,
