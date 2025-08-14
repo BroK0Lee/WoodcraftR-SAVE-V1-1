@@ -18,7 +18,8 @@ let abortFlag = false;
 let lastSig: string | null = null;
 let precomputePromise: Promise<boolean> | null = null;
 let proxyRetryCount = 0;
-const MAX_PROXY_RETRIES = 5;
+const MAX_PROXY_RETRIES = 5; // retries rapprochés (80ms)
+let scheduledFinalFallback = false;
 
 // Référence globale au proxy du worker (alimentée par registerWorkerProxy)
 // Types minimaux dérivés de l'API worker
@@ -104,15 +105,37 @@ async function computePanelCore(force = false): Promise<boolean> {
     !proxy ||
     typeof (proxy as WorkerProxyType).createPanelWithCuts !== "function"
   ) {
+    // Diagnostic détaillé
+    plog("PROXY_INVALID_OR_MISSING", {
+      hasProxy: !!proxy,
+      type: proxy
+        ? typeof (proxy as WorkerProxyType).createPanelWithCuts
+        : null,
+      keys: proxy ? Object.keys(proxy as object) : [],
+      retry: proxyRetryCount + 1,
+    });
+    // Invalidation locale + tentative de ré-acquisition immédiate
+    workerProxy = null;
+    ensureWorkerProxy();
     if (proxyRetryCount < MAX_PROXY_RETRIES) {
       proxyRetryCount++;
-      plog("PROXY_INVALID_OR_MISSING_RETRY", { attempt: proxyRetryCount });
-      setTimeout(() => {
-        // Tentative à nouveau (même force) après bref délai
-        void computePanelCore(force);
-      }, 80);
+      setTimeout(() => void computePanelCore(force), 80);
     } else {
       plog("PROXY_INVALID_OR_MISSING_GIVE_UP");
+      if (!scheduledFinalFallback) {
+        scheduledFinalFallback = true;
+        setTimeout(() => {
+          if (!workerProxy) {
+            plog("FINAL_FALLBACK_TRY");
+            ensureWorkerProxy();
+          }
+          if (workerProxy) {
+            proxyRetryCount = 0;
+            scheduledFinalFallback = false;
+            void computePanelCore(true);
+          }
+        }, 500);
+      }
     }
     return false;
   }
