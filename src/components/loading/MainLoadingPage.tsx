@@ -36,7 +36,13 @@ function clamp(v: number, min: number, max: number) {
   return v < min ? min : v > max ? max : v;
 }
 
+// DEBUG FLAG (mettre à false pour couper la verbosité)
+const DEBUG_LOADING = true;
+
 export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
+  const dlog = useCallback((...args: unknown[]) => {
+    if (DEBUG_LOADING) console.debug("[LOAD]", ...args);
+  }, []);
   const containerRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -99,10 +105,16 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     setWorkerStatus("worker-start");
     setSelectorStatus("selector-start");
     initializeApp();
-  }, [setAppStatus, setWorkerStatus, setSelectorStatus, initializeApp]);
+    dlog("INIT_APP_START");
+  }, [setAppStatus, setWorkerStatus, setSelectorStatus, initializeApp, dlog]);
 
   // Intro (logo + barre)
   useGsapIntro({ logoRef, progressBarRef });
+
+  // Log transitions statuts
+  useEffect(() => {
+    dlog("STATUS_CHANGE", { workerStatus, selectorStatus });
+  }, [workerStatus, selectorStatus, dlog]);
 
   // Progression adaptative de base (0 -> SOFT_CAP * 100) en fonction du temps cible
   useEffect(() => {
@@ -129,6 +141,18 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       baseIntervalRef.current = null;
     };
   }, [computeTarget, startedAt]);
+
+  // Logs de jalons progression
+  const lastMarkerRef = useRef<number | null>(null);
+  useEffect(() => {
+    const markers = [0, 60, 90, 95, 98, 100];
+    for (const m of markers) {
+      if (progress >= m && lastMarkerRef.current !== m) {
+        lastMarkerRef.current = m;
+        dlog("PROGRESS_MARK", m);
+      }
+    }
+  }, [progress, dlog]);
 
   // Micro pulses dans la zone d'attente (SOFT_CAP -> HARD_WAIT_CAP) tant que readiness pas atteinte
   useEffect(() => {
@@ -174,30 +198,31 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     }
   }, [progress, workerStatus, selectorStatus]);
 
-  // Finalisation dès readiness + franchissement FAST_PATH_MIN
-  useEffect(() => {
+  // Fonction de démarrage finalisation indépendante
+  const startFinalization = useCallback(() => {
     if (doneRef.current || finishingRef.current) return;
     const readyAll =
       workerStatus === "worker-ready" && selectorStatus === "selector-ready";
     if (!readyAll) return;
-
-    // Assurer un minimum crédible (si readiness trop tôt)
+    waitingRef.current = false; // couper message attente
     const minPct = FAST_PATH_MIN * 100;
     setProgress((p) => (p < minPct ? minPct : p));
-
     const start = Math.max(progress, minPct);
-    const startTime = performance.now();
     const distance = 100 - start;
-    // Durée selon la distance restante (plus on est loin, plus c'est long)
     const tNorm = clamp((distance / 100 - (1 - SOFT_CAP)) / SOFT_CAP, 0, 1);
     const duration = lerp(FINISH_MIN_MS, FINISH_MAX_MS, tNorm);
     finishingRef.current = true;
-
+    dlog("FINALIZE_TRIGGER", {
+      start,
+      duration,
+      workerStatus,
+      selectorStatus,
+    });
+    const startTime = performance.now();
     const animate = () => {
       if (doneRef.current) return;
       const now = performance.now();
       const t = clamp((now - startTime) / duration, 0, 1);
-      // easing (easeOutCubic)
       const eased = 1 - Math.pow(1 - t, 3);
       const value = lerp(start, 100, eased);
       setProgress(value);
@@ -206,6 +231,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       } else {
         doneRef.current = true;
         setProgress(100);
+        dlog("FINALIZE_DONE");
         setAppStatus("app-ready");
         setTimeout(() => {
           setAppLoading(false);
@@ -218,9 +244,53 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     progress,
     workerStatus,
     selectorStatus,
+    setAppStatus,
+    setAppLoading,
     onLoadingComplete,
+    dlog,
+  ]);
+
+  // Effet déclencheur sur statuts uniquement
+  useEffect(() => {
+    startFinalization();
+  }, [workerStatus, selectorStatus, startFinalization]);
+
+  // Watchdog & fallback
+  useEffect(() => {
+    let readyAt: number | null = null;
+    let finishingAt: number | null = null;
+    const interval = window.setInterval(() => {
+      const readyAll =
+        workerStatus === "worker-ready" && selectorStatus === "selector-ready";
+      if (readyAll && !doneRef.current && !finishingRef.current) {
+        if (readyAt == null) readyAt = performance.now();
+        if (performance.now() - readyAt > 2000) {
+          dlog("WATCHDOG_FORCE_START");
+          startFinalization();
+        }
+      }
+      if (finishingRef.current && !doneRef.current) {
+        if (finishingAt == null) finishingAt = performance.now();
+        if (performance.now() - finishingAt > 5000) {
+          dlog("WATCHDOG_FORCE_COMPLETE", { progress });
+          doneRef.current = true;
+          setProgress(100);
+          setAppStatus("app-ready");
+          setAppLoading(false);
+          onLoadingComplete();
+        }
+      }
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [
+    workerStatus,
+    selectorStatus,
+    progress,
+    startFinalization,
     setAppLoading,
     setAppStatus,
+    onLoadingComplete,
+    dlog,
   ]);
 
   // Ajuster largeur barre
