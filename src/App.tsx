@@ -1,27 +1,14 @@
-import { useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from 'sonner';
 import { Header } from './dashboard/Header';
 import { Dashboard } from './dashboard/Dashboard';
 import { MainLoadingPage } from './components/loading/MainLoadingPage';
-import ContentViewer from './components/ContentViewer';
+// import ContentViewer from './components/ContentViewer'; (plus nécessaire tant que le worker n'a pas besoin du viewer pour init)
 import { useLoadingStore } from './store/loadingStore';
-import { useWoodMaterialSelectorInit } from './hooks/useWoodMaterialSelectorInit';
-import { useOpenCascadeWorker } from './hooks/useOpenCascadeWorker';
+// Initialisations déplacées dans MainLoadingPage pour éviter double init.
 
 function App() {
-  const { isAppLoading, initializeApp, setAppLoading } = useLoadingStore();
-  
-  // Initialiser le worker OpenCascade une seule fois au niveau App
-  useOpenCascadeWorker();
-  
-  // Initialiser WoodMaterialSelector en parallèle
-  useWoodMaterialSelectorInit();
-
-  useEffect(() => {
-    // Démarrer l'initialisation au montage du composant
-    initializeApp();
-  }, [initializeApp]);
+  const { isAppLoading, setAppLoading } = useLoadingStore();
 
   const handleLoadingComplete = () => {
     setAppLoading(false);
@@ -30,10 +17,6 @@ function App() {
   if (isAppLoading) {
     return (
       <>
-        {/* ContentViewer monté en arrière-plan pour initialiser le worker OpenCascade */}
-        <div style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}>
-          <ContentViewer />
-        </div>
         <MainLoadingPage onLoadingComplete={handleLoadingComplete} />
       </>
     );

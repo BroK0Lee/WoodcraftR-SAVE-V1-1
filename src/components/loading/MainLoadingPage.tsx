@@ -53,6 +53,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     workerStatus,
     selectorStatus,
     setAppLoading,
+  initializeApp,
   } = useLoadingStore();
 
   const [progress, setProgress] = useState(0); // 0..100 (affiché)
@@ -97,7 +98,8 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     setAppStatus("app-start");
     setWorkerStatus("worker-start");
     setSelectorStatus("selector-start");
-  }, [setAppStatus, setWorkerStatus, setSelectorStatus]);
+    initializeApp();
+  }, [setAppStatus, setWorkerStatus, setSelectorStatus, initializeApp]);
 
   // Intro (logo + barre)
   useGsapIntro({
