@@ -17,6 +17,8 @@ let inFlight: Promise<void> | null = null;
 let abortFlag = false;
 let lastSig: string | null = null;
 let precomputePromise: Promise<boolean> | null = null;
+let proxyRetryCount = 0;
+const MAX_PROXY_RETRIES = 5;
 
 // Référence globale au proxy du worker (alimentée par registerWorkerProxy)
 // Types minimaux dérivés de l'API worker
@@ -102,9 +104,20 @@ async function computePanelCore(force = false): Promise<boolean> {
     !proxy ||
     typeof (proxy as WorkerProxyType).createPanelWithCuts !== "function"
   ) {
-    plog("PROXY_INVALID_OR_MISSING");
+    if (proxyRetryCount < MAX_PROXY_RETRIES) {
+      proxyRetryCount++;
+      plog("PROXY_INVALID_OR_MISSING_RETRY", { attempt: proxyRetryCount });
+      setTimeout(() => {
+        // Tentative à nouveau (même force) après bref délai
+        void computePanelCore(force);
+      }, 80);
+    } else {
+      plog("PROXY_INVALID_OR_MISSING_GIVE_UP");
+    }
     return false;
   }
+  // Proxy valide : reset compteur retries
+  if (proxyRetryCount) proxyRetryCount = 0;
 
   const sig = buildSig();
   if (!force && sig === lastSig && geometry) {
