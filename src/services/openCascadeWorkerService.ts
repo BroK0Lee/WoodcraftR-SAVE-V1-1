@@ -9,6 +9,10 @@ let workerInstance: Worker | null = null;
 let proxyInstance: Comlink.Remote<OccWorkerAPI> | null = null;
 let ready = false;
 let initPromise: Promise<boolean> | null = null;
+const DEBUG_LOADING = true;
+const wlog = (...a: unknown[]) => {
+  if (DEBUG_LOADING) console.debug("[LOAD][WORKER]", ...a);
+};
 
 // Reflète la nouvelle machine d'états du worker (progressEvents.ts)
 export type WorkerProgressEvent = {
@@ -48,6 +52,7 @@ export async function initOccWorker(): Promise<boolean> {
         new URL("../workers/occ.worker.ts", import.meta.url),
         { type: "module" }
       );
+      wlog("spawn worker");
       // Ecoute des messages bruts (progression)
       workerInstance.addEventListener("message", (e: MessageEvent) => {
         const data = e.data as unknown;
@@ -68,10 +73,18 @@ export async function initOccWorker(): Promise<boolean> {
       proxyInstance = Comlink.wrap<OccWorkerAPI>(workerInstance);
     }
     try {
-      const ok = await proxyInstance.init();
+      wlog("call proxy.init()");
+      const ok = await Promise.race([
+        proxyInstance.init(),
+        new Promise<boolean>((_, reject) =>
+          setTimeout(() => reject(new Error("OCC init timeout 30s")), 30000)
+        ),
+      ]);
       ready = !!ok;
+      wlog("init result", ready);
       return ready;
     } catch (e) {
+      wlog("init error", e);
       // En cas d'échec, nettoyer l'état pour permettre une réinitialisation ultérieure
       ready = false;
       proxyInstance = null;
