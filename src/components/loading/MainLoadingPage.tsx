@@ -6,7 +6,9 @@ import { useGsapIntro } from "./hooks/useGsapIntro";
 import { useOpenCascadeWorker } from "@/hooks/useOpenCascadeWorker";
 import { useWoodMaterialSelectorInit } from "@/hooks/useWoodMaterialSelectorInit";
 
-interface MainLoadingPageProps { onLoadingComplete: () => void }
+interface MainLoadingPageProps {
+  onLoadingComplete: () => void;
+}
 
 // Durées adaptatives (ms)
 const MIN_TOTAL_MS = 6000; // fast path minimal
@@ -52,7 +54,8 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       return MIN_TOTAL_MS;
     }
     // Sinon viser target, mais si dépassement => max
-    if (elapsed > TARGET_TOTAL_MS) return Math.min(elapsed + 2000, MAX_TOTAL_MS);
+    if (elapsed > TARGET_TOTAL_MS)
+      return Math.min(elapsed + 2000, MAX_TOTAL_MS);
     return TARGET_TOTAL_MS;
   }, [startedAt, workerStatus, selectorStatus]);
 
@@ -116,14 +119,21 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
       if (intervalRef.current) window.clearInterval(intervalRef.current);
       intervalRef.current = null;
     };
-  }, [computeTarget, startedAt, workerStatus, selectorStatus, setAppStatus, setAppLoading, onLoadingComplete]);
+  }, [
+    computeTarget,
+    startedAt,
+    workerStatus,
+    selectorStatus,
+    setAppStatus,
+    setAppLoading,
+    onLoadingComplete,
+  ]);
 
   // Ajuster largeur barre
   useEffect(() => {
     if (!progressBarRef.current) return;
-    const inner = progressBarRef.current.querySelector<HTMLDivElement>(
-      '.h-full'
-    );
+    const inner =
+      progressBarRef.current.querySelector<HTMLDivElement>(".h-full");
     barInnerRef.current = inner;
     if (inner) inner.style.width = `${Math.round(progress)}%`;
   }, [progress]);
