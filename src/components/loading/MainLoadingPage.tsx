@@ -102,12 +102,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   }, [setAppStatus, setWorkerStatus, setSelectorStatus, initializeApp]);
 
   // Intro (logo + barre)
-  useGsapIntro({
-    logoRef,
-    progressBarRef,
-    // Fournit un ref vide typé pour compat compat.
-    stepsRef: { current: null } as unknown as React.RefObject<HTMLDivElement>,
-  });
+  useGsapIntro({ logoRef, progressBarRef });
 
   // Progression adaptative de base (0 -> SOFT_CAP * 100) en fonction du temps cible
   useEffect(() => {
