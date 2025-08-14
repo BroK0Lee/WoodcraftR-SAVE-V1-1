@@ -96,7 +96,12 @@ async function computePanelCore(force = false): Promise<boolean> {
       return false;
     }
   }
-  const proxy = workerProxy!;
+  const proxy = workerProxy;
+  // Garde supplémentaire : éviter TypeError si proxy disparaît ou est incomplet
+  if (!proxy || typeof (proxy as WorkerProxyType).createPanelWithCuts !== "function") {
+    plog("PROXY_INVALID_OR_MISSING");
+    return false;
+  }
 
   const sig = buildSig();
   if (!force && sig === lastSig && geometry) {
@@ -121,7 +126,7 @@ async function computePanelCore(force = false): Promise<boolean> {
 
   const computation = async () => {
     try {
-      const res = await proxy.createPanelWithCuts({
+  const res = await proxy.createPanelWithCuts({
         dimensions,
         cuts: previewCut ? [...cuts, previewCut] : cuts,
         shape,
