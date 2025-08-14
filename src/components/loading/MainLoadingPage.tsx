@@ -4,6 +4,10 @@ import { BrandingHeader } from "./components/BrandingHeader";
 import { GlobalProgressBar } from "./components/GlobalProgressBar";
 import { useGsapIntro } from "./hooks/useGsapIntro";
 import { useOpenCascadeWorker } from "@/hooks/useOpenCascadeWorker";
+import {
+  computeInitialPanelIfNeeded,
+  registerWorkerProxy,
+} from "@/services/panelGeometryService";
 import { useWoodMaterialSelectorInit } from "@/hooks/useWoodMaterialSelectorInit";
 
 interface MainLoadingPageProps {
@@ -49,7 +53,14 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   const barInnerRef = useRef<HTMLDivElement | null>(null);
 
   // Hook worker & selector (déclenche les initialisations)
-  useOpenCascadeWorker();
+  const { getWorkerProxy, isReady: workerReady } = useOpenCascadeWorker();
+  // Enregistrer le proxy worker quand prêt
+  useEffect(() => {
+    if (workerReady) {
+      const proxy = getWorkerProxy();
+      if (proxy) registerWorkerProxy(proxy);
+    }
+  }, [workerReady, getWorkerProxy]);
   useWoodMaterialSelectorInit();
 
   const {
@@ -117,7 +128,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   // Log transitions statuts
   useEffect(() => {
     dlog("STATUS_CHANGE", { workerStatus, selectorStatus });
-  }, [workerStatus, selectorStatus, dlog]);
+  }, [workerStatus, selectorStatus, workerReady, dlog]);
 
   // Progression adaptative de base (0 -> SOFT_CAP * 100) en fonction du temps cible
   useEffect(() => {
@@ -267,6 +278,26 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
   useEffect(() => {
     startFinalization();
   }, [workerStatus, selectorStatus, startFinalization]);
+
+  // Pré-calcul du panneau dès que tout est prêt (non bloquant)
+  useEffect(() => {
+    const readyAll =
+      workerStatus === "worker-ready" && selectorStatus === "selector-ready";
+    if (!readyAll) return;
+    let canceled = false;
+    (async () => {
+      const t0 = performance.now();
+      const did = await computeInitialPanelIfNeeded();
+      if (!canceled && did) {
+        dlog("INITIAL_PANEL_PRECOMPUTED", {
+          ms: Math.round(performance.now() - t0),
+        });
+      }
+    })();
+    return () => {
+      canceled = true;
+    };
+  }, [workerStatus, selectorStatus, dlog]);
 
   // Watchdog & fallback
   useEffect(() => {
