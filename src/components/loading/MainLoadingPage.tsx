@@ -53,7 +53,7 @@ export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
     workerStatus,
     selectorStatus,
     setAppLoading,
-  initializeApp,
+    initializeApp,
   } = useLoadingStore();
 
   const [progress, setProgress] = useState(0); // 0..100 (affiché)

@@ -1,10 +1,10 @@
-import { ThemeProvider } from 'next-themes';
-import { Toaster } from 'sonner';
-import { Header } from './dashboard/Header';
-import { Dashboard } from './dashboard/Dashboard';
-import { MainLoadingPage } from './components/loading/MainLoadingPage';
+import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner";
+import { Header } from "./dashboard/Header";
+import { Dashboard } from "./dashboard/Dashboard";
+import { MainLoadingPage } from "./components/loading/MainLoadingPage";
 // import ContentViewer from './components/ContentViewer'; (plus nécessaire tant que le worker n'a pas besoin du viewer pour init)
-import { useLoadingStore } from './store/loadingStore';
+import { useLoadingStore } from "./store/loadingStore";
 // Initialisations déplacées dans MainLoadingPage pour éviter double init.
 
 function App() {
