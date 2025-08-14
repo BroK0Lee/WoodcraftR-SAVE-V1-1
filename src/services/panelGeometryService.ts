@@ -1,4 +1,5 @@
 import { usePanelStore } from "@/store/panelStore";
+import { getOccProxy, isOccReady } from "@/services/openCascadeWorkerService";
 import type { PanelGeometryDTO } from "@/workers/api/shapeToGeometry";
 import type { EdgeDTO } from "@/models/EdgeDTO";
 // IMPORTANT: ne pas importer/consommer directement le hook useOpenCascadeWorker ici (hooks interdits hors React).
@@ -50,6 +51,17 @@ export function registerWorkerProxy(proxy: unknown) {
   if (proxy) plog("WORKER_PROXY_REGISTERED");
 }
 
+function ensureWorkerProxy(): boolean {
+  if (workerProxy) return true;
+  if (!isOccReady()) return false;
+  const occ = getOccProxy();
+  if (occ) {
+    registerWorkerProxy(occ);
+    return true;
+  }
+  return false;
+}
+
 function buildSig() {
   const { dimensions, cuts, shape, circleDiameter, previewCut } =
     usePanelStore.getState();
@@ -77,11 +89,14 @@ async function computePanelCore(force = false): Promise<boolean> {
   } = panelState;
 
   // Récupération du proxy via hook (hors composant : on appelle directement la fonction du hook - acceptable car elle retourne une ref stable)
-  const proxy = workerProxy;
-  if (!proxy) {
-    plog("NO_PROXY_READY");
-    return false;
+  if (!workerProxy) {
+    // Tentative de récupération lazy si le worker est prêt (cas HMR / navigation)
+    if (!ensureWorkerProxy()) {
+      plog("NO_PROXY_READY");
+      return false;
+    }
   }
+  const proxy = workerProxy!;
 
   const sig = buildSig();
   if (!force && sig === lastSig && geometry) {
