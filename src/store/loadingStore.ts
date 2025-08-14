@@ -17,6 +17,14 @@ interface LoadingState {
     | "ready"
     | "error";
   workerErrorMessage?: string;
+  // Nouveaux statuts simplifiés
+  appStatus: "idle" | "app-start" | "app-ready";
+  workerStatus: "idle" | "worker-start" | "worker-ready" | "worker-error";
+  selectorStatus:
+    | "idle"
+    | "selector-start"
+    | "selector-ready"
+    | "selector-error";
   isMaterialsLoaded: boolean;
   isComponentsLoaded: boolean;
   isWoodMaterialSelectorLoaded: boolean;
@@ -28,6 +36,9 @@ interface LoadingState {
     phase: LoadingState["workerPhase"];
     errorMessage?: string;
   }) => void;
+  setAppStatus: (s: LoadingState["appStatus"]) => void;
+  setWorkerStatus: (s: LoadingState["workerStatus"]) => void;
+  setSelectorStatus: (s: LoadingState["selectorStatus"]) => void;
   setMaterialsLoaded: (loaded: boolean) => void;
   setComponentsLoaded: (loaded: boolean) => void;
   setWoodMaterialSelectorLoaded: (loaded: boolean) => void;
@@ -41,6 +52,9 @@ export const useLoadingStore = create<LoadingState>((set, get) => ({
   workerRawDownloadPct: 0,
   workerPhase: "idle",
   workerErrorMessage: undefined,
+  appStatus: "idle",
+  workerStatus: "idle",
+  selectorStatus: "idle",
   isMaterialsLoaded: false,
   isComponentsLoaded: false,
   isWoodMaterialSelectorLoaded: false,
@@ -60,6 +74,9 @@ export const useLoadingStore = create<LoadingState>((set, get) => ({
       workerPhase: evt.phase ?? s.workerPhase,
       workerErrorMessage: evt.errorMessage ?? s.workerErrorMessage,
     })),
+  setAppStatus: (appStatus) => set({ appStatus }),
+  setWorkerStatus: (workerStatus) => set({ workerStatus }),
+  setSelectorStatus: (selectorStatus) => set({ selectorStatus }),
   setMaterialsLoaded: (loaded) => set({ isMaterialsLoaded: loaded }),
   setComponentsLoaded: (loaded) => set({ isComponentsLoaded: loaded }),
   setWoodMaterialSelectorLoaded: (loaded) =>
