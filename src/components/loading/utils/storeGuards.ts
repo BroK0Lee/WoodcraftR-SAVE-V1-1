@@ -15,8 +15,8 @@ export async function waitForFlag(
 }
 
 export const guards = {
-  workerReady: () => useLoadingStore.getState().isWorkerReady,
-  workerError: () => useLoadingStore.getState().workerPhase === "error",
+  workerReady: () => useLoadingStore.getState().workerStatus === "worker-ready",
+  workerError: () => useLoadingStore.getState().workerStatus === "worker-error",
   materialsLoaded: () => useLoadingStore.getState().isMaterialsLoaded,
   componentsLoaded: () => useLoadingStore.getState().isComponentsLoaded,
   selectorLoaded: () => useLoadingStore.getState().isWoodMaterialSelectorLoaded,
