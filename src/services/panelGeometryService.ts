@@ -53,7 +53,8 @@ export function registerWorkerProxy(proxy: unknown) {
   }
   // On accepte le proxy et on laissera computePanelCore vérifier la méthode.
   workerProxy = proxy as WorkerProxyType;
-  const hasMethod = typeof (workerProxy as WorkerProxyType).createPanelWithCuts === "function";
+  const hasMethod =
+    typeof (workerProxy as WorkerProxyType).createPanelWithCuts === "function";
   plog("WORKER_PROXY_REGISTERED", { hasMethod });
 }
 
