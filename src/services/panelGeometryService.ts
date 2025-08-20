@@ -45,13 +45,16 @@ export type WorkerProxyType = {
 let workerProxy: WorkerProxyType | null = null;
 
 export function registerWorkerProxy(proxy: unknown) {
-  // Validation minimale
-  if (proxy && typeof proxy === "object" && "createPanelWithCuts" in proxy) {
-    workerProxy = proxy as WorkerProxyType;
-  } else if (proxy == null) {
+  // Ancienne validation avec 'in' échouait probablement sur le proxy Comlink (trap 'has').
+  if (proxy == null) {
     workerProxy = null;
+    plog("WORKER_PROXY_CLEARED");
+    return;
   }
-  if (proxy) plog("WORKER_PROXY_REGISTERED");
+  // On accepte le proxy et on laissera computePanelCore vérifier la méthode.
+  workerProxy = proxy as WorkerProxyType;
+  const hasMethod = typeof (workerProxy as WorkerProxyType).createPanelWithCuts === "function";
+  plog("WORKER_PROXY_REGISTERED", { hasMethod });
 }
 
 function ensureWorkerProxy(): boolean {
