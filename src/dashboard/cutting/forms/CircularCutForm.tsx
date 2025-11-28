@@ -1,0 +1,303 @@
+import React, { useState, useEffect } from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Plus, Edit } from "lucide-react";
+import { usePanelStore } from "@/store/panelStore";
+import { CIRCULAR_CUT_LIMITS } from "@/models/Cut";
+import { CutFormProps } from "../types";
+
+export function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps) {
+  // Accès aux dimensions du panneau et à la découpe de prévisualisation
+  const dimensions = usePanelStore((state) => state.dimensions);
+  const previewCut = usePanelStore((state) => state.previewCut);
+  const updateCut = usePanelStore((state) => state.updateCut);
+
+  // Initialiser avec les valeurs de la découpe de prévisualisation si elle existe,
+  // ou avec les valeurs de la découpe en cours d'édition,
+  // ou avec des valeurs par défaut
+  const initialData =
+    editingCut && editingCut.type === "circle"
+      ? {
+          positionX: editingCut.positionX,
+          positionY: editingCut.positionY,
+          radius: editingCut.radius,
+          depth: editingCut.depth,
+        }
+      : previewCut && previewCut.type === "circle"
+      ? {
+          positionX: previewCut.positionX,
+          positionY: previewCut.positionY,
+          radius: previewCut.radius,
+          depth: previewCut.depth,
+        }
+      : {
+          positionX: 100,
+          positionY: 100,
+          radius: 25,
+          depth: dimensions.thickness,
+        };
+
+  const [formData, setFormData] = useState(initialData);
+
+  // États locaux pour permettre la saisie libre avant validation (comme GeneralPanel)
+  const [positionXInput, setPositionXInput] = useState(
+    formData.positionX.toString()
+  );
+  const [positionYInput, setPositionYInput] = useState(
+    formData.positionY.toString()
+  );
+  const [diameterInput, setDiameterInput] = useState(
+    (formData.radius * 2).toString()
+  );
+  const [depthInput, setDepthInput] = useState(formData.depth.toString());
+
+  // Actions de prévisualisation depuis le store
+  const updatePreviewCut = usePanelStore((state) => state.updatePreviewCut);
+
+  // Gérer les changements d'editingCut pour réinitialiser les champs
+  useEffect(() => {
+    if (editingCut && editingCut.type === "circle") {
+      const editData = {
+        positionX: editingCut.positionX,
+        positionY: editingCut.positionY,
+        radius: editingCut.radius,
+        depth: editingCut.depth,
+      };
+      setFormData(editData);
+      setPositionXInput(editingCut.positionX.toString());
+      setPositionYInput(editingCut.positionY.toString());
+      setDiameterInput((editingCut.radius * 2).toString());
+      setDepthInput(editingCut.depth.toString());
+      // En mode édition, pas de prévisualisation séparée - on modifie directement
+    }
+  }, [editingCut]);
+
+  // Synchroniser avec la découpe de prévisualisation du parent (une seule fois au montage)
+  useEffect(() => {
+    // En mode édition, on ne crée pas de prévisualisation séparée
+    if (editingCut) {
+      console.log(
+        "🔄 [CircularCutForm] Mode édition - pas de prévisualisation séparée"
+      );
+      return;
+    }
+
+    if (previewCut && previewCut.type === "circle") {
+      // Pas besoin de recréer, la découpe existe déjà
+      console.log(
+        "🔄 [CircularCutForm] Découpe de prévisualisation déjà créée:",
+        previewCut
+      );
+    } else {
+      // Créer une nouvelle découpe si aucune n'existe
+      updatePreviewCut(formData);
+      console.log(
+        "🆕 [CircularCutForm] Découpe de prévisualisation créée:",
+        formData
+      );
+    }
+    // Intention: exécuter uniquement au montage pour initialiser la prévisualisation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Déclenché uniquement au montage du composant
+
+  // Fonction de validation et mise à jour centralisée
+  const handleValidation = (field: string, inputValue: string) => {
+    const newValue = Number(inputValue);
+    let constrainedValue = Math.max(0, newValue);
+
+    // Pour le diamètre, on applique les contraintes de rayon multipliées par 2
+    if (field === "diameter") {
+      const radiusValue = newValue / 2;
+      const constrainedRadius = Math.max(
+        CIRCULAR_CUT_LIMITS.radius.min,
+        Math.min(radiusValue, CIRCULAR_CUT_LIMITS.radius.max)
+      );
+      constrainedValue = constrainedRadius * 2; // Reconvertir en diamètre
+    }
+    // Appliquer les contraintes spécifiques pour la profondeur
+    else if (field === "depth") {
+      constrainedValue = Math.max(
+        CIRCULAR_CUT_LIMITS.depth.min,
+        Math.min(newValue, dimensions.thickness)
+      );
+    }
+
+    // Corriger la valeur dans l'input si elle a été contrainte
+    if (constrainedValue !== newValue) {
+      setTimeout(() => {
+        switch (field) {
+          case "positionX":
+            setPositionXInput(constrainedValue.toString());
+            break;
+          case "positionY":
+            setPositionYInput(constrainedValue.toString());
+            break;
+          case "diameter":
+            setDiameterInput(constrainedValue.toString());
+            break;
+          case "depth":
+            setDepthInput(constrainedValue.toString());
+            break;
+        }
+      }, 0);
+    }
+
+    // Pour le diamètre, on doit mettre à jour le rayon dans formData
+    let fieldToUpdate = field;
+    let valueToUpdate = constrainedValue;
+    if (field === "diameter") {
+      fieldToUpdate = "radius";
+      valueToUpdate = constrainedValue / 2;
+    }
+
+    // Vérifier si la valeur a vraiment changé avant de déclencher le calcul
+    if (formData[fieldToUpdate as keyof typeof formData] !== valueToUpdate) {
+      const newFormData = { ...formData, [fieldToUpdate]: valueToUpdate };
+      setFormData(newFormData);
+
+      // En mode édition : mettre à jour directement la découpe existante
+      if (editingCut) {
+        updateCut(editingCut.id, newFormData);
+        console.log(
+          "🔄 [CircularCutForm] Mode édition - MAJ directe de la découpe:",
+          fieldToUpdate,
+          valueToUpdate
+        );
+      } else {
+        // En mode création : utiliser la prévisualisation
+        updatePreviewCut(newFormData);
+        console.log(
+          "🔄 [CircularCutForm] Mode création - MAJ prévisualisation:",
+          fieldToUpdate,
+          valueToUpdate
+        );
+      }
+    }
+  };
+
+  // Fonction pour gérer onBlur
+  const handleFieldBlur = (field: string, inputValue: string) => {
+    handleValidation(field, inputValue);
+  };
+
+  // Fonction pour gérer Entrée
+  const handleKeyDown = (
+    e: React.KeyboardEvent,
+    field: string,
+    inputValue: string
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleValidation(field, inputValue);
+      // Auto-blur supprimé : pas de (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const handleAddCut = () => {
+    const cutData = {
+      positionX: formData.positionX,
+      positionY: formData.positionY,
+      radius: formData.radius,
+      depth: formData.depth,
+    };
+
+    // Toujours appeler onAddCut - la logique de création vs édition
+    // est gérée dans handleAddCutWithParams du composant parent
+    onAddCut(cutData);
+  };
+
+  const isValid = formData.radius > 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full border-2 border-red-500 bg-red-50"></div>
+            <span className="text-red-600 font-medium">Position X (mm)</span>
+          </Label>
+          <Input
+            type="number"
+            value={positionXInput}
+            onChange={(e) => setPositionXInput(e.target.value)}
+            onBlur={() => handleFieldBlur("positionX", positionXInput)}
+            onKeyDown={(e) => handleKeyDown(e, "positionX", positionXInput)}
+            className="h-9 border-red-300 focus:border-red-500 focus:ring-red-200"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full border-2 border-blue-500 bg-blue-50"></div>
+            <span className="text-blue-600 font-medium">Position Y (mm)</span>
+          </Label>
+          <Input
+            type="number"
+            value={positionYInput}
+            onChange={(e) => setPositionYInput(e.target.value)}
+            onBlur={() => handleFieldBlur("positionY", positionYInput)}
+            onKeyDown={(e) => handleKeyDown(e, "positionY", positionYInput)}
+            className="h-9 border-blue-300 focus:border-blue-500 focus:ring-blue-200"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">Diamètre ⌀ (mm)</Label>
+        <Input
+          type="number"
+          value={diameterInput}
+          onChange={(e) => setDiameterInput(e.target.value)}
+          onBlur={() => handleFieldBlur("diameter", diameterInput)}
+          onKeyDown={(e) => handleKeyDown(e, "diameter", diameterInput)}
+          className="h-9"
+          min={CIRCULAR_CUT_LIMITS.radius.min * 2}
+          max={CIRCULAR_CUT_LIMITS.radius.max * 2}
+          step={0.1}
+          placeholder="Diamètre en mm"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs">
+          Profondeur (mm) - {dimensions.thickness}mm = traversant
+        </Label>
+        <Input
+          type="number"
+          value={depthInput}
+          onChange={(e) => setDepthInput(e.target.value)}
+          onBlur={() => handleFieldBlur("depth", depthInput)}
+          onKeyDown={(e) => handleKeyDown(e, "depth", depthInput)}
+          className="h-9"
+          min={CIRCULAR_CUT_LIMITS.depth.min}
+          max={dimensions.thickness}
+          step={0.1}
+        />
+      </div>
+
+      <div className="flex gap-3 mt-4">
+        <Button onClick={onCancel} className="flex-1" variant="outline">
+          Annuler
+        </Button>
+        <Button
+          onClick={handleAddCut}
+          className="flex-1"
+          variant="default"
+          disabled={!isValid}
+        >
+          {editingCut ? (
+            <>
+              <Edit className="h-4 w-4 mr-2" />
+              Modifier
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Créer
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
