@@ -38,11 +38,13 @@ export function CuttingPanel() {
     addCut,
     removeCut,
     updateCut,
-    startEditingCut,
     // Actions de prévisualisation
     setPreviewCut,
     previewCut,
     validateCutPosition,
+    // Actions d'édition
+    startEditingCut,
+    stopEditingCut,
     // Actions de visibilité (debug)
     isPanelVisible,
     togglePanelVisibility,
@@ -83,6 +85,7 @@ export function CuttingPanel() {
       // Mode édition : mettre à jour la découpe existante
       const updatedCut = { ...editingCut, ...customParams };
       updateCut(editingCut.id, updatedCut);
+      stopEditingCut();
 
       console.log("✏️ Découpe mise à jour:", updatedCut.name, updatedCut);
     } else {
@@ -99,6 +102,7 @@ export function CuttingPanel() {
     // Nettoyer la prévisualisation et l'état d'édition
     setPreviewCut(null);
     setEditingCut(null);
+    stopEditingCut();
   };
 
   const handleCancelForm = () => {
@@ -107,6 +111,7 @@ export function CuttingPanel() {
     // Nettoyer la prévisualisation et l'état d'édition lors de l'annulation
     setPreviewCut(null);
     setEditingCut(null);
+    stopEditingCut();
 
     console.log("❌ Formulaire de paramètres annulé");
   };
@@ -128,6 +133,7 @@ export function CuttingPanel() {
 
     // Marquer cette découpe comme étant en édition
     setEditingCut(cut);
+    startEditingCut(cut.id);
 
     // En mode édition, on ne crée pas de prévisualisation séparée
     // La découpe existante sera modifiée directement dans le store
@@ -259,76 +265,7 @@ export function CuttingPanel() {
             )}
           </Button>
 
-          {/* Bouton de test pour découpes Worker OpenCascade */}
-          <Button
-            onClick={() => {
-              // Créer une découpe rectangulaire de test
-              const testCut = createDefaultCut("rectangle", cuts.length);
-              addCut(testCut);
-            }}
-            variant="secondary"
-            size="sm"
-            className="w-full mt-2"
-          >
-            <Scissors className="h-4 w-4 mr-2" />
-            Test Worker: Ajouter découpe rectangulaire
-          </Button>
 
-          <Button
-            onClick={() => {
-              // Créer une découpe circulaire de test
-              const testCut = createDefaultCut("circle", cuts.length);
-              addCut(testCut);
-            }}
-            variant="secondary"
-            size="sm"
-            className="w-full mt-1"
-          >
-            <Circle className="h-4 w-4 mr-2" />
-            Test Worker: Ajouter découpe circulaire
-          </Button>
-
-          <Button
-            onClick={() => {
-              // Test cotations: créer une découpe de prévisualisation
-              const testCut = createDefaultCut("rectangle", cuts.length);
-              testCut.positionX = 150;
-              testCut.positionY = 75;
-              console.log(
-                "📐 Test cotations - Prévisualisation découpe:",
-                testCut
-              );
-              setPreviewCut(testCut);
-            }}
-            variant="outline"
-            size="sm"
-            className="w-full mt-1"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Test Cotations: Prévisualisation
-          </Button>
-
-          <Button
-            onClick={() => {
-              // Test cotations: éditer la première découpe s'il y en a une
-              if (cuts.length > 0) {
-                const firstCut = cuts[0];
-                console.log("📐 Test cotations - Édition découpe:", firstCut);
-                startEditingCut(firstCut.id);
-              } else {
-                console.warn(
-                  "Aucune découpe à éditer - ajoutez d'abord une découpe"
-                );
-              }
-            }}
-            variant="outline"
-            size="sm"
-            className="w-full mt-1"
-            disabled={cuts.length === 0}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Test Cotations: Édition
-          </Button>
         </CardContent>
       </Card>
 

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { Group } from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import type { Cut } from "@/models/Cut";
+import { usePanelStore } from "@/store/panelStore";
 
 interface Props {
   cut: Cut;
@@ -13,9 +14,30 @@ interface Props {
  * Style professionnel CAO avec lignes de rappel et flèches
  */
 export default function DimensionLabels({ cut, panelDimensions }: Props) {
-  // Calcul des données de cotation
+  // Synchronisation avec la géométrie réelle pour éviter le décalage visuel
+  // On ne met à jour les valeurs affichées que lorsque la géométrie 3D a été recalculée
+  const geometry = usePanelStore((s) => s.geometry);
+  const [displayedCut, setDisplayedCut] = useState(cut);
+
+  useEffect(() => {
+    setDisplayedCut(cut);
+    // On dépend de geometry pour déclencher la mise à jour au bon moment
+    // On dépend de cut pour avoir les dernières valeurs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geometry]);
+
+  // Si c'est la première fois (montage) ou si on change de découpe cible, on force la mise à jour immédiate
+  // pour éviter d'afficher les valeurs de la découpe précédente
+  useEffect(() => {
+    if (cut.id !== displayedCut.id) {
+      setDisplayedCut(cut);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cut.id]);
+
+  // Calcul des données de cotation basées sur displayedCut (synchronisé)
   const cotationData = useMemo(() => {
-    const { positionX, positionY } = cut;
+    const { positionX, positionY } = displayedCut;
     const { length, width, thickness } = panelDimensions;
     const offset = 25;
     const originX = 0;
@@ -36,7 +58,7 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
       displayX: positionX.toFixed(2),
       displayY: positionY.toFixed(2),
     };
-  }, [cut, panelDimensions]);
+  }, [displayedCut, panelDimensions]);
 
   // Référence pour le groupe Three.js
   const groupRef = useRef<Group>(null);

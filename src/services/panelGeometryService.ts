@@ -77,7 +77,7 @@ function buildSig() {
     cuts,
     shape,
     circleDiameter,
-    preview: previewCut?.id || null,
+    preview: previewCut,
   });
 }
 
