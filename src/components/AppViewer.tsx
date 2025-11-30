@@ -1,13 +1,24 @@
 import { Canvas, useLoader } from "@react-three/fiber";
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useEffect, useState } from "react";
 import { OrbitControls, Environment } from "@react-three/drei";
 import AxesHelper from "./AxesHelper";
 import EdgesLayer from "./EdgesLayer";
 import DimensionLabels from "./DimensionLabels";
-import type { PanelGeometryDTO } from "@/helpers/shapeToGeometry";
+import type { PanelGeometryDTO } from "@/workers/api/shapeToGeometry";
 import { usePanelStore } from "@/store/panelStore";
 import { useGlobalMaterialStore } from "@/store/globalMaterialStore";
-import { TextureLoader, RepeatWrapping, DoubleSide, Vector2 } from "three";
+import {
+  TextureLoader,
+  RepeatWrapping,
+  DoubleSide,
+  Vector2,
+  SRGBColorSpace,
+  NoColorSpace,
+} from "three";
+import {
+  getMaterialsManifest,
+  type MaterialsManifest,
+} from "@/services/materialsManifest";
 
 function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   // Calculs optimisés des dimensions une seule fois
@@ -83,45 +94,105 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
   const white1x1 =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO9QCywAAAAASUVORK5CYII=";
   const hasMaterial = !!selectedMaterialId;
-  const baseUrl = hasMaterial
-    ? `/textures/wood/${selectedMaterialId}`
-    : undefined;
+  // Récupérer folder/maps depuis le manifest pour l'id sélectionné
+  const [selectedEntry, setSelectedEntry] = useState<
+    MaterialsManifest["materials"][number] | null
+  >(null);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!hasMaterial) {
+        setSelectedEntry(null);
+        return;
+      }
+      try {
+        const manifest = await getMaterialsManifest();
+        if (!mounted) return;
+        const entry =
+          manifest.materials.find((m) => m.id === selectedMaterialId) ?? null;
+        setSelectedEntry(entry);
+      } catch {
+        setSelectedEntry(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [hasMaterial, selectedMaterialId]);
+
+  const baseUrl =
+    hasMaterial && selectedEntry
+      ? `/textures/wood/${selectedEntry.folder}`
+      : undefined;
   const [colorTex, normalTex, roughTex] = useLoader(TextureLoader, [
-    hasMaterial ? `${baseUrl}/basecolor.jpg` : white1x1,
-    hasMaterial ? `${baseUrl}/normal.jpg` : white1x1,
-    hasMaterial ? `${baseUrl}/roughness.jpg` : white1x1,
+    hasMaterial && selectedEntry
+      ? `${baseUrl}/${selectedEntry.maps.basecolor}`
+      : white1x1,
+    hasMaterial && selectedEntry
+      ? `${baseUrl}/${selectedEntry.maps.normal}`
+      : white1x1,
+    hasMaterial && selectedEntry
+      ? `${baseUrl}/${selectedEntry.maps.roughness}`
+      : white1x1,
   ]);
   // AO texture (optional based on flag)
   const [aoTex] = useLoader(TextureLoader, [
-    useAO && hasMaterial ? `${baseUrl}/ao.jpg` : white1x1,
+    useAO && hasMaterial && selectedEntry
+      ? `${baseUrl}/${selectedEntry.maps.ao}`
+      : white1x1,
   ]);
   // Improve texture sampling
-  [colorTex, normalTex, roughTex, aoTex].forEach((t) => {
+  [colorTex, normalTex, roughTex, aoTex].forEach((t, idx) => {
     t.wrapS = t.wrapT = RepeatWrapping;
     t.anisotropy = 4;
+    // Définir l'espace colorimétrique: baseColor en sRGB, autres en linéaire
+    if (idx === 0) {
+      t.colorSpace = SRGBColorSpace;
+    } else {
+      t.colorSpace = NoColorSpace;
+    }
+    t.needsUpdate = true;
   });
   const baseColor = hasMaterial ? "#ffffff" : "#9ca3af"; // neutral gray when no material selected
 
   return (
     <mesh position={[0, 0, 0]} castShadow receiveShadow>
-      <bufferGeometry>
+      <bufferGeometry
+        key={`geom-${geometry.positions.length}-${geometry.indices.length}`}
+        onUpdate={(g) => {
+          // Assurer des bornes correctes pour le culling
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const geom = g as any;
+          geom.computeBoundingBox?.();
+          geom.computeBoundingSphere?.();
+        }}
+      >
         <bufferAttribute
           attach="attributes-position"
           array={geometry.positions}
           count={geometry.positions.length / 3}
           itemSize={3}
+          onUpdate={(attr) => {
+            attr.needsUpdate = true;
+          }}
         />
         <bufferAttribute
           attach="index"
           array={geometry.indices}
           count={geometry.indices.length}
           itemSize={1}
+          onUpdate={(attr) => {
+            attr.needsUpdate = true;
+          }}
         />
         <bufferAttribute
           attach="attributes-uv"
           array={uvs}
           count={uvs.length / 2}
           itemSize={2}
+          onUpdate={(attr) => {
+            attr.needsUpdate = true;
+          }}
         />
         {useAO && (
           <bufferAttribute
@@ -129,6 +200,9 @@ function PanelMesh({ geometry }: { geometry: PanelGeometryDTO }) {
             array={uvs}
             count={uvs.length / 2}
             itemSize={2}
+            onUpdate={(attr) => {
+              attr.needsUpdate = true;
+            }}
           />
         )}
       </bufferGeometry>
@@ -152,7 +226,6 @@ export default function PanelViewer() {
   const isPanelVisible = usePanelStore((state) => state.isPanelVisible);
   const geometry = usePanelStore((state) => state.geometry);
   const edges = usePanelStore((state) => state.edges);
-  const isCalculating = usePanelStore((state) => state.isCalculating);
 
   // États pour les cotations
   const dimensions = usePanelStore((state) => state.dimensions);
@@ -189,15 +262,13 @@ export default function PanelViewer() {
         <Environment preset="city" />
 
         <group position={panelOffset}>
-          {isPanelVisible && geometry && !isCalculating && (
+          {isPanelVisible && geometry && (
             <Suspense fallback={null}>
               <PanelMesh geometry={geometry} />
             </Suspense>
           )}
 
-          {edges.length > 0 && isPanelVisible && !isCalculating && (
-            <EdgesLayer />
-          )}
+          {edges.length > 0 && isPanelVisible && <EdgesLayer />}
 
           {/* Cotations lors de l'édition/prévisualisation d'une découpe */}
           {isPanelVisible && (

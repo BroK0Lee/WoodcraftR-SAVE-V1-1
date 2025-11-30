@@ -1,0 +1,20 @@
+{
+  "id": "osb_3",
+  "displayName": "OSB 3",
+  "carousel": {
+    "title": "OSB 3",
+    "description": "Panneau de lamelles orientées pour milieu humide, structure robuste et apparence industrielle.",
+    "image": "/textures/wood/osb_3/basecolor.png",
+    "color": "#CFA56B",
+    "fullDescription": "L’OSB 3 est un panneau de bois d’ingénierie fabriqué à partir de lamelles longues de bois orientées et collées sous pression avec des résines phénoliques ou mélamine-urée-formol【840628116241865†L139-L146】. La densité moyenne des panneaux OSB est d’environ 630 kg/m³【840628116241865†L139-L144】 et leur construction en trois couches croisées leur confère d’excellentes performances mécaniques, comparables à celles du contreplaqué【840628116241865†L139-L149】. Selon la norme EN 300, la catégorie OSB 3 est destinée à un usage en milieu humide tandis que l’OSB 4 est utilisée sous contraintes élevées【840628116241865†L176-L189】. Ces panneaux sont largement utilisés pour le contreventement des murs, les dalles de plancher, les écrans sous toiture, la charpente ou encore l’emballage industriel【840628116241865†L154-L160】, et ils peuvent également être laissés apparents dans l’aménagement intérieur pour leur aspect décoratif unique.\n",
+    "Origin": "Bois résineux (pin, épicéa) issus de résidus de scieries",
+    "Hardness": "Mi-dur",
+    "Class": 3,
+    "tags": [
+      "OSB",
+      "Panneau structurel",
+      "Milieu humide",
+      "Construction"
+    ]
+  }
+}

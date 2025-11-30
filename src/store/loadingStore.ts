@@ -1,13 +1,23 @@
-import { create } from 'zustand';
+import { create } from "zustand";
+import { materialPreloader } from "@/services/materialPreloader";
 
 interface LoadingState {
   isAppLoading: boolean;
-  isWorkerReady: boolean; // OpenCascade worker
+  // Nouveaux statuts simplifiés
+  appStatus: "idle" | "app-start" | "app-ready";
+  workerStatus: "idle" | "worker-start" | "worker-ready" | "worker-error";
+  selectorStatus:
+    | "idle"
+    | "selector-start"
+    | "selector-ready"
+    | "selector-error";
   isMaterialsLoaded: boolean;
   isComponentsLoaded: boolean;
   isWoodMaterialSelectorLoaded: boolean;
   setAppLoading: (loading: boolean) => void;
-  setWorkerReady: (ready: boolean) => void;
+  setAppStatus: (s: LoadingState["appStatus"]) => void;
+  setWorkerStatus: (s: LoadingState["workerStatus"]) => void;
+  setSelectorStatus: (s: LoadingState["selectorStatus"]) => void;
   setMaterialsLoaded: (loaded: boolean) => void;
   setComponentsLoaded: (loaded: boolean) => void;
   setWoodMaterialSelectorLoaded: (loaded: boolean) => void;
@@ -16,46 +26,51 @@ interface LoadingState {
 
 export const useLoadingStore = create<LoadingState>((set, get) => ({
   isAppLoading: true,
-  isWorkerReady: false,
+  appStatus: "idle",
+  workerStatus: "idle",
+  selectorStatus: "idle",
   isMaterialsLoaded: false,
   isComponentsLoaded: false,
   isWoodMaterialSelectorLoaded: false,
-  
+
   setAppLoading: (loading) => set({ isAppLoading: loading }),
-  setWorkerReady: (ready) => set({ isWorkerReady: ready }),
+  setAppStatus: (appStatus) => set({ appStatus }),
+  setWorkerStatus: (workerStatus) => set({ workerStatus }),
+  setSelectorStatus: (selectorStatus) => set({ selectorStatus }),
   setMaterialsLoaded: (loaded) => set({ isMaterialsLoaded: loaded }),
   setComponentsLoaded: (loaded) => set({ isComponentsLoaded: loaded }),
-  setWoodMaterialSelectorLoaded: (loaded) => set({ isWoodMaterialSelectorLoaded: loaded }),
-  
+  setWoodMaterialSelectorLoaded: (loaded) =>
+    set({ isWoodMaterialSelectorLoaded: loaded }),
+
   initializeApp: async () => {
     const state = get();
-    
+
     try {
-      // Le worker OpenCascade sera géré par ContentViewer
-      // Ici on s'occupe juste des autres composants
-      
-      // Étape 1: Charger les matières
+      // Étape 0: S'assurer que le worker est prêt AVANT de charger les matières
+      // (polling sur workerStatus)
+      while (get().workerStatus !== "worker-ready") {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      // Étape 1: Charger les matières + précharger les images (cache navigateur)
       if (!state.isMaterialsLoaded) {
-        // Précharger les images des matières si nécessaire
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await materialPreloader.preloadMaterials();
         set({ isMaterialsLoaded: true });
       }
-      
-      // Étape 2: Initialiser les composants
+
+      // Étape 2: Initialiser les composants (UI non-bloquante)
       if (!state.isComponentsLoaded) {
-        await new Promise(resolve => setTimeout(resolve, 100));
         set({ isComponentsLoaded: true });
       }
-      
+
       // Pas de finalisation ici - on attend que le worker et WoodMaterialSelector soient prêts
-      
     } catch (error) {
-      console.error('Erreur lors de l\'initialisation de l\'application:', error);
+      console.error("Erreur lors de l'initialisation de l'application:", error);
       // En cas d'erreur, on continue quand même
-      set({ 
+      set({
         isMaterialsLoaded: true,
-        isComponentsLoaded: true
+        isComponentsLoaded: true,
       });
     }
-  }
+  },
 }));

@@ -1,0 +1,15 @@
+{
+  "id": "teck",
+  "displayName": "Teck",
+  "carousel": {
+    "title": "Teck — Teak",
+    "description": "Bois exotique très durable de couleur brun doré, grain grossier et huiles naturelles qui assurent une excellente stabilité.",
+    "image": "/textures/wood/teck/basecolor.png",
+    "color": "#B57429",
+    "fullDescription": "Le teck (Tectona grandis) est une essence tropicale réputée pour sa durabilité exceptionnelle et sa stabilité dimensionnelle. Son duramen varie du brun jaune au brun orange, parfois veiné de teintes cuivrées, et fonce sous l’effet de la lumière【538620574354453†L133-L139】【597930324651259†L158-L161】. L’aubier, bien distinct, est plus clair. Le grain est plutôt grossier et hétérogène avec un fil généralement droit, conférant une texture chaleureuse et régulière【538620574354453†L133-L138】【950054565014641†L104-L112】. Le teck est un bois mi‑lourd dont la densité se situe autour de 630 à 680 kg/m³ et qui présente une dureté intermédiaire (Monnin ~4,2)【538620574354453†L153-L161】【950054565014641†L120-L125】. Riche en huiles naturelles et en silice, il est naturellement très durable et résistant à l’eau de mer, aux champignons et aux insectes, ce qui le classe parmi les essences les plus durables (classe d’usage 4 voire 5)【597930324651259†L152-L156】【950054565014641†L131-L140】. Très stable, il a un retrait et un risque de déformation faibles lors du séchage et ne nécessite pas de traitement particulier【597930324651259†L164-L175】【950054565014641†L146-L152】. Grâce à ces qualités, le teck est utilisé tant en extérieur (terrasses, bardages, ponts de bateaux, menuiserie extérieure) qu’en intérieur (parquets, escaliers, meubles, sculpture et tournage)【597930324651259†L181-L191】【538620574354453†L192-L204】.",
+    "Origin": "Asie du Sud‑Est (Indonésie, Birmanie, Thaïlande, Inde) avec des plantations en Amérique centrale, Amérique du Sud et Afrique【597930324651259†L139-L150】【732919731123015†L246-L296】",
+    "Hardness": "Mi-dur",
+    "Class": 4,
+    "tags": ["Bois exotique", "Extérieur", "Durable", "Marine", "Parquet"]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "chene",
+  "displayName": "Chêne",
+  "carousel": {
+    "title": "Chêne — Oak",
+    "description": "Bois noble et durable, veines marquées, excellente stabilité.",
+    "image": "/textures/wood/chene/basecolor.png",
+    "color": "#8B5E3C",
+    "fullDescription": "La teinte du chêne transformé en bois va du brun clair au brun jaune. C’est un bois dur et résistant à la surface lisse et soyeuse【708287360079148†L101-L103】. Appartenant au genre Quercus, il regroupe plus de 300 espèces d’arbres adaptables et abondamment présents dans l’hémisphère nord【708287360079148†L82-L92】. Le chêne est naturellement durable grâce à ses tanins et présente une densité élevée aux alentours de 850 kg/m³, avec une excellente résistance à la compression et une bonne résistance à l’humidité【708287360079148†L191-L200】. Ce bois noble est utilisé depuis des siècles en construction navale et charpente, et reste apprécié pour le mobilier, la parqueterie et la tonnellerie【708287360079148†L118-L136】. Sa disponibilité en Europe et en Amérique du Nord, sa robustesse et sa durabilité naturelle en font une essence de référence pour l’ameublement, les sols et les ouvrages de longue durée.",
+    "Origin": "Hémisphère nord (principalement Europe et Amérique du Nord)",
+    "Hardness": "Dur",
+    "Class": 3,
+    "tags": ["Bois dur", "Durable", "Parquet", "Menuiserie", "Tonnellerie"]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "contreplaque_peuplier",
+  "displayName": "Contreplaqué Peuplier",
+  "carousel": {
+    "title": "Contreplaqué Peuplier — Poplar plywood",
+    "description": "Panneau léger en plis croisés de peuplier, teinte crème à beige clair, grain fin et satiné, idéal pour l’agencement et l’emballage.",
+    "image": "/textures/wood/contreplaque_peuplier/basecolor.png",
+    "color": "#E5C996",
+    "fullDescription": "Le contreplaqué peuplier est fabriqué à partir de fines feuilles de peuplier déroulées puis collées en plis croisés. Il présente une couleur blanche à beige clair avec un grain fin et uniforme et un aspect satiné【287500002528639†L145-L156】. Sa densité moyenne est faible, de l’ordre de 0,4 à 0,5 (environ 400 à 500 kg/m³), ce qui en fait un panneau léger et facile à manipuler【287500002528639†L152-L155】【414427999683161†L27-L33】. Bien que moins résistant que les contreplaqués de pin ou de chêne, il offre une rigidité suffisante pour des structures légères et une bonne stabilité dimensionnelle【414427999683161†L33-L46】. Le panneau est cependant sensible à l’humidité et nécessite un traitement hydrofuge pour éviter le gonflement et la déformation【414427999683161†L47-L51】. Grâce à sa croissance rapide et à sa disponibilité locale, le peuplier est une ressource durable et abondante en France【287500002528639†L139-L147】. Le contreplaqué peuplier est principalement utilisé pour l’emballage, l’ameublement, l’agencement intérieur et la décoration, mais des traitements adaptés permettent aussi des applications extérieures spécifiques【287500002528639†L145-L158】.\n", 
+    "Origin": "France et plantations européennes de peupliers【287500002528639†L139-L147】",
+    "Hardness": "Tendre",
+    "Class": 1,
+    "tags": ["Panneau", "Léger", "Ameublement", "Agencement"]
+  }
+}

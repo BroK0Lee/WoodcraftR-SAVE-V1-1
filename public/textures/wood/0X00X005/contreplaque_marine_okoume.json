@@ -1,0 +1,15 @@
+{
+  "id": "contreplaque_marine_okoume",
+  "displayName": "Contreplaqué Marine Okoumé",
+  "carousel": {
+    "title": "Contreplaqué marine Okoumé — Marine okoume plywood",
+    "description": "Panneau marin léger en okoumé, teinte brun rosé, excellente stabilité et durabilité en milieu humide.",
+    "image": "/textures/wood/contreplaque_okoume/basecolor.png",
+    "color": "#D8876F",
+    "fullDescription": "Ce contreplaqué marin est composé de plis croisés d’okoumé déroulé. Les 7 plis de ce panneau sont collés avec une résine MUF de classe 3 (colle marine) et certifiés selon la norme BS 1088, offrant une très bonne résistance au délaminage et aux conditions marines【867339102194933†L158-L164】. Le bois d’okoumé, aux teintes allant du blanc rosé au brun rougeâtre, confère au panneau une apparence décorative et homogène tout en restant léger (densité ≈ 550 kg/m³)【867339102194933†L171-L178】. Ce contreplaqué est réputé pour sa stabilité et sa durabilité en milieu humide : il conserve ses performances mécaniques et dimensionnelles sur le long terme, même soumis à des variations hygrométriques【867339102194933†L135-L154】. Grâce à ces qualités, il est couramment utilisé pour la construction nautique (coques, ponts, intérieurs), pour les façades et bardages extérieurs ainsi que pour la menuiserie en milieu marin ou les remorques【867339102194933†L135-L154】. Bien que la durabilité naturelle de l’okoumé soit modérée, l’utilisation d’un collage hydrofuge permet d’atteindre la classe d’usage 3 pour une utilisation en extérieur humide, voire la classe 4 après traitement.  ",
+    "Origin": "Forêts d’Afrique centrale (Gabon, Congo)",
+    "Hardness": "Mi-dur",
+    "Class": 3,
+    "tags": ["Marine", "Léger", "Okoumé", "Stable", "Extérieur"]
+  }
+}

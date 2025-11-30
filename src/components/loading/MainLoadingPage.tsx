@@ -1,303 +1,310 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { TreePine, Loader2, CheckCircle } from "lucide-react";
 import { useLoadingStore } from "@/store/loadingStore";
-
-interface LoadingStep {
-  id: string;
-  label: string;
-  status: "pending" | "loading" | "completed";
-}
+import { BrandingHeader } from "./components/BrandingHeader";
+import { GlobalProgressBar } from "./components/GlobalProgressBar";
+import { useGsapIntro } from "./hooks/useGsapIntro";
+import { useOpenCascadeWorker } from "@/hooks/useOpenCascadeWorker";
+import {
+  computeInitialPanelIfNeeded,
+  registerWorkerProxy,
+} from "@/services/panelGeometryService";
+import { useWoodMaterialSelectorInit } from "@/hooks/useWoodMaterialSelectorInit";
 
 interface MainLoadingPageProps {
   onLoadingComplete: () => void;
+  /** Contrôle visibilité overlay (opacity + pointer-events). Par défaut true */
+  visible?: boolean;
 }
 
-export function MainLoadingPage({ onLoadingComplete }: MainLoadingPageProps) {
+// Timings & caps
+const MIN_TOTAL_MS = 6000;
+const TARGET_TOTAL_MS = 18000;
+const MAX_TOTAL_MS = 30000;
+const FAST_PATH_MIN = 0.6;
+const SOFT_CAP = 0.9;
+const HARD_WAIT_CAP = 0.98;
+const BASE_TICK_MS = 100;
+const PULSE_INTERVAL_MS = 200;
+const FINISH_MIN_MS = 500;
+const FINISH_MAX_MS = 1200;
+const DEBUG_LOADING = true;
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const clamp = (v: number, min: number, max: number) =>
+  v < min ? min : v > max ? max : v;
+
+export function MainLoadingPage({
+  onLoadingComplete,
+  visible = true,
+}: MainLoadingPageProps) {
+  const dlog = useCallback((...args: unknown[]) => {
+    if (DEBUG_LOADING) console.debug("[LOAD]", ...args);
+  }, []);
   const containerRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
-  const stepsRef = useRef<HTMLDivElement>(null);
-
-  const [currentStep, setCurrentStep] = useState(0);
-  const [steps, setSteps] = useState<LoadingStep[]>([
-    {
-      id: "worker",
-      label: "Initialisation OpenCascade Worker...",
-      status: "pending",
-    },
-    { id: "materials", label: "Chargement des matières...", status: "pending" },
-    {
-      id: "components",
-      label: "Préparation des composants...",
-      status: "pending",
-    },
-    {
-      id: "selector",
-      label: "Initialisation WoodMaterialSelector...",
-      status: "pending",
-    },
-  ]);
-
-  // Store state pour suivre l'avancement du chargement
-  const { initializeApp } = useLoadingStore();
-
-  const startLoadingProcess = useCallback(async () => {
-    // Lancer l'initialisation de l'app (matières, composants)
-    initializeApp();
-
-    // Étape 1: Attendre OpenCascade Worker
-    setCurrentStep(0);
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i === 0 ? "loading" : "pending",
-      }))
-    );
-
-    // Attendre que le worker OpenCascade soit prêt
-    console.log("⏳ [MainLoadingPage] En attente du worker OpenCascade...");
-    while (!useLoadingStore.getState().isWorkerReady) {
-      console.log(
-        "⏳ [MainLoadingPage] Worker pas encore prêt, attente... isWorkerReady:",
-        useLoadingStore.getState().isWorkerReady
-      );
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    console.log("✅ [MainLoadingPage] Worker OpenCascade prêt !");
-
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i === 0 ? "completed" : "pending",
-      }))
-    );
-
-    // Étape 2: Matières
-    setCurrentStep(1);
-    console.log("⏳ [MainLoadingPage] Étape 2: Chargement matières...");
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i === 1 ? "loading" : i < 1 ? "completed" : "pending",
-      }))
-    );
-
-    // Attendre que les matières soient chargées
-    while (!useLoadingStore.getState().isMaterialsLoaded) {
-      console.log(
-        "⏳ [MainLoadingPage] Matières pas encore chargées, attente... isMaterialsLoaded:",
-        useLoadingStore.getState().isMaterialsLoaded
-      );
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    console.log("✅ [MainLoadingPage] Matières chargées !");
-
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i <= 1 ? "completed" : "pending",
-      }))
-    );
-
-    // Étape 3: Composants
-    setCurrentStep(2);
-    console.log("⏳ [MainLoadingPage] Étape 3: Chargement composants...");
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i === 2 ? "loading" : i < 2 ? "completed" : "pending",
-      }))
-    );
-
-    // Attendre que les composants soient chargés
-    while (!useLoadingStore.getState().isComponentsLoaded) {
-      console.log(
-        "⏳ [MainLoadingPage] Composants pas encore chargés, attente... isComponentsLoaded:",
-        useLoadingStore.getState().isComponentsLoaded
-      );
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    console.log("✅ [MainLoadingPage] Composants chargés !");
-
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i <= 2 ? "completed" : "pending",
-      }))
-    );
-
-    // Étape 4: Finalisation (attendre WoodMaterialSelector)
-    setCurrentStep(3);
-    console.log("⏳ [MainLoadingPage] Étape 4: Finalisation...");
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status: i === 3 ? "loading" : i < 3 ? "completed" : "pending",
-      }))
-    );
-
-    // Attendre que WoodMaterialSelector soit initialisé
-    while (!useLoadingStore.getState().isWoodMaterialSelectorLoaded) {
-      console.log(
-        "⏳ [MainLoadingPage] WoodMaterialSelector pas encore chargé, attente... isWoodMaterialSelectorLoaded:",
-        useLoadingStore.getState().isWoodMaterialSelectorLoaded
-      );
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    console.log("✅ [MainLoadingPage] WoodMaterialSelector chargé !");
-
-    setSteps((prev) =>
-      prev.map((step) => ({
-        ...step,
-        status: "completed",
-      }))
-    );
-
-    console.log("🎉 [MainLoadingPage] Toutes les étapes terminées !");
-
-    // Animations finales
-    gsap.to(progressBarRef.current, {
-      width: "100%",
-      duration: 0.3,
-      ease: "power2.out",
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    gsap.to(containerRef.current, {
-      opacity: 0,
-      scale: 0.9,
-      duration: 0.8,
-      ease: "power2.inOut",
-      onComplete: () => {
-        onLoadingComplete();
-      },
-    });
-  }, [initializeApp, onLoadingComplete]);
-
+  const barInnerRef = useRef<HTMLDivElement | null>(null);
+  const { getWorkerProxy, isReady: workerReady } = useOpenCascadeWorker();
   useEffect(() => {
-    // Animation d'entrée du logo
-    gsap.fromTo(
-      logoRef.current,
-      { scale: 0, rotation: -180, opacity: 0 },
-      {
-        scale: 1,
-        rotation: 0,
-        opacity: 1,
-        duration: 1.2,
-        ease: "back.out(1.7)",
-        delay: 0.3,
+    if (workerReady) {
+      const proxy = getWorkerProxy();
+      if (proxy) {
+        registerWorkerProxy(proxy);
+        void computeInitialPanelIfNeeded();
       }
-    );
-
-    // Animation de la barre de progression
-    gsap.fromTo(
-      progressBarRef.current,
-      { scaleX: 0 },
-      {
-        scaleX: 1,
-        duration: 0.8,
-        ease: "power2.inOut",
-        delay: 0.8,
-      }
-    );
-
-    // Animation des étapes
-    gsap.fromTo(
-      stepsRef.current?.children || [],
-      { y: 30, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.6,
-        stagger: 0.1,
-        delay: 1.2,
-      }
-    );
-    // Démarrer le processus de chargement
-    startLoadingProcess();
-  }, [startLoadingProcess]);
-
-  const getStepIcon = (step: LoadingStep) => {
-    switch (step.status) {
-      case "loading":
-        return <Loader2 className="w-4 h-4 animate-spin text-amber-600" />;
-      case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      default:
-        return (
-          <div className="w-4 h-4 rounded-full border-2 border-gray-300" />
-        );
     }
-  };
-
+  }, [workerReady, getWorkerProxy]);
+  useWoodMaterialSelectorInit();
+  const {
+    setAppStatus,
+    setWorkerStatus,
+    setSelectorStatus,
+    workerStatus,
+    selectorStatus,
+    setAppLoading,
+    initializeApp,
+  } = useLoadingStore();
+  const [progress, setProgress] = useState(0);
+  const [startedAt] = useState(() => performance.now());
+  const waitingRef = useRef(false);
+  const doneRef = useRef(false);
+  const baseIntervalRef = useRef<number | null>(null);
+  const pulseRafRef = useRef<number | null>(null);
+  const finishingRef = useRef(false);
+  const computeTarget = useCallback(() => {
+    const now = performance.now();
+    const elapsed = now - startedAt;
+    if (
+      workerStatus === "worker-ready" &&
+      selectorStatus === "selector-ready" &&
+      elapsed < MIN_TOTAL_MS
+    )
+      return MIN_TOTAL_MS;
+    if (elapsed > TARGET_TOTAL_MS)
+      return Math.min(elapsed + 2000, MAX_TOTAL_MS);
+    return TARGET_TOTAL_MS;
+  }, [startedAt, workerStatus, selectorStatus]);
+  const phaseLabel = (() => {
+    if (workerStatus === "worker-error" || selectorStatus === "selector-error")
+      return "Erreur de chargement";
+    if (workerStatus !== "worker-ready") return "Initialisation du moteur 3D";
+    if (selectorStatus !== "selector-ready")
+      return "Préparation du sélecteur matériaux";
+    if (!doneRef.current) return "Finalisation de l'application";
+    return "Prêt";
+  })();
+  const initStartedRef = useRef(false);
+  useEffect(() => {
+    if (initStartedRef.current) return;
+    initStartedRef.current = true;
+    setAppStatus("app-start");
+    setWorkerStatus("worker-start");
+    setSelectorStatus("selector-start");
+    initializeApp();
+    dlog("INIT_APP_START");
+  }, [setAppStatus, setWorkerStatus, setSelectorStatus, initializeApp, dlog]);
+  useGsapIntro({ logoRef, progressBarRef });
+  useEffect(() => {
+    dlog("STATUS_CHANGE", { workerStatus, selectorStatus });
+  }, [workerStatus, selectorStatus, workerReady, dlog]);
+  useEffect(() => {
+    if (baseIntervalRef.current) return;
+    baseIntervalRef.current = window.setInterval(() => {
+      if (doneRef.current || finishingRef.current) return;
+      const elapsed = performance.now() - startedAt;
+      const targetTotal = computeTarget();
+      let ratio = elapsed / targetTotal;
+      if (ratio > 1) ratio = 1;
+      const softCapPct = SOFT_CAP * 100;
+      const baseIdeal = ratio * softCapPct;
+      setProgress((prev) => {
+        if (DEBUG_LOADING && Math.abs(prev - baseIdeal) > 5)
+          dlog("BASE_TICK", {
+            elapsed: Math.round(elapsed),
+            targetTotal: Math.round(targetTotal),
+            prev,
+            baseIdeal: Math.round(baseIdeal),
+          });
+        if (prev >= softCapPct) return prev;
+        return baseIdeal > prev ? Math.min(baseIdeal, softCapPct) : prev;
+      });
+    }, BASE_TICK_MS);
+    return () => {
+      if (baseIntervalRef.current)
+        window.clearInterval(baseIntervalRef.current);
+      baseIntervalRef.current = null;
+    };
+  }, [computeTarget, startedAt, dlog]);
+  const lastMarkerRef = useRef<number | null>(null);
+  useEffect(() => {
+    const markers = [0, 60, 90, 95, 98, 100];
+    for (const m of markers) {
+      if (progress >= m && lastMarkerRef.current !== m) {
+        lastMarkerRef.current = m;
+        dlog("PROGRESS_MARK", m);
+      }
+    }
+  }, [progress, dlog]);
+  useEffect(() => {
+    const readyAll =
+      workerStatus === "worker-ready" && selectorStatus === "selector-ready";
+    if (doneRef.current || finishingRef.current) return;
+    if (readyAll) {
+      waitingRef.current = false;
+      if (pulseRafRef.current) {
+        cancelAnimationFrame(pulseRafRef.current);
+        pulseRafRef.current = null;
+      }
+      return;
+    }
+    if (progress >= SOFT_CAP * 100 && progress < HARD_WAIT_CAP * 100) {
+      waitingRef.current = true;
+      let lastPulse = performance.now();
+      const tick = () => {
+        if (!waitingRef.current || doneRef.current || finishingRef.current)
+          return;
+        const now = performance.now();
+        if (now - lastPulse >= PULSE_INTERVAL_MS) {
+          lastPulse = now;
+          setProgress((p) => {
+            if (p < HARD_WAIT_CAP * 100)
+              return Math.min(p + 0.1, HARD_WAIT_CAP * 100);
+            return p;
+          });
+        }
+        pulseRafRef.current = requestAnimationFrame(tick);
+      };
+      pulseRafRef.current = requestAnimationFrame(tick);
+      return () => {
+        waitingRef.current = false;
+        if (pulseRafRef.current) cancelAnimationFrame(pulseRafRef.current);
+        pulseRafRef.current = null;
+      };
+    }
+  }, [progress, workerStatus, selectorStatus]);
+  const startFinalization = useCallback(() => {
+    if (doneRef.current || finishingRef.current) return;
+    const readyAll =
+      workerStatus === "worker-ready" && selectorStatus === "selector-ready";
+    if (!readyAll) return;
+    waitingRef.current = false;
+    const minPct = FAST_PATH_MIN * 100;
+    setProgress((p) => (p < minPct ? minPct : p));
+    const start = Math.max(progress, minPct);
+    const distance = 100 - start;
+    const tNorm = clamp((distance / 100 - (1 - SOFT_CAP)) / SOFT_CAP, 0, 1);
+    const duration = lerp(FINISH_MIN_MS, FINISH_MAX_MS, tNorm);
+    finishingRef.current = true;
+    const startTime = performance.now();
+    const animate = () => {
+      if (doneRef.current) return;
+      const now = performance.now();
+      const t = clamp((now - startTime) / duration, 0, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const value = lerp(start, 100, eased);
+      setProgress(value);
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        doneRef.current = true;
+        setProgress(100);
+        setAppStatus("app-ready");
+        setTimeout(() => {
+          setAppLoading(false);
+          onLoadingComplete();
+        }, 120);
+      }
+    };
+    requestAnimationFrame(animate);
+  }, [
+    progress,
+    workerStatus,
+    selectorStatus,
+    setAppStatus,
+    setAppLoading,
+    onLoadingComplete,
+  ]);
+  useEffect(() => {
+    startFinalization();
+  }, [workerStatus, selectorStatus, startFinalization]);
+  useEffect(() => {
+    const readyAll =
+      workerStatus === "worker-ready" && selectorStatus === "selector-ready";
+    if (!readyAll || !workerReady) return;
+    let canceled = false;
+    (async () => {
+      const t0 = performance.now();
+      const did = await computeInitialPanelIfNeeded();
+      if (!canceled && did)
+        dlog("INITIAL_PANEL_PRECOMPUTED", {
+          ms: Math.round(performance.now() - t0),
+        });
+    })();
+    return () => {
+      canceled = true;
+    };
+  }, [workerStatus, selectorStatus, workerReady, dlog]);
+  useEffect(() => {
+    let readyAt: number | null = null;
+    let finishingAt: number | null = null;
+    const interval = window.setInterval(() => {
+      const readyAll =
+        workerStatus === "worker-ready" && selectorStatus === "selector-ready";
+      if (readyAll && !doneRef.current && !finishingRef.current) {
+        if (readyAt == null) readyAt = performance.now();
+        if (performance.now() - readyAt > 2000) startFinalization();
+      }
+      if (finishingRef.current && !doneRef.current) {
+        if (finishingAt == null) finishingAt = performance.now();
+        if (performance.now() - finishingAt > 5000) {
+          doneRef.current = true;
+          setProgress(100);
+          setAppStatus("app-ready");
+          setAppLoading(false);
+          onLoadingComplete();
+        }
+      }
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [
+    workerStatus,
+    selectorStatus,
+    progress,
+    startFinalization,
+    setAppLoading,
+    setAppStatus,
+    onLoadingComplete,
+  ]);
+  useEffect(() => {
+    if (!progressBarRef.current) return;
+    const inner =
+      progressBarRef.current.querySelector<HTMLDivElement>(".h-full");
+    barInnerRef.current = inner;
+    if (inner) inner.style.width = `${Math.round(progress)}%`;
+  }, [progress]);
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center z-50"
+      className={`fixed inset-0 bg-gradient-to-br from-amber-50 via-white to-orange-50 flex items-center justify-center z-50 transition-opacity duration-300 ${
+        visible
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
+      }`}
     >
       <div className="max-w-md w-full mx-4 text-center">
-        {/* Logo animé */}
-        <div ref={logoRef} className="mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center shadow-lg">
-            <TreePine className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">WoodcraftR</h1>
-          <p className="text-gray-600 text-sm">
-            Votre atelier de découpe bois personnalisé
+        <BrandingHeader ref={logoRef} />
+        <GlobalProgressBar ref={progressBarRef} />
+        <p className="text-xs text-gray-600 mt-4">{phaseLabel}</p>
+        {waitingRef.current && !doneRef.current && (
+          <p className="text-[11px] text-amber-600 mt-2">
+            Finalisation... (peut prendre quelques secondes la première fois)
           </p>
-        </div>
-
-        {/* Barre de progression */}
-        <div className="mb-8">
-          <div
-            ref={progressBarRef}
-            className="w-full h-2 bg-gray-200 rounded-full overflow-hidden"
-          >
-            <div
-              className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-300 ease-out"
-              style={{ width: "0%" }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Étape {currentStep + 1} sur {steps.length}
+        )}
+        {(workerStatus === "worker-error" ||
+          selectorStatus === "selector-error") && (
+          <p className="text-xs text-red-600 mt-4">
+            Erreur de chargement – veuillez recharger la page.
           </p>
-        </div>
-
-        {/* Liste des étapes */}
-        <div ref={stepsRef} className="space-y-3">
-          {steps.map((step) => (
-            <div
-              key={step.id}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-300 ${
-                step.status === "loading"
-                  ? "bg-amber-100 border border-amber-200"
-                  : step.status === "completed"
-                  ? "bg-green-50 border border-green-200"
-                  : "bg-gray-50 border border-gray-200"
-              }`}
-            >
-              {getStepIcon(step)}
-              <span
-                className={`text-sm font-medium ${
-                  step.status === "loading"
-                    ? "text-amber-800"
-                    : step.status === "completed"
-                    ? "text-green-800"
-                    : "text-gray-600"
-                }`}
-              >
-                {step.label}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Message de patience */}
-        <div className="mt-8 text-xs text-gray-500">
-          <p>Initialisation en cours, merci de patienter...</p>
-        </div>
+        )}
       </div>
     </div>
   );

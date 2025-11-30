@@ -1,0 +1,15 @@
+{
+  "id": "hetre",
+  "displayName": "Hêtre",
+  "carousel": {
+    "title": "Hêtre — Beech",
+    "description": "Bois clair à grain fin et fil droit, facile à travailler mais peu durable en extérieur.",
+    "image": "/textures/wood/hetre/basecolor.png",
+    "color": "#D9A87B",
+    "fullDescription": "Le hêtre (Fagus sylvatica) est un bois feuillu européen très répandu. Ses planches sciées sont d’une couleur allant du blanc‑crème au rosé clair, avec parfois un cœur rouge et sans différenciation nette entre l’aubier et le duramen【506073359490510†L110-L113】【449340556751227†L41-L43】. Son fil est généralement droit et son grain très fin, offrant un aspect homogène et légèrement flammé lorsque le débit est sur dosse【506073359490510†L116-L120】. Le hêtre est classé parmi les bois mi‑lourds à durs, avec une masse volumique comprise entre 600 et 750 kg/m³【85784690905886†L82-L88】. Sa surface lisse et uniforme se teint, se colle et se vernit très facilement, et il se cintre bien après étuvage【85784690905886†L109-L119】.\n\nNaturellement peu durable et sensible à l’humidité, le hêtre est surtout destiné aux aménagements intérieurs ; il peut néanmoins être traité (par haute température ou imprégnation) pour être utilisé en classe 3 en extérieur【85784690905886†L86-L97】. Il est très apprécié en menuiserie et agencement intérieur pour la fabrication de meubles, d’ustensiles de cuisine et de jouets, ainsi que de parquets, d’escaliers et de pièces cintrées【506073359490510†L131-L146】【85784690905886†L100-L107】. Grâce à ses propriétés mécaniques correctes et à sa facilité d’usinage, il est également utilisé pour les panneaux contreplaqués, l’emballage et le calage industriel【85784690905886†L100-L107】. Originaire des forêts tempérées d’Europe, il est abondant en France, en Allemagne et en Europe centrale et se reproduit aisément en sylviculture【506073359490510†L199-L210】.",
+    "Origin": "Europe (principalement France, Allemagne et Europe centrale)",
+    "Hardness": "Dur",
+    "Class": 2,
+    "tags": ["Bois dur", "Menuiserie", "Parquet", "Mobilier", "Objets tournés"]
+  }
+}

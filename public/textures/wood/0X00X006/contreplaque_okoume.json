@@ -1,0 +1,15 @@
+{
+  "id": "contreplaque_okoume",
+  "displayName": "Contreplaqué Okoumé",
+  "carousel": {
+    "title": "Contreplaqué Okoumé — Okoumé plywood",
+    "description": "Panneau léger et décoratif, teinte brun rosé, bonne stabilité.",
+    "image": "/textures/wood/contreplaque_okoume/basecolor.png",
+    "color": "#D8876F",
+    "fullDescription": "Le contreplaqué okoumé est constitué de placages d\u2019okoumé déroulés collés en plis croisés. Le bois okoumé, originaire des forêts d\u2019Afrique centrale, présente une couleur allant du blanc rosâtre au brun rougeâtre et acquiert un lustre nacré avec le temps\u3010862166544367710\u2020L80-L89\u3011. Les panneaux standard ont des faces brun rosé caractéristiques et une densité modérée d\u2019environ 440\u2013500\u00a0kg/m\u00b3\u3010178485400316835\u2020L171-L178\u3011, ce qui en fait un matériau léger et facile \u00e0 travailler. Les versions à collage extérieur offrent une bonne stabilité et une résistance mécanique satisfaisante et peuvent être utilisées en milieu humide\u3010592224603139589\u2020L141-L175\u3011, tandis que les versions intérieures se destinent aux environnements secs pour l\u2019agencement, la marqueterie et les plafonds\u3010178485400316835\u2020L130-L148\u3011. L\u2019okoumé est classé en usage\u00a02 (intérieur ou sous abri) mais les contreplaqués hydrofuges ou marines peuvent atteindre la classe\u00a03; sa durabilité naturelle est moyenne, nécessitant un traitement pour les applications maritimes. Ce panneau est prisé pour la fabrication de meubles, revêtements décoratifs, cloisons, marqueterie et constructions navales.",
+    "Origin": "Afrique centrale (Gabon, Congo)",
+    "Hardness": "Tendre",
+    "Class": 3,
+    "tags": ["Exotique", "Léger", "Agencement", "Marine"]
+  }
+}

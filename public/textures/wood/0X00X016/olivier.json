@@ -1,0 +1,15 @@
+{
+  "id": "olivier",
+  "displayName": "Olivier",
+  "carousel": {
+    "title": "Olivier — Olive wood",
+    "description": "Bois méditerranéen très dur au veinage marbré, couleurs du jaune doré au brun foncé, haute densité et résistance exceptionnelle.",
+    "image": "/textures/wood/olivier/basecolor.png",
+    "color": "#C7932A",
+    "fullDescription": "L’olivier (Olea europaea) fournit un bois d’une grande densité et d’une beauté singulière. Ses couleurs vont du jaune clair au brun foncé avec des veines brunes irrégulières et sinueuses qui forment des marbrures uniques【516445110193209†L189-L215】. Cette essence est très lourde et très dure (densité 900 à 1100 kg/m³) offrant une résistance remarquable aux chocs et à l’usure【516445110193209†L203-L208】. La texture est fine et serrée, le grain est irrégulier à ondulé, ce qui confère un rendu décoratif recherché【516445110193209†L212-L215】【656531413769309†L182-L192】. Bien que naturellement durable contre les champignons et insectes, l’olivier possède une stabilité modérée : il réagit aux variations d’humidité et doit être séché et entretenu avec soin【516445110193209†L218-L229】. Modérément résistant à l’humidité et aux intempéries, il est principalement utilisé en intérieur pour des objets de décoration, des ustensiles de cuisine, de la tournerie ou de petits meubles, où ses veines spectaculaires peuvent être mises en valeur【516445110193209†L250-L271】【656531413769309†L23-L30】.",
+    "Origin": "Région méditerranéenne (Espagne, Italie, Grèce, Tunisie, Turquie, Maroc, Algérie) et quelques zones chaudes du Moyen‑Orient et d’Afrique du Nord【656531413769309†L140-L150】",
+    "Hardness": "Très dur",
+    "Class": 1,
+    "tags": ["Bois très dur", "Décoration", "Ustensiles", "Tournerie", "Petit mobilier"]
+  }
+}

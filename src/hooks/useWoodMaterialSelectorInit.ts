@@ -43,63 +43,64 @@ function animate() {
 export function useWoodMaterialSelectorInit() {
   const [isInitialized, setIsInitialized] = useState(globalCache.isInitialized);
   const [error, setError] = useState<string | null>(null);
-  const { setWoodMaterialSelectorLoaded } = useLoadingStore();
+  const { setWoodMaterialSelectorLoaded, setSelectorStatus } =
+    useLoadingStore();
   const initializationInProgress = useRef(false);
   useEffect(() => {
     const initializeWoodMaterialSelector = async () => {
       try {
+        if (typeof window !== "undefined")
+          console.debug("[LOAD] SELECTOR_INIT_START");
         // Si déjà initialisé, marquer comme prêt
         if (globalCache.isInitialized) {
           setIsInitialized(true);
           setWoodMaterialSelectorLoaded(true);
+          setSelectorStatus("selector-ready");
+          if (typeof window !== "undefined")
+            console.debug("[LOAD] SELECTOR_READY (cached)");
           return;
         }
-        // Éviter les initialisations multiples simultanées
-        if (initializationInProgress.current) {
-          return;
-        }
+        if (initializationInProgress.current) return;
         initializationInProgress.current = true;
-        // Précharger les matériaux en arrière-plan
         materialPreloader.preloadMaterials().catch((e: unknown) => {
-          // Continuer l'initialisation même si le préchargement échoue
           console.warn(
             "[useWoodMaterialSelectorInit] preloadMaterials error:",
             e
           );
         });
-        // Créer les instances 3D de base (sans montage DOM)
         const scene = new THREE.Scene();
-        // === CAMÉRA IDENTIQUE À L'EXEMPLE THREE.JS ORIGINAL ===
         const camera = new THREE.PerspectiveCamera(40, 1, 1, 10000);
-        camera.position.z = 2750; // Rapproché de 3000 à 2000 pour une meilleure vision des cartes
+        camera.position.z = 2750;
         const renderer = new CSS3DRenderer();
-        renderer.setSize(800, 600); // Taille par défaut, sera ajustée au montage
-        // Sauvegarder dans le cache global
+        renderer.setSize(800, 600);
         globalCache = {
           scene,
           renderer,
           camera,
-          controls: null, // Les controls seront créés au montage
-          materialSphere: null, // Sera créé au premier montage
+          controls: null,
+          materialSphere: null,
           isInitialized: true,
           isSphereCreated: false,
           animationId: null,
         };
-        // Démarrer la boucle d'animation globale (comme Three.js original)
         animate();
-
         setIsInitialized(true);
         setWoodMaterialSelectorLoaded(true);
+        setSelectorStatus("selector-ready");
+        if (typeof window !== "undefined")
+          console.debug("[LOAD] SELECTOR_READY");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
-        // Marquer comme chargé même en cas d'erreur pour ne pas bloquer l'app
         setWoodMaterialSelectorLoaded(true);
+        setSelectorStatus("selector-error");
+        if (typeof window !== "undefined")
+          console.debug("[LOAD] SELECTOR_ERROR", err);
       } finally {
         initializationInProgress.current = false;
       }
     };
     initializeWoodMaterialSelector();
-  }, [setWoodMaterialSelectorLoaded]);
+  }, [setWoodMaterialSelectorLoaded, setSelectorStatus]);
   // Méthode pour monter le renderer dans un élément DOM
   const mountRenderer = (element: HTMLElement): CSS3DRenderer | null => {
     if (!globalCache.isInitialized || !globalCache.renderer) {

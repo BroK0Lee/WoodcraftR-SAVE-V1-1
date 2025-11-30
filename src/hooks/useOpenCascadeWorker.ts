@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLoadingStore } from "@/store/loadingStore";
 import {
   initOccWorker,
@@ -7,67 +7,70 @@ import {
   terminateOccWorker,
 } from "@/services/openCascadeWorkerService";
 
+// Hook minimal: initialise le worker OpenCascade et expose son proxy.
+// Toute logique de progression fine a été supprimée (UI gérée par timings adaptatifs côté écran de chargement).
 export function useOpenCascadeWorker() {
   const [isReady, setIsReady] = useState(isOccReady());
   const [error, setError] = useState<string | null>(null);
-  const { setWorkerReady } = useLoadingStore();
-  const initializationInProgress = useRef(false);
+  const { setWorkerStatus, workerStatus } = useLoadingStore();
+  const initRef = useRef(false);
 
   useEffect(() => {
-    const initializeWorker = async () => {
+    let cancelled = false;
+    (async () => {
+      if (initRef.current) return; // idempotent
+      initRef.current = true;
       try {
-        // Si déjà initialisé, marquer comme prêt
+        // log init début
+        if (typeof window !== "undefined")
+          console.debug("[LOAD] WORKER_INIT_START");
         if (isOccReady() && getOccProxy()) {
-          setIsReady(true);
-          setWorkerReady(true);
+          if (!cancelled) {
+            setIsReady(true);
+            if (workerStatus !== "worker-ready") {
+              // Sécurité si service n'a pas promu
+              setWorkerStatus("worker-ready");
+              if (typeof window !== "undefined")
+                console.debug("[LOAD] WORKER_READY (cached promote)");
+            } else if (typeof window !== "undefined") {
+              console.debug("[LOAD] WORKER_READY (cached)");
+            }
+          }
           return;
         }
-
-        // Éviter les initialisations multiples simultanées
-        if (initializationInProgress.current) {
-          return;
-        }
-
-        initializationInProgress.current = true;
-
-        // Initialiser via le service singleton
         const ok = await initOccWorker();
-        if (ok) {
-          setIsReady(true);
-          setWorkerReady(true);
-        } else {
+        if (!ok)
           throw new Error("Échec de l'initialisation du worker OpenCascade");
+        if (!cancelled) {
+          setIsReady(true);
+          // Normalement déjà promu par service, fallback si besoin
+          if (workerStatus !== "worker-ready") {
+            setWorkerStatus("worker-ready");
+            if (typeof window !== "undefined")
+              console.debug("[LOAD] WORKER_READY (hook fallback promote)");
+          } else if (typeof window !== "undefined") {
+            console.debug("[LOAD] WORKER_READY (service)");
+          }
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Erreur inconnue");
-        // En cas d'erreur, marquer comme prêt pour ne pas bloquer l'app
-        setWorkerReady(true);
-      } finally {
-        initializationInProgress.current = false;
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : String(e));
+          setWorkerStatus("worker-error");
+          if (typeof window !== "undefined")
+            console.debug("[LOAD] WORKER_ERROR", e);
+        }
       }
-    };
-
-    initializeWorker();
-
-    // Cleanup: ne pas terminer le worker ici (global). Laisser au service.
+    })();
     return () => {
-      // noop
+      cancelled = true;
     };
-  }, [setWorkerReady]);
+  }, [setWorkerStatus, workerStatus]);
 
-  // Fonction pour obtenir le proxy du worker (pour les composants qui en ont besoin)
-  const getWorkerProxy = () => getOccProxy();
-
-  // Fonction pour terminer le worker (à appeler uniquement lors de la fermeture de l'app)
-  const terminateWorker = () => {
+  const getWorkerProxy = useCallback(() => getOccProxy(), []);
+  const terminateWorker = useCallback(() => {
     terminateOccWorker();
     setIsReady(false);
-  };
+  }, []);
 
-  return {
-    isReady,
-    error,
-    getWorkerProxy,
-    terminateWorker,
-  };
+  return { isReady, error, getWorkerProxy, terminateWorker };
 }

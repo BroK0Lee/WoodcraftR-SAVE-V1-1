@@ -1,0 +1,15 @@
+{
+  "id": "merisier",
+  "displayName": "Mérisier",
+  "carousel": {
+    "title": "Mérisier — Cherry",
+    "description": "Bois noble à teinte chaude, grain fin et fil droit, apprécié en ébénisterie et mobilier de style.",
+    "image": "/textures/wood/merisier/basecolor.png",
+    "color": "#A86447",
+    "fullDescription": "Le mérisier, appelé aussi cerisier sauvage (Prunus avium), est un bois de grande valeur recherché pour sa texture compacte et sa couleur ambrée qui s’accentue avec le temps【946555992120438†L72-L76】. Son aubier rose pâle se distingue du duramen aux nuances allant du jaune miel au brun rosâtre, souvent traversé de veinures verdâtres【417685264216289†L27-L31】【822945564251044†L127-L130】. Le fil est droit et peu ondulé, le grain fin à moyen et la figure peut présenter des flammes sur dosse【417685264216289†L27-L31】【822945564251044†L127-L134】. La masse volumique moyenne se situe autour de 600 kg/m³, ce qui en fait un bois mi‑lourd et mi‑dur【417685264216289†L46-L56】【946555992120438†L81-L84】. La stabilité est moyenne et le bois est moyennement à peu durable ; le duramen est modérément durable tandis que l’aubier est peu durable et sensible aux attaques d’insectes【417685264216289†L69-L83】【822945564251044†L154-L158】.\n\nLe mérisier est cependant facile à usiner : sciage, rabotage, ponçage, tournage et sculpture se font aisément, et il offre un poli et une finition très appréciés en ébénisterie【417685264216289†L60-L68】【946555992120438†L95-L101】. Il présente une bonne aptitude au cintrage et au collage【417685264216289†L60-L68】. En raison de sa faible durabilité naturelle, il est destiné aux usages intérieurs : meubles de style, agencement de menuiserie et ébénisterie haut de gamme, placages, parquets, escaliers et portes intérieures【417685264216289†L83-L87】【822945564251044†L132-L134】. Les planches peuvent foncer sous l’effet de la lumière, donnant au mobilier une patine chaleureuse. Originaire d’Europe et relativement rare, cette essence est principalement exploitée en France et en Europe centrale et constitue un choix privilégié pour des réalisations décoratives et haut de gamme.",
+    "Origin": "Europe (principalement France et Europe centrale)",
+    "Hardness": "Mi-dur",
+    "Class": 2,
+    "tags": ["Bois noble", "Ebénisterie", "Mobilier de style", "Parquet", "Placage"]
+  }
+}

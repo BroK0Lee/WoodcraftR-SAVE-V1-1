@@ -1,0 +1,15 @@
+{
+  "id": "mdf_standard",
+  "displayName": "MDF Standard",
+  "carousel": {
+    "title": "MDF Standard — Standard MDF",
+    "description": "Panneau de fibres à densité moyenne, teinte brun clair uniforme, surface lisse et facile à usiner.",
+    "image": "/textures/wood/mdf_standard/basecolor.png",
+    "color": "#C08A5F",
+    "fullDescription": "Le MDF (Medium Density Fiberboard) standard est un panneau de fibres de bois de densité moyenne fabriqué à partir de sous‑produits d'usine (sciure et copeaux) broyés, séchés, puis agglomérés avec des résines et de la cire pour former un panneau homogène【46614786695800†L19-L23】. Il présente une couleur brun clair uniforme sans texture ni motif perceptible, ce qui lui confère une surface parfaitement lisse【46614786695800†L23-L24】. Sa densité se situe généralement entre 650 et 780 kg/m³【262847457853326†L140-L145】, ce qui assure une bonne stabilité et une dureté intermédiaire. Les surfaces du MDF sont isotropes et faciles à peindre ou à plaquer, ce qui en fait un matériau apprécié pour la décoration et l'agencement intérieur. Il est utilisé dans la fabrication de meubles, d'armoires, de revêtements de sol et d'enceintes audio en raison de sa finition lisse, de sa résistance et de sa consistance【46614786695800†L85-L90】. Toutefois, le MDF standard est sensible à l'humidité : il gonfle et se déforme dès que l'environnement devient humide【46614786695800†L119-L122】, d'où son usage limité aux applications intérieures sèches. Des versions hydrofuges et ignifuges existent pour des environnements spécifiques, mais le MDF standard reste une solution polyvalente et économique pour de nombreux projets de menuiserie intérieure. Selon la norme EN 13986, les panneaux MDF d'épaisseur supérieure à 9 mm peuvent atteindre la classe de réaction au feu D‑s2, d0 et sont classés E1 pour leurs émissions de formaldéhyde【545165893940390†L140-L147】.",
+    "Origin": "Produit industriel à base de fibres de bois recyclées",
+    "Hardness": "Mi-dur",
+    "Class": 1,
+    "tags": ["Panneau de fibres", "Décoration", "Ameublement", "Intérieur", "Économique"]
+  }
+}

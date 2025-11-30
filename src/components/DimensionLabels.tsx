@@ -1,7 +1,8 @@
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { Group } from "three";
 import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import type { Cut } from "@/models/Cut";
+import { usePanelStore } from "@/store/panelStore";
 
 interface Props {
   cut: Cut;
@@ -13,9 +14,30 @@ interface Props {
  * Style professionnel CAO avec lignes de rappel et flèches
  */
 export default function DimensionLabels({ cut, panelDimensions }: Props) {
-  // Calcul des données de cotation
+  // Synchronisation avec la géométrie réelle pour éviter le décalage visuel
+  // On ne met à jour les valeurs affichées que lorsque la géométrie 3D a été recalculée
+  const geometry = usePanelStore((s) => s.geometry);
+  const [displayedCut, setDisplayedCut] = useState(cut);
+
+  useEffect(() => {
+    setDisplayedCut(cut);
+    // On dépend de geometry pour déclencher la mise à jour au bon moment
+    // On dépend de cut pour avoir les dernières valeurs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geometry]);
+
+  // Si c'est la première fois (montage) ou si on change de découpe cible, on force la mise à jour immédiate
+  // pour éviter d'afficher les valeurs de la découpe précédente
+  useEffect(() => {
+    if (cut.id !== displayedCut.id) {
+      setDisplayedCut(cut);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cut.id]);
+
+  // Calcul des données de cotation basées sur displayedCut (synchronisé)
   const cotationData = useMemo(() => {
-    const { positionX, positionY } = cut;
+    const { positionX, positionY } = displayedCut;
     const { length, width, thickness } = panelDimensions;
     const offset = 25;
     const originX = 0;
@@ -36,49 +58,75 @@ export default function DimensionLabels({ cut, panelDimensions }: Props) {
       displayX: positionX.toFixed(2),
       displayY: positionY.toFixed(2),
     };
-  }, [cut, panelDimensions]);
+  }, [displayedCut, panelDimensions]);
 
   // Référence pour le groupe Three.js
   const groupRef = useRef<Group>(null);
+  // Références persistantes pour les labels (créés une fois)
+  const labelXRef = useRef<CSS2DObject | null>(null);
+  const labelYRef = useRef<CSS2DObject | null>(null);
+  const labelClass =
+    "px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none";
 
-  // Ajout des labels CSS2D comme dans AxesHelper
+  // Création/démontage des labels une seule fois
   useEffect(() => {
     const group = groupRef.current;
     if (!group) return;
-    // Nettoyer les anciens labels CSS2D
-    group.children = group.children.filter(
-      (obj) => !(obj instanceof CSS2DObject)
-    );
-    // Style cohérent avec AxesHelper
-    const labelClass =
-      "px-1 py-0.5 rounded shadow text-xs font-bold bg-neutral-900/90 text-white border border-white/10 pointer-events-none select-none";
-    // Label X
-    const labelXDiv = document.createElement("div");
-    labelXDiv.className = labelClass;
-    labelXDiv.textContent = `X: ${cotationData.displayX}`;
-    const labelXObj = new CSS2DObject(labelXDiv);
-    labelXObj.position.set(
+
+    // Créer X si absent
+    if (!labelXRef.current) {
+      const labelXDiv = document.createElement("div");
+      labelXDiv.className = labelClass;
+      labelXRef.current = new CSS2DObject(labelXDiv);
+      group.add(labelXRef.current);
+    }
+    // Créer Y si absent
+    if (!labelYRef.current) {
+      const labelYDiv = document.createElement("div");
+      labelYDiv.className = labelClass;
+      labelYDiv.style.display = "flex";
+      labelYDiv.style.justifyContent = "center";
+      labelYDiv.style.alignItems = "center";
+      labelYDiv.style.whiteSpace = "nowrap";
+      labelYRef.current = new CSS2DObject(labelYDiv);
+      group.add(labelYRef.current);
+    }
+
+    // Cleanup au démontage
+    return () => {
+      if (group && labelXRef.current) {
+        group.remove(labelXRef.current);
+        // Detacher l'élément DOM par sécurité
+        (labelXRef.current.element as HTMLElement | undefined)?.remove?.();
+        labelXRef.current = null;
+      }
+      if (group && labelYRef.current) {
+        group.remove(labelYRef.current);
+        (labelYRef.current.element as HTMLElement | undefined)?.remove?.();
+        labelYRef.current = null;
+      }
+    };
+  }, []);
+
+  // Mise à jour du contenu/position des labels quand les données changent
+  useEffect(() => {
+    const lx = labelXRef.current;
+    const ly = labelYRef.current;
+    if (!lx || !ly) return;
+    // Texte
+    (lx.element as HTMLDivElement).textContent = `X: ${cotationData.displayX}`;
+    (ly.element as HTMLDivElement).textContent = `Y: ${cotationData.displayY}`;
+    // Positions
+    lx.position.set(
       (cotationData.originX + cotationData.positionX) / 2,
       cotationData.xCotationY - 8,
       cotationData.zOffset
     );
-    group.add(labelXObj);
-    // Label Y standard, identique à X
-    const labelYDiv = document.createElement("div");
-    labelYDiv.className = labelClass;
-    labelYDiv.style.display = "flex";
-    labelYDiv.style.justifyContent = "center";
-    labelYDiv.style.alignItems = "center";
-    labelYDiv.style.whiteSpace = "nowrap";
-    labelYDiv.textContent = `Y: ${cotationData.displayY}`;
-    const labelYObj = new CSS2DObject(labelYDiv);
-    labelYObj.position.set(
+    ly.position.set(
       cotationData.yCotationX - 8,
       (cotationData.originY + cotationData.positionY) / 2,
       cotationData.zOffset
     );
-    group.add(labelYObj);
-    // Pas besoin de cleanup manuel, group.clear() suffit
   }, [cotationData]);
 
   return (

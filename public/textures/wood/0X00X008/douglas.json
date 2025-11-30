@@ -1,0 +1,15 @@
+{
+  "id": "douglas",
+  "displayName": "Douglas",
+  "carousel": {
+    "title": "Douglas — Douglas fir",
+    "description": "Bois résineux local aux teintes rosées à brun rougeâtre, cernes marqués et bonne résistance structurelle.",
+    "image": "/textures/wood/douglas/basecolor.png",
+    "color": "#D98A6B",
+    "fullDescription": "Le Douglas (Pseudotsuga menziesii), souvent nommé pin d’Oregon, est un résineux originaire de la côte ouest de l’Amérique du Nord et largement cultivé en France depuis le XIXᵉ siècle【477535963212855†L156-L164】【939662721630231†L36-L40】. Son duramen présente des teintes allant du rose saumon au brun rougeâtre avec des cernes annuels bien marqués et des petits nœuds【477535963212855†L323-L343】【939662721630231†L49-L60】. Le grain est généralement droit et la texture moyenne à grossière, apportant un aspect rustique chaleureux【939662721630231†L49-L56】. Ce bois est moyennement dense : sa masse volumique oscille autour de 500 à 550 kg/m³【477535963212855†L335-L339】【578961122282722†L224-L226】. Purge d’aubier, son cœur contient beaucoup de résine qui confère une bonne durabilité naturelle et une résistance aux insectes ; il est classé en emploi 3 (extérieur hors sol) avec une longévité de 10 à 50 ans【477535963212855†L328-L331】【578961122282722†L224-L231】. Son aubier, non durable mais imprégnable, peut être traité. Grâce à sa résistance mécanique élevée, le Douglas est utilisé pour les charpentes, ossatures, bardages, terrasses, ainsi que pour les planchers et lambris d’intérieur【578961122282722†L234-L246】. Sa provenance locale (France, Morvan, Massif central, Vosges) en fait une essence privilégiée pour des constructions durables et écologiques.",
+    "Origin": "Amérique du Nord (côte ouest) et plantations en France (Morvan, Massif central, Vosges)【477535963212855†L156-L164】【578961122282722†L224-L245】",
+    "Hardness": "Tendre",
+    "Class": 3,
+    "tags": ["Bois résineux", "Structure", "Bardage", "Terrasse", "Local"]
+  }
+}

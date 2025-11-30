@@ -2,406 +2,144 @@
 import * as Comlink from "comlink";
 import openCascadeFactory from "opencascade.js/dist/opencascade.full.js";
 import wasmURL from "opencascade.js/dist/opencascade.full.wasm?url";
-import { shapeToGeometry } from "../helpers/shapeToGeometry";
-import shapeToUrl from "../helpers/shapeToUrl"; // doit etre "pur JS" !
 import type {
   OccWorkerAPI,
-  CuttingInfo,
   CutValidationResult,
   PanelWithCutsConfig,
 } from "./worker.types";
 import type { PanelDimensions } from "@/models/Panel";
-import type { EdgeDTO } from "@/models/EdgeDTO";
 import type { Cut, RectangularCut, CircularCut } from "@/models/Cut";
-import { EPSILON_CUT } from "@/models/Cut";
 import type { TopoDS_Shape } from "opencascade.js";
+// Modules refactorisés
+import { createBox as createBoxBase } from "./api/panelBase";
+import { getEdges as getEdgesBase } from "./api/edges";
+import { createPanelWithCuts as createPanelWithCutsBase } from "./api/panelWithCuts";
+import {
+  createCircularCut as createCircularCutBase,
+  createRectangularCut as createRectangularCutBase,
+  applyAllCuts as applyAllCutsBase,
+} from "./api/cuts";
+import { validateSingleCut } from "./api/validation";
+import type { OCCLike } from "./api/occtypes";
 
-// --- VARIABLES GLOBALES ---
+// --- ETAT GLOBAL ---
 let oc: Awaited<ReturnType<typeof openCascadeFactory>> | null = null;
 
-// --- INIT OPENCASCADE ---
-async function init() {
-  if (!oc) {
-    // Correction du typage pour accepter locateFile
-    type OpenCascadeFactory = (opts: {
-      locateFile: () => string;
-    }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
-    const factory = openCascadeFactory as unknown as OpenCascadeFactory;
-    oc = await factory({ locateFile: () => wasmURL });
+async function init(): Promise<boolean> {
+  // instrumentation simple
+  console.debug("[LOAD][OCC_WORKER] init start");
+  if (oc) {
+    console.debug("[LOAD][OCC_WORKER] already cached");
+    return true;
   }
+  type OpenCascadeFactory = (opts: {
+    locateFile: () => string;
+  }) => Promise<Awaited<ReturnType<typeof openCascadeFactory>>>;
+  const factory = openCascadeFactory as unknown as OpenCascadeFactory;
+  console.debug("[LOAD][OCC_WORKER] fetch wasm", wasmURL);
+  const resp = await fetch(wasmURL);
+  const totalStr = resp.headers.get("Content-Length");
+  const total = totalStr ? parseInt(totalStr, 10) : undefined;
+  let loaded = 0;
+  let wasmBuffer: ArrayBuffer;
+  if (resp.body && total && Number.isFinite(total)) {
+    const reader = resp.body.getReader();
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        chunks.push(value);
+        loaded += value.byteLength;
+        // progression legacy supprimée
+      }
+    }
+    const combined = new Uint8Array(loaded);
+    let offset = 0;
+    for (const chunk of chunks) {
+      combined.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    wasmBuffer = combined.buffer;
+  } else {
+    wasmBuffer = await resp.arrayBuffer();
+    // progression legacy supprimée
+  }
+  const blob = new Blob([wasmBuffer], { type: "application/wasm" });
+  const blobUrl = URL.createObjectURL(blob);
+  console.debug("[LOAD][OCC_WORKER] instantiating module");
+  oc = await factory({ locateFile: () => blobUrl });
+  URL.revokeObjectURL(blobUrl);
+  console.debug("[LOAD][OCC_WORKER] init done");
   return true;
 }
 
-// --- API PRINCIPALE ---
-
-// Fonction unique : génère la géométrie, les edges et l'URL GLB d'un panneau
-async function createBox({
-  length,
-  width,
-  thickness,
-}: PanelDimensions): Promise<{
-  geometry: import("@/helpers/shapeToGeometry").PanelGeometryDTO;
-  edges: EdgeDTO[];
-  url: string;
-}> {
+// Utilitaire
+function requireOc() {
   if (!oc) throw new Error("OpenCascade not ready");
-  const panel = new oc.BRepPrimAPI_MakeBox_2(length, width, thickness).Shape();
-  const geometry = shapeToGeometry(oc, panel);
-  const edges = getEdges(panel, 0.5);
-  const url = shapeToUrl(oc, panel);
-  return { geometry, edges, url };
+  return oc;
 }
 
-// 3. Retourne les arêtes discrétisées d'une forme
-function getEdges(shape: TopoDS_Shape, tolerance: number): EdgeDTO[] {
-  if (!oc) throw new Error("OpenCascade not ready");
-
-  // Correction du typage dynamique pour les enums OpenCascade.js
-  const TopAbs_EDGE = oc.TopAbs_ShapeEnum?.TopAbs_EDGE ?? 2;
-  const TopAbs_SHAPE = oc.TopAbs_ShapeEnum?.TopAbs_SHAPE ?? 7;
-  const explorer = new oc.TopExp_Explorer_2(
-    shape,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TopAbs_EDGE as any, // OpenCascade enum casting required
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TopAbs_SHAPE as any
-  );
-
-  const result: EdgeDTO[] = [];
-  let id = 0;
-
-  while (explorer.More()) {
-    const edge = oc.TopoDS.Edge_1(explorer.Current());
-    const adaptor = new oc.BRepAdaptor_Curve_2(edge);
-    const discretizer = new oc.GCPnts_UniformDeflection_2(
-      adaptor,
-      tolerance,
-      false
-    );
-
-    if (discretizer.IsDone()) {
-      const nb = discretizer.NbPoints();
-      const points = new Float32Array(nb * 3);
-      for (let i = 1; i <= nb; i++) {
-        const pnt = discretizer.Value(i);
-        const base = (i - 1) * 3;
-        points[base] = pnt.X();
-        points[base + 1] = pnt.Y();
-        points[base + 2] = pnt.Z();
-      }
-      result.push({ id, xyz: points });
-      id += 1;
-    }
-
-    explorer.Next();
-  }
-
-  return result;
+// Wrappers
+async function createBox(dims: PanelDimensions) {
+  return createBoxBase(requireOc() as unknown as OCCLike, dims);
 }
-
-// ===== NOUVELLES FONCTIONS DE DÉCOUPE =====
-
-/**
- * Crée une forme de découpe rectangulaire positionnée
- */
-function createRectangularCut(
-  cut: RectangularCut,
-  panelThickness: number
-): TopoDS_Shape {
-  if (!oc) throw new Error("OpenCascade not ready");
-
-  // Utiliser la profondeur spécifiée ou l'épaisseur du panneau si traversante
-  const cutDepth = cut.depth || panelThickness;
-
-  // Créer la boîte de découpe avec un epsilon pour éviter le Z-fighting
-  const cutBox = new oc.BRepPrimAPI_MakeBox_2(
-    cut.length,
-    cut.width,
-    cutDepth + 2 * EPSILON_CUT
-  ).Shape();
-
-  // Créer la transformation pour positionner la découpe
-  const translation = new oc.gp_Trsf_1();
-
-  // Position relative au coin inférieur gauche du panneau
-  // Découpe depuis la face avant (Z=thickness) vers les Z négatifs
-  // La découpe doit commencer à Z = panelThickness + EPSILON_CUT et aller vers le bas
-  const zPosition = panelThickness + EPSILON_CUT - (cutDepth + 2 * EPSILON_CUT);
-
-  // Les positions X/Y représentent désormais le CENTRE de la découpe rectangle
-  // La box OCC est définie à partir de l'origine (coin bas-gauche) -> translater de (-L/2, -W/2)
-  translation.SetTranslation_1(
-    new oc.gp_Vec_4(
-      cut.positionX - cut.length / 2,
-      cut.positionY - cut.width / 2,
-      zPosition
-    )
-  );
-
-  // Appliquer la transformation
-  const transform = new oc.BRepBuilderAPI_Transform_2(
-    cutBox,
-    translation,
-    false
-  );
-
-  return transform.Shape();
+function getEdges(shape: TopoDS_Shape, tolerance: number) {
+  return getEdgesBase(requireOc() as unknown as OCCLike, shape, tolerance);
 }
-
-/**
- * Crée une forme de découpe circulaire positionnée
- */
-function createCircularCut(
-  cut: CircularCut,
-  panelThickness: number
-): TopoDS_Shape {
-  if (!oc) throw new Error("OpenCascade not ready");
-
-  // Utiliser la profondeur spécifiée ou l'épaisseur du panneau si traversante
-  const cutDepth = cut.depth || panelThickness;
-
-  // Créer le cylindre de découpe avec un epsilon pour éviter le Z-fighting
-  // Le cylindre est créé avec l'axe Z par défaut et l'origine au centre
-  const cylinder = new oc.BRepPrimAPI_MakeCylinder_2(
-    cut.radius,
-    cutDepth + 2 * EPSILON_CUT,
-    2 * Math.PI // angle complet
-  ).Shape();
-
-  // Créer la transformation pour positionner la découpe
-  const translation = new oc.gp_Trsf_1();
-
-  // Position relative au coin inférieur gauche du panneau
-  // Découpe depuis la face avant (Z=thickness) vers les Z négatifs
-  // La découpe doit commencer à Z = panelThickness + EPSILON_CUT et aller vers le bas
-  const zPosition = panelThickness + EPSILON_CUT - (cutDepth + 2 * EPSILON_CUT);
-
-  translation.SetTranslation_1(
-    new oc.gp_Vec_4(cut.positionX, cut.positionY, zPosition)
-  );
-
-  // Appliquer la transformation
-  const transform = new oc.BRepBuilderAPI_Transform_2(
-    cylinder,
-    translation,
-    false
-  );
-
-  return transform.Shape();
+async function createPanelWithCuts(config: PanelWithCutsConfig) {
+  return createPanelWithCutsBase(requireOc() as unknown as OCCLike, config);
 }
-
-/**
- * Applique toutes les découpes sur un panneau par soustraction séquentielle
- */
-async function applyAllCuts(
-  panel: TopoDS_Shape,
-  cuts: Cut[],
-  panelThickness: number
-): Promise<{
-  resultShape: TopoDS_Shape;
-  cuttingInfo: CuttingInfo;
-}> {
-  if (!oc) throw new Error("OpenCascade not ready");
-
-  let resultShape: TopoDS_Shape = panel;
-  const failedCuts: string[] = [];
-  let totalCutArea = 0;
-  let totalCutVolume = 0;
-  let rectangularCuts = 0;
-  let circularCuts = 0;
-
-  for (const cut of cuts) {
-    try {
-      // Créer la forme de découpe selon le type
-      let cutShape: TopoDS_Shape;
-      if (cut.type === "rectangle") {
-        cutShape = createRectangularCut(cut, panelThickness);
-        rectangularCuts++;
-        // Calculer l'aire et le volume pour rectangle
-        totalCutArea += cut.length * cut.width;
-        totalCutVolume +=
-          cut.length * cut.width * (cut.depth || panelThickness);
-      } else {
-        cutShape = createCircularCut(cut, panelThickness);
-        circularCuts++;
-        // Calculer l'aire et le volume pour cercle
-        const area = Math.PI * cut.radius * cut.radius;
-        totalCutArea += area;
-        totalCutVolume += area * (cut.depth || panelThickness);
-      }
-
-      // Appliquer l'opération booléenne de soustraction
-      const booleanOp = new oc.BRepAlgoAPI_Cut_3(
-        resultShape,
-        cutShape,
-        new oc.Message_ProgressRange_1()
-      );
-
-      // Construire l'opération
-      booleanOp.Build(new oc.Message_ProgressRange_1());
-
-      // Vérifier si l'opération a réussi
-      if (booleanOp.IsDone()) {
-        resultShape = booleanOp.Shape();
-      } else {
-        failedCuts.push(cut.id);
-        console.warn(
-          `Échec de l'opération booléenne pour la découpe ${cut.id}`
-        );
-      }
-    } catch (error) {
-      failedCuts.push(cut.id);
-      console.error(
-        `Erreur lors de la création de la découpe ${cut.id}:`,
-        error
-      );
-    }
-  }
-
-  const cuttingInfo: CuttingInfo = {
-    totalCuts: cuts.length,
-    rectangularCuts,
-    circularCuts,
-    totalCutArea,
-    totalCutVolume,
-    failedCuts,
-  };
-
-  return { resultShape, cuttingInfo };
-}
-
-/**
- * Crée un panneau avec toutes les découpes appliquées
- */
-async function createPanelWithCuts({
-  dimensions,
-  cuts,
-  shape = "rectangle",
-  circleDiameter,
-}: PanelWithCutsConfig): Promise<{
-  geometry: import("@/helpers/shapeToGeometry").PanelGeometryDTO;
-  edges: EdgeDTO[];
-  url: string;
-  cuttingInfo: CuttingInfo;
-}> {
-  if (!oc) throw new Error("OpenCascade not ready");
-
-  // Créer le panneau de base selon la forme
-  let basePanel: TopoDS_Shape;
-  if (shape === "circle") {
-    const diameter =
-      circleDiameter ?? Math.min(dimensions.length, dimensions.width);
-    const radius = Math.max(0.1, diameter / 2);
-    // Cylindre debout le long de Z ; on veut un disque horizontal: OK (Z = thickness)
-    const rawCylinder = new oc.BRepPrimAPI_MakeCylinder_2(
-      radius,
-      dimensions.thickness,
-      2 * Math.PI
-    ).Shape();
-    // Aligner le repère XY sur [0..diam]x[0..diam] comme pour la boîte
-    const trsf = new oc.gp_Trsf_1();
-    trsf.SetTranslation_1(new oc.gp_Vec_4(radius, radius, 0));
-    const transform = new oc.BRepBuilderAPI_Transform_2(
-      rawCylinder,
-      trsf,
-      false
-    );
-    basePanel = transform.Shape();
-  } else {
-    basePanel = new oc.BRepPrimAPI_MakeBox_2(
-      dimensions.length,
-      dimensions.width,
-      dimensions.thickness
-    ).Shape();
-  }
-
-  // Appliquer toutes les découpes
-  const { resultShape, cuttingInfo } = await applyAllCuts(
-    basePanel,
-    cuts,
-    dimensions.thickness
-  );
-
-  // Générer la géométrie, les edges et l'URL
-  const geometry = shapeToGeometry(oc, resultShape);
-  const edges = getEdges(resultShape, 0.5);
-  const url = shapeToUrl(oc, resultShape);
-
-  return { geometry, edges, url, cuttingInfo };
-}
-
-/**
- * Valide la faisabilité géométrique d'une découpe
- */
 async function validateCutFeasibility(
   panelDims: PanelDimensions,
   cut: Cut
 ): Promise<CutValidationResult> {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  // Vérifications communes
-  if (cut.positionX < 0) {
-    errors.push("La position X ne peut pas être négative");
-  }
-  if (cut.positionY < 0) {
-    errors.push("La position Y ne peut pas être négative");
-  }
-  if (cut.depth < 0) {
-    errors.push("La profondeur ne peut pas être négative");
-  }
-  if (cut.depth > panelDims.thickness) {
-    warnings.push("La profondeur dépasse l'épaisseur du panneau");
-  }
-
-  // Vérifications spécifiques par type
-  if (cut.type === "rectangle") {
-    const halfL = cut.length / 2;
-    const halfW = cut.width / 2;
-    if (cut.length <= 0) {
-      errors.push("La longueur doit être positive");
-    }
-    if (cut.width <= 0) {
-      errors.push("La largeur doit être positive");
-    }
-    // Note: la forme du panneau (rectangle/cercle) est gérée côté store/UI.
-    // Vérifier selon la forme du panneau
-    // Pour panneau circulaire, vérifier que les 4 coins (centre ± demi-extensions) sont dans le disque
-    // Pour panneau rectangulaire, vérifier les bornes min/max avec centre
-    // Remarque: le worker ne connaît pas shape/diamètre ici -> on valide par défaut pour panneau rectangulaire
-    if (cut.positionX - halfL < 0 || cut.positionX + halfL > panelDims.length) {
-      errors.push("La découpe rectangulaire dépasse la longueur du panneau");
-    }
-    if (cut.positionY - halfW < 0 || cut.positionY + halfW > panelDims.width) {
-      errors.push("La découpe rectangulaire dépasse la largeur du panneau");
-    }
-  } else if (cut.type === "circle") {
-    // Vérifier que le cercle reste dans les limites du panneau
-    if (
-      cut.positionX - cut.radius < 0 ||
-      cut.positionX + cut.radius > panelDims.length
-    ) {
-      errors.push("La découpe circulaire dépasse la longueur du panneau");
-    }
-    if (
-      cut.positionY - cut.radius < 0 ||
-      cut.positionY + cut.radius > panelDims.width
-    ) {
-      errors.push("La découpe circulaire dépasse la largeur du panneau");
-    }
-    if (cut.radius <= 0) {
-      errors.push("Le rayon doit être positif");
-    }
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings,
-  };
+  const res = validateSingleCut(
+    { width: panelDims.width, height: panelDims.length },
+    cut.type === "rectangle"
+      ? {
+          type: "rect",
+          width: cut.length,
+          height: cut.width,
+          x: cut.positionX,
+          y: cut.positionY,
+        }
+      : {
+          type: "circle",
+          radius: cut.radius,
+          x: cut.positionX,
+          y: cut.positionY,
+        }
+  );
+  return { isValid: res.ok, errors: res.errors, warnings: [] };
+}
+function createRectangularCut(cut: RectangularCut, thickness: number) {
+  return createRectangularCutBase(
+    requireOc() as unknown as OCCLike,
+    cut,
+    thickness
+  );
+}
+function createCircularCut(cut: CircularCut, thickness: number) {
+  return createCircularCutBase(
+    requireOc() as unknown as OCCLike,
+    cut,
+    thickness
+  );
+}
+async function applyAllCuts(
+  panel: TopoDS_Shape,
+  cuts: Cut[],
+  thickness: number
+) {
+  return applyAllCutsBase(
+    requireOc() as unknown as OCCLike,
+    panel,
+    cuts,
+    thickness
+  );
 }
 
-// --- EXPOSE API ---
 Comlink.expose({
   init,
   createBox,
