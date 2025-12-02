@@ -32,6 +32,16 @@ export interface RectangularCut extends BaseCut {
   length: number;
   /** Largeur de la découpe rectangulaire (en mm) */
   width: number;
+  /** Rotation de la découpe (en degrés, sens anti-horaire) */
+  rotation?: number;
+  /** Nombre de répétitions supplémentaires en X (0 = pas de répétition) */
+  repetitionX?: number;
+  /** Entraxe en X (en mm) */
+  spacingX?: number;
+  /** Nombre de répétitions supplémentaires en Y (0 = pas de répétition) */
+  repetitionY?: number;
+  /** Entraxe en Y (en mm) */
+  spacingY?: number;
 }
 
 /** Découpe circulaire */
@@ -73,7 +83,12 @@ export const DEFAULT_RECTANGULAR_CUT: Omit<RectangularCut, 'id' | 'name' | 'crea
   positionY: 100,
   length: 50,
   width: 30,
-  depth: DEFAULT_DIMENSIONS.thickness // Traversante par défaut = épaisseur du panneau
+  depth: DEFAULT_DIMENSIONS.thickness, // Traversante par défaut = épaisseur du panneau
+  rotation: 0,
+  repetitionX: 0,
+  spacingX: 100,
+  repetitionY: 0,
+  spacingY: 100
 };
 
 /** Valeurs par défaut pour une découpe circulaire */

@@ -17,11 +17,22 @@ export interface OCCLike {
   // Transforms
   gp_Trsf_1?: new () => gp_Trsf;
   gp_Vec_4?: new (x: number, y: number, z: number) => GpVecLike;
+  gp_Pnt_3?: new (x: number, y: number, z: number) => unknown;
+  gp_Dir_4?: new (x: number, y: number, z: number) => unknown;
+  gp_Ax1_2?: new (p: unknown, d: unknown) => unknown;
+
   BRepBuilderAPI_Transform_2?: new (
     shape: TopoDS_Shape,
     trsf: gp_Trsf,
     copy: boolean
   ) => { Shape(): TopoDS_Shape };
+
+  // Compound
+  TopoDS_Compound?: new () => TopoDS_Shape;
+  BRep_Builder?: new () => {
+    MakeCompound(c: TopoDS_Shape): void;
+    Add(c: TopoDS_Shape, s: TopoDS_Shape): void;
+  };
 
   // Boolean
   BRepAlgoAPI_Cut_3?: new (a: TopoDS_Shape, b: TopoDS_Shape, pr: unknown) => {
