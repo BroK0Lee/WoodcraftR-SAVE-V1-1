@@ -1,4 +1,5 @@
-import { RectangularCut } from "@/models/Cut";
+import { RectangularCut, CircularCut } from "@/models/Cut";
+import { getCircularGridMinSpacing } from "@/dashboard/cutting/components/gridrepetition";
 
 export interface ValidationResult {
   isValid: boolean;
@@ -104,5 +105,40 @@ export function validateRectangularCut(cut: Partial<RectangularCut>): Validation
     errors,
     minSpacingX,
     minSpacingY
+  };
+}
+
+/**
+ * Valide les contraintes pour une découpe circulaire en répétition grille
+ * Règle : entraxe min (X et Y) = diameter/2 + SAFETY_MARGIN_MM
+ */
+export function validateCircularCut(
+  cut: Partial<CircularCut & { repetitionX?: number; spacingX?: number; repetitionY?: number; spacingY?: number }>
+): ValidationResult {
+  const errors: string[] = [];
+  const radius = cut.radius || 0;
+  const diameter = radius * 2;
+
+  // Use helper to compute min spacing
+  const { minSpacingX, minSpacingY } = getCircularGridMinSpacing(diameter, 1.0);
+
+  const repX = cut.repetitionX || 0;
+  const spacingX = cut.spacingX || 0;
+  const repY = cut.repetitionY || 0;
+  const spacingY = cut.spacingY || 0;
+
+  if (repX > 0 && spacingX < minSpacingX - 1e-2) {
+    errors.push(`L'entraxe X doit être au minimum de ${minSpacingX}mm pour les découpes circulaires.`);
+  }
+
+  if (repY > 0 && spacingY < minSpacingY - 1e-2) {
+    errors.push(`L'entraxe Y doit être au minimum de ${minSpacingY}mm pour les découpes circulaires.`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    minSpacingX,
+    minSpacingY,
   };
 }

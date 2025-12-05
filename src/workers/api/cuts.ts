@@ -1,6 +1,6 @@
 import type { RectangularCut, CircularCut, Cut } from "@/models/Cut";
 import { EPSILON_CUT } from "@/models/Cut";
-import { validateRectangularCut } from "@/dashboard/cutting/validation/CutRulesValidation";
+import { validateRectangularCut, validateCircularCut } from "@/dashboard/cutting/validation/CutRulesValidation";
 import type { TopoDS_Shape } from "opencascade.js";
 import type { CuttingInfo } from "../worker.types";
 import type { OCCLike } from "./occtypes";
@@ -119,6 +119,18 @@ export function createCircularCut(
   panelThickness: number
 ): TopoDS_Shape {
   assertOc(oc);
+  // Validation de sécurité pour les découpes circulaires (si répétitions renseignées)
+  try {
+    const validation = validateCircularCut(cut as any);
+    if (!validation.isValid) {
+      console.warn(`[Worker] Invalid circular cut configuration ignored: ${validation.errors.join(", ")}`);
+      throw new Error(`Invalid circular cut configuration: ${validation.errors.join(", ")}`);
+    }
+  } catch (err) {
+    // si la validation jette ou autre, on rebondit et empêche la création
+    throw err;
+  }
+
   const cutDepth = cut.depth || panelThickness;
   const cylinder = new oc.BRepPrimAPI_MakeCylinder_2!(
     cut.radius,
@@ -130,12 +142,48 @@ export function createCircularCut(
   translation.SetTranslation_1(
     new oc.gp_Vec_4!(cut.positionX, cut.positionY, zPosition)
   );
-  const transform = new oc.BRepBuilderAPI_Transform_2!(
-    cylinder,
-    translation,
-    false
-  );
-  return transform.Shape();
+  // Gérer les répétitions si renseignées (repX / repY)
+  const repX = (cut.repetitionX as number) || 0;
+  const repY = (cut.repetitionY as number) || 0;
+  const spaceX = (cut.spacingX as number) || 100;
+  const spaceY = (cut.spacingY as number) || 100;
+
+  // Si pas de répétition, on retourne la forme unique positionnée
+  if (repX === 0 && repY === 0) {
+    const transform = new oc.BRepBuilderAPI_Transform_2!(
+      cylinder,
+      translation,
+      false
+    );
+    return transform.Shape();
+  }
+
+  // Sinon, créer un Compound et y ajouter toutes les instances
+  const builder = new oc.BRep_Builder!();
+  const compound = new oc.TopoDS_Compound!();
+  builder.MakeCompound(compound);
+
+  for (let i = 0; i <= repX; i++) {
+    for (let j = 0; j <= repY; j++) {
+      const offsetX = i * spaceX;
+      const offsetY = j * spaceY;
+
+      const translationTrsf = new oc.gp_Trsf_1!();
+      translationTrsf.SetTranslation_1(
+        new oc.gp_Vec_4!(cut.positionX + offsetX, cut.positionY + offsetY, zPosition)
+      );
+
+      const positionedShape = new oc.BRepBuilderAPI_Transform_2!(
+        cylinder,
+        translationTrsf,
+        true // copy
+      ).Shape();
+
+      builder.Add(compound, positionedShape);
+    }
+  }
+
+  return compound;
 }
 
 // Applique toutes les découpes et calcule les infos

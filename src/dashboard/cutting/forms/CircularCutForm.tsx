@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import { validateCircularCut } from "../validation/CutRulesValidation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Edit } from "lucide-react";
 import { usePanelStore } from "@/store/panelStore";
 import { CIRCULAR_CUT_LIMITS } from "@/models/Cut";
@@ -23,6 +26,10 @@ export function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps
           positionY: editingCut.positionY,
           radius: editingCut.radius,
           depth: editingCut.depth,
+          repetitionX: editingCut.repetitionX || 0,
+          spacingX: editingCut.spacingX || 100,
+          repetitionY: editingCut.repetitionY || 0,
+          spacingY: editingCut.spacingY || 100,
         }
       : previewCut && previewCut.type === "circle"
       ? {
@@ -30,12 +37,20 @@ export function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps
           positionY: previewCut.positionY,
           radius: previewCut.radius,
           depth: previewCut.depth,
+          repetitionX: previewCut.repetitionX || 0,
+          spacingX: previewCut.spacingX || 100,
+          repetitionY: previewCut.repetitionY || 0,
+          spacingY: previewCut.spacingY || 100,
         }
       : {
           positionX: 100,
           positionY: 100,
           radius: 25,
           depth: dimensions.thickness,
+          repetitionX: 0,
+          spacingX: 100,
+          repetitionY: 0,
+          spacingY: 100,
         };
 
   const [formData, setFormData] = useState(initialData);
@@ -52,8 +67,35 @@ export function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps
   );
   const [depthInput, setDepthInput] = useState(formData.depth.toString());
 
+  // États pour la grille
+  const [enableGrid, setEnableGrid] = useState(
+    (formData.repetitionX || 0) > 0 || (formData.repetitionY || 0) > 0
+  );
+  const [repetitionXInput, setRepetitionXInput] = useState(
+    (formData.repetitionX || 0).toString()
+  );
+  const [spacingXInput, setSpacingXInput] = useState(
+    (formData.spacingX || 100).toString()
+  );
+  const [repetitionYInput, setRepetitionYInput] = useState(
+    (formData.repetitionY || 0).toString()
+  );
+  const [spacingYInput, setSpacingYInput] = useState(
+    (formData.spacingY || 100).toString()
+  );
+
+  // État de validation
+  const [validationState, setValidationState] = useState({
+    isValid: true,
+    minSpacingX: 0,
+    minSpacingY: 0,
+  });
+
   // Actions de prévisualisation depuis le store
   const updatePreviewCut = usePanelStore((state) => state.updatePreviewCut);
+
+  // Ref pour dernier toast (comportement similaire aux formulaires rectangulaires)
+  const lastToastRef = useRef<string | number | null>(null);
 
   // Gérer les changements d'editingCut pour réinitialiser les champs
   useEffect(() => {
@@ -63,15 +105,46 @@ export function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps
         positionY: editingCut.positionY,
         radius: editingCut.radius,
         depth: editingCut.depth,
+        repetitionX: editingCut.repetitionX || 0,
+        spacingX: editingCut.spacingX || 100,
+        repetitionY: editingCut.repetitionY || 0,
+        spacingY: editingCut.spacingY || 100,
       };
       setFormData(editData);
       setPositionXInput(editingCut.positionX.toString());
       setPositionYInput(editingCut.positionY.toString());
       setDiameterInput((editingCut.radius * 2).toString());
       setDepthInput(editingCut.depth.toString());
+      const hasGrid = (editingCut.repetitionX || 0) > 0 || (editingCut.repetitionY || 0) > 0;
+      setEnableGrid(hasGrid);
+      setRepetitionXInput((editingCut.repetitionX || 0).toString());
+      setSpacingXInput((editingCut.spacingX || 100).toString());
+      setRepetitionYInput((editingCut.repetitionY || 0).toString());
+      setSpacingYInput((editingCut.spacingY || 100).toString());
       // En mode édition, pas de prévisualisation séparée - on modifie directement
     }
   }, [editingCut]);
+
+  // Validation en temps réel
+  useEffect(() => {
+    const validation = validateCircularCut(formData as any);
+    setValidationState({
+      isValid: validation.isValid,
+      minSpacingX: validation.minSpacingX || 0,
+      minSpacingY: validation.minSpacingY || 0,
+    });
+
+    // Si la configuration redevient valide, annuler le toast existant
+    if (validation.isValid && lastToastRef.current) {
+      try {
+        toast.dismiss(lastToastRef.current);
+      } catch (e) {
+        // ignore
+      }
+      lastToastRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, editingCut]);
 
   // Synchroniser avec la découpe de prévisualisation du parent (une seule fois au montage)
   useEffect(() => {
@@ -151,10 +224,40 @@ export function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps
       valueToUpdate = constrainedValue / 2;
     }
 
+    // Contraintes générales pour répétitions / entraxes
+    if (field === "repetitionX" || field === "repetitionY") {
+      constrainedValue = Math.max(0, Math.min(newValue, 50));
+      fieldToUpdate = field;
+      valueToUpdate = constrainedValue;
+    }
+    if (field === "spacingX" || field === "spacingY") {
+      constrainedValue = Math.max(1, newValue);
+      fieldToUpdate = field;
+      valueToUpdate = constrainedValue;
+    }
+
     // Vérifier si la valeur a vraiment changé avant de déclencher le calcul
     if (formData[fieldToUpdate as keyof typeof formData] !== valueToUpdate) {
       const newFormData = { ...formData, [fieldToUpdate]: valueToUpdate };
       setFormData(newFormData);
+
+      // Si la modification touche des propriétés de grille, valider
+      const validation = validateCircularCut(newFormData as any);
+      if (!validation.isValid) {
+        if (lastToastRef.current) {
+          try {
+            toast.dismiss(lastToastRef.current);
+          } catch (e) {}
+          lastToastRef.current = null;
+        }
+        lastToastRef.current = toast.error("Configuration invalide", {
+          description: validation.errors.join("\n"),
+          duration: 5000,
+        });
+
+        // Ne pas propager la configuration invalide vers le worker / preview
+        return;
+      }
 
       // En mode édition : mettre à jour directement la découpe existante
       if (editingCut) {
@@ -195,11 +298,28 @@ export function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps
   };
 
   const handleAddCut = () => {
+    // Validation finale pour les répétitions circulaires (si présentes)
+    const validation = validateCircularCut(formData as any);
+    if (!validation.isValid) {
+      if (lastToastRef.current) {
+        try { toast.dismiss(lastToastRef.current); } catch (e) {}
+        lastToastRef.current = null;
+      }
+      lastToastRef.current = toast.error("Impossible de créer la découpe", {
+        description: validation.errors.join("\n"),
+      });
+      return;
+    }
+
     const cutData = {
       positionX: formData.positionX,
       positionY: formData.positionY,
       radius: formData.radius,
       depth: formData.depth,
+      repetitionX: enableGrid ? formData.repetitionX : 0,
+      spacingX: enableGrid ? formData.spacingX : 100,
+      repetitionY: enableGrid ? formData.repetitionY : 0,
+      spacingY: enableGrid ? formData.spacingY : 100,
     };
 
     // Toujours appeler onAddCut - la logique de création vs édition
@@ -256,6 +376,115 @@ export function CircularCutForm({ onAddCut, onCancel, editingCut }: CutFormProps
           step={0.1}
           placeholder="Diamètre en mm"
         />
+      </div>
+
+      <div className="space-y-4 border rounded-md p-3 bg-muted/20">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Répétition en grille</Label>
+          <Switch checked={enableGrid} onCheckedChange={(v) => {
+            // toggle handler: reuse logic similar to rectangular form
+            setEnableGrid(Boolean(v));
+            if (!v) {
+              const newFormData = { ...formData, repetitionX: 0, repetitionY: 0 };
+              setFormData(newFormData);
+              const validation = validateCircularCut(newFormData as any);
+              if (!validation.isValid) {
+                if (lastToastRef.current) { try { toast.dismiss(lastToastRef.current); } catch(e){}; lastToastRef.current = null; }
+                lastToastRef.current = toast.error("Configuration invalide", { description: validation.errors.join("\n"), duration: 5000 });
+                return;
+              }
+              if (editingCut) { updateCut(editingCut.id, newFormData); } else { updatePreviewCut(newFormData); }
+            } else {
+              const repX = parseInt(repetitionXInput) || 0;
+              const repY = parseInt(repetitionYInput) || 0;
+              const spX = parseFloat(spacingXInput) || 100;
+              const spY = parseFloat(spacingYInput) || 100;
+              const newFormData = { ...formData, repetitionX: repX, spacingX: spX, repetitionY: repY, spacingY: spY };
+              setFormData(newFormData);
+              const validation = validateCircularCut(newFormData as any);
+              if (!validation.isValid) {
+                if (lastToastRef.current) { try { toast.dismiss(lastToastRef.current); } catch(e){}; lastToastRef.current = null; }
+                lastToastRef.current = toast.error("Configuration invalide", { description: validation.errors.join("\n"), duration: 5000 });
+                return;
+              }
+              if (editingCut) { updateCut(editingCut.id, newFormData); } else { updatePreviewCut(newFormData); }
+            }
+          }} />
+        </div>
+
+        {enableGrid && (
+          <div className="space-y-3 pt-2">
+            {/* Axe X */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground">Axe X</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Répétitions (suppl.)</Label>
+                  <Input
+                    type="number"
+                    value={repetitionXInput}
+                    onChange={(e) => setRepetitionXInput(e.target.value)}
+                    onBlur={() => handleFieldBlur("repetitionX", repetitionXInput)}
+                    onKeyDown={(e) => handleKeyDown(e, "repetitionX", repetitionXInput)}
+                    className="h-8"
+                    min={0}
+                    max={50}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Entraxe (mm)</Label>
+                  <Input
+                    type="number"
+                    value={spacingXInput}
+                    onChange={(e) => setSpacingXInput(e.target.value)}
+                    onBlur={() => handleFieldBlur("spacingX", spacingXInput)}
+                    onKeyDown={(e) => handleKeyDown(e, "spacingX", spacingXInput)}
+                    className={`h-8 ${!validationState.isValid && formData.spacingX < validationState.minSpacingX ? "border-red-500 focus:border-red-500" : ""}`}
+                    min={1}
+                  />
+                  {!validationState.isValid && formData.spacingX < validationState.minSpacingX && (
+                    <p className="text-[10px] text-red-500">Min: {Math.ceil(validationState.minSpacingX)}mm</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Axe Y */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground">Axe Y</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Répétitions (suppl.)</Label>
+                  <Input
+                    type="number"
+                    value={repetitionYInput}
+                    onChange={(e) => setRepetitionYInput(e.target.value)}
+                    onBlur={() => handleFieldBlur("repetitionY", repetitionYInput)}
+                    onKeyDown={(e) => handleKeyDown(e, "repetitionY", repetitionYInput)}
+                    className="h-8"
+                    min={0}
+                    max={50}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Entraxe (mm)</Label>
+                  <Input
+                    type="number"
+                    value={spacingYInput}
+                    onChange={(e) => setSpacingYInput(e.target.value)}
+                    onBlur={() => handleFieldBlur("spacingY", spacingYInput)}
+                    onKeyDown={(e) => handleKeyDown(e, "spacingY", spacingYInput)}
+                    className={`h-8 ${!validationState.isValid && formData.spacingY < validationState.minSpacingY ? "border-red-500 focus:border-red-500" : ""}`}
+                    min={1}
+                  />
+                  {!validationState.isValid && formData.spacingY < validationState.minSpacingY && (
+                    <p className="text-[10px] text-red-500">Min: {Math.ceil(validationState.minSpacingY)}mm</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
